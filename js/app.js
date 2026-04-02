@@ -226,24 +226,3 @@ function rnd(){
 }
 
 
-// ── STARTUP ─────────────────────────────────────────────────────────
-
-(function(){
-  var params = new URLSearchParams(window.location.search);
-  var viewData = params.get('view');
-  if(viewData){
-    try{
-      var g = JSON.parse(decodeURIComponent(atob(viewData)));
-      showQRView(g);
-      return;
-    }catch(e){}
-  }
-  loadSettings();
-loadCollections();
-loadMilestones();
-loadTransferred();
-loadCustomPrices();
-initNavigation();
-initSwipeNav();
-  ld(); // rnd() called inside ld() after async DB load
-})();
