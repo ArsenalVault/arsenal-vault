@@ -264,7 +264,29 @@ tr.row:hover,tr.row:active{background:#2a3040}
 <input type="file" id="photoIn" accept="image/*" multiple style="display:none"/>
 <input type="file" id="schIn" accept="image/*,.pdf" style="display:none"/>
 <input type="file" id="importIn" accept=".json" style="display:none"/>
-<script src="js/state.js"></script>
+<script src="js/state.js">
+// ── STARTUP ──────────────────────────────────────────────────────────
+// Runs AFTER all modules and renderers are loaded
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  var viewData = params.get('view');
+  if(viewData){
+    try{
+      var g = JSON.parse(decodeURIComponent(atob(viewData)));
+      showQRView(g);
+      return;
+    }catch(e){}
+  }
+  loadSettings();
+loadCollections();
+loadMilestones();
+loadTransferred();
+loadCustomPrices();
+initNavigation();
+initSwipeNav();
+  ld(); // rnd() called inside ld() after async DB load
+})();
+</script>
 <script src="js/utils.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
