@@ -472,7 +472,36 @@ var QRGen = (function(){
 var SK='arsenal_v6';
 var CONDITIONS=['Excellent','Good','Fair','Poor','Needs Repair'];
 var CC={Excellent:'#60e880',Good:'#a0e0a0',Fair:'#ffd060',Poor:'#ff9040','Needs Repair':'#ff7070'};
-var CALIBERS=['.22 LR','.22 WMR','.223 Rem','.243 Win','.270 Win','.30-06 Springfield','.308 Win','.30-30 Win','.338 Lapua','.357 Mag','.38 Special','.380 ACP','.40 S&W','.44 Mag','.45 ACP','.45 Colt','.50 BMG','5.56 NATO','6.5 Creedmoor','7.62x39mm','7.62x51mm','9mm Luger','10mm Auto','12 Gauge','20 Gauge','.410 Bore','Other'];
+var CALIBERS=[
+  // Rimfire
+  '.17 HMR','.17 WSM','.22 LR','.22 WMR','.22 Short',
+  // Centerfire Pistol
+  '.25 ACP','.32 ACP','.32 H&R Mag','.327 Fed Mag',
+  '9mm Luger','9mm Makarov','.357 SIG','.357 Mag',
+  '.38 Special','.38 Super','.380 ACP',
+  '.40 S&W','.41 Mag','.44 Special','.44 Mag',
+  '.45 ACP','.45 GAP','.45 Colt','.454 Casull',
+  '.460 S&W','.480 Ruger','.50 AE','10mm Auto',
+  // Centerfire Rifle
+  '.204 Ruger','.22-250 Rem','.223 Rem','.224 Valkyrie',
+  '.243 Win','.257 Roberts','.260 Rem','.270 Win','.270 WSM',
+  '.280 Rem','.30 Carbine','.30-06 Springfield','.30-30 Win',
+  '.300 AAC Blackout','.300 Win Mag','.300 WSM','.300 PRC',
+  '.308 Win','.30-378 Wby','.32 Win Special',
+  '.338 Federal','.338 Lapua','.338 Win Mag',
+  '.350 Legend','.35 Whelen','.375 H&H','.378 Wby',
+  '.416 Rem Mag','.416 Rigby','.444 Marlin',
+  '.45-70 Gov','.458 Win Mag','.460 Wby','.50 BMG',
+  '5.45x39mm','5.56 NATO','6mm ARC','6mm Creedmoor',
+  '6.5 Creedmoor','6.5 Grendel','6.5 PRC','6.5x55 Swedish',
+  '6.8 SPC','7mm Rem Mag','7mm-08 Rem','7mm PRC',
+  '7.62x39mm','7.62x51mm','7.62x54mmR','7.92x57mm Mauser',
+  '8mm Rem Mag','300 Norma Mag','338 Norma Mag',
+  // Shotgun
+  '10 Gauge','12 Gauge','16 Gauge','20 Gauge','28 Gauge','.410 Bore',
+  // Other
+  'Other'
+];
 var TYPES=['Pistol','Revolver','Rifle','Shotgun','Carbine','Suppressor','Other'];
 
 var guns=[];
@@ -671,9 +700,17 @@ function filtered(){
   return f;
 }
 
+
+function onCalChange(sel){
+  FORM.caliber = sel.value;
+  var ci = document.getElementById('cal_custom');
+  if(ci) ci.style.display = (sel.value === 'Other') ? 'block' : 'none';
+}
 function rnd(){
+  var fab=document.getElementById('fab_add');
+  if(fab) fab.style.display=(VIEW==='add')?'none':'flex';
   var nav=document.getElementById('nav');
-  nav.innerHTML='<div style="grid-column:1/2">'+rCollDropdown()+'</div>'+'<button class="nav-btn'+(VIEW==="dashboard"?' active':'')+'" onclick="go(\'dashboard\')" style="grid-column:2/3">&#9632; Dashboard</button>'+'<button class="nav-btn'+(VIEW==="pic"?' active':'')+'" onclick="go(\'pic\')" style="grid-column:3/4">&#128247; View</button>'+'<button class="nav-btn'+(VIEW==="reports"?' active':'')+'" onclick="go(\'reports\')" style="grid-column:1/2">&#128202; Reports</button>'+'<button class="nav-btn'+(VIEW==="list"?' active':'')+'" onclick="go(\'list\')" style="grid-column:2/3">Inventory</button>';
+  nav.innerHTML='<div style="grid-column:1/2">'+rCollDropdown()+'</div>'+'<button class="nav-btn'+(VIEW==="dashboard"?' active':'')+'" onclick="go(\'dashboard\')" style="grid-column:2/3">&#9632; Dashboard</button>'+'<button class="nav-btn'+(VIEW==="reports"?' active':'')+'" onclick="go(\'reports\')" style="grid-column:1/2">&#128202; Reports</button>'+'<button class="nav-btn'+(VIEW==="list"?' active':'')+'" onclick="go(\'list\')" style="grid-column:2/3">Inventory</button>';
   if(VIEW==='dashboard')app.innerHTML=rDash();
   else if(VIEW==='list')app.innerHTML=rList();
   else if(VIEW==='add')app.innerHTML=rAdd();
@@ -845,7 +882,7 @@ function rList(){
       +'<option value="model"'+(srtBy==='model'?' selected':'')+'>Sort: Model</option>'
       +'<option value="caliber"'+(srtBy==='caliber'?' selected':'')+'>Sort: Caliber</option>'
       +'<option value="value"'+(srtBy==='value'?' selected':'')+'>Sort: Value</option></select>'
-    +'<button class="btn-g" onclick="toggleBulkMode()" style="font-size:11px">'+(bulkMode?'✓ Done':'⬡ Bulk Edit')+'</button>'+'<button class="btn-ex" onclick="expCSV()">&#8595; CSV</button>'
+    +'<button class="btn-g" onclick="toggleBulkMode()" style="font-size:11px">'+(bulkMode?'✓ Done':'⬡ Bulk Edit')+'</button>'+'<button class="btn-ex" onclick="expCSV()">&#8595; CSV</button>'+'<button class="btn-ai" onclick="go(\'pic\')" style="font-size:11px">&#128247; View Inventory</button>'
     +'<button class="btn-pr" onclick="pAll()">Print</button>'
     
     +'</div>'
@@ -856,7 +893,12 @@ function rList(){
 // ── ADD / EDIT ────────────────────────────────────────────────────────
 function rAdd(){
   var f=FORM;
-  var calOpts=CALIBERS.map(function(c){return '<option'+(f.caliber===c?' selected':'')+'>'+c+'</option>';}).join('');
+  var isCustomCal = f.caliber && f.caliber!=='' && CALIBERS.indexOf(f.caliber)<0;
+  var calOpts=CALIBERS.map(function(c){
+    var sel = (c===f.caliber) || (c==='Other' && isCustomCal);
+    return '<option value="'+c+'"'+(sel?' selected':'')+'>'+c+'</option>';
+  }).join('');
+  var calCustomHtml = '<input type="text" class="inp" id="cal_custom" placeholder="Type custom caliber (e.g. 6.8x43mm)" oninput="FORM.caliber=this.value" value="'+(isCustomCal?eh(f.caliber):'')+'\" style="margin-top:6px;display:'+(isCustomCal||f.caliber==='Other'?'block':'none')+'">';
   var typeOpts=TYPES.map(function(t){return '<option'+(f.type===t?' selected':'')+'>'+t+'</option>';}).join('');
   var condOpts=CONDITIONS.map(function(c){return '<option'+(f.condition===c?' selected':'')+'>'+c+'</option>';}).join('');
 
@@ -909,7 +951,7 @@ function rAdd(){
       +'<div class="form-group"><label class="lbl">Make *</label><div class="ac-wrap"><input type="text" id="f_make" value="'+eh(f.make)+'" placeholder="e.g. Smith &amp; Wesson" autocomplete="off" oninput="acInput(this.value)" onkeydown="acKey(event)" onblur="acBlur()"/><div id="ac_list" class="ac-list"></div></div></div>'
       +'<div class="form-group"><label class="lbl">Model *</label><input type="text" id="f_model" value="'+eh(f.model)+'" placeholder="e.g. 686, G19"/></div>'
       +'<div class="form-group"><label class="lbl">Type</label><select id="f_type" onchange="FORM.type=this.value"><option value="">Select...</option>'+typeOpts+'</select></div>'
-      +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange="FORM.caliber=this.value"><option value="">Select...</option>'+calOpts+'</select></div>'
+      +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange=\"FORM.caliber=this.value;onCalChange(this)\"><option value="">Select...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
       +'<div class="form-group"><label class="lbl">Condition</label><select id="f_cond" onchange="FORM.condition=this.value">'+condOpts+'</select></div>'
       +'<div class="form-group"><label class="lbl">Status</label><div class="wbtns">'
       +'<button class="wbtn '+(f.working?'wy':'')+'" onclick="FORM.working=true;rnd()">✓ Working</button>'
@@ -933,7 +975,7 @@ function rAdd(){
     +'<div class="form-group"><label class="lbl">Serial Number</label><div style="display:flex;gap:8px"><input type="text" id="f_sn" value="'+eh(f.serialNumber)+'" placeholder="Enter serial number" style="flex:1"/><button id="sn_btn" class="btn-ai" onclick="doSnLookup()" style="white-space:nowrap;flex-shrink:0">&#128269; Look Up Year</button></div></div>'
     +'<div class="form-group"><label class="lbl">Year</label><input type="text" id="f_yr" value="'+eh(f.year)+'" placeholder="Auto-filled or enter manually"/><div id="yr_st" style="font-size:12px;margin-top:5px;display:none"></div></div>'
     +'<div class="form-group"><label class="lbl">Type</label><select id="f_type" onchange="FORM.type=this.value"><option value="">Select type...</option>'+typeOpts+'</select></div>'
-    +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange="FORM.caliber=this.value"><option value="">Select caliber...</option>'+calOpts+'</select></div>'
+    +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange=\"FORM.caliber=this.value;onCalChange(this)\"><option value="">Select caliber...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
     +'<div class="form-group"><label class="lbl">Storage Location</label><input type="text" id="f_storage" value="'+eh(f.storageLocation)+'" placeholder="e.g. Gun safe #1, Bedroom cabinet"/></div>'
     +'<div class="form-group"><label class="lbl">Last Cleaned</label><input type="date" id="f_cleaned" value="'+eh(f.lastCleaned)+'" style="color-scheme:dark"/></div>'
     +'</div>';
@@ -3061,6 +3103,9 @@ function buildHamMenu(){
       +'<span class="ham-item-icon">&#128194;</span><span>Restore from Backup</span>'
     +'</div>'
 
+    +'<div class="ham-item" onclick="hamAction(function(){go(\'pic\')})">'
+    +'<span class="ham-item-icon">&#128247;</span><span>View Inventory</span>'
+    +'</div>'
     +'<div class="ham-section">Print &amp; Export</div>'
     +'<div class="ham-item" onclick="hamAction(function(){pAll()})">'
       +'<span class="ham-item-icon">&#9113;</span><span>Print Full Inventory</span>'
@@ -3417,14 +3462,16 @@ function initSwipeNav(){
     var dy = e.changedTouches[0].clientY - startY;
     var dt = Date.now() - startTime;
 
-    // Pull down from top = refresh CURRENT page (not go home)
+    // Pull down from top = refresh current page only
     if(dy > 80 && Math.abs(dx) < 40 && dt < 600 && startY < 120){
+      // Re-render current view without changing VIEW variable
+      var current = VIEW;
       rnd();
       toast('Refreshed');
       return;
     }
 
-    // Only process horizontal swipes from here
+    // Only process horizontal swipes
     if(Math.abs(dx) < 40 || Math.abs(dy) > 80 || dt > 500) return;
 
     // Right swipe from left edge = back
