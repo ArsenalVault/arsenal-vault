@@ -132,8 +132,8 @@ input,select,textarea,button{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 .wrap{max-width:1100px;margin:0 auto;padding:0 18px}
 header{border-bottom:2px solid #2e3545;padding:14px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px}
 .logo{font-size:15px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a}
-nav{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:8px 0 10px}
-.nav-btn{padding:9px 6px;font-size:11px;letter-spacing:.03em;text-transform:uppercase;border:1px solid #3a4455;background:transparent;color:#c8d0e0;cursor:pointer;border-radius:6px;font-family:inherit;white-space:nowrap;text-align:center;width:100%}
+nav{display:flex;flex-direction:column;gap:4px;padding:6px 0 10px}
+.nav-btn{padding:9px 6px;font-size:11px;letter-spacing:.03em;text-transform:uppercase;border:1px solid #3a4455;background:transparent;color:#c8d0e0;cursor:pointer;border-radius:6px;font-family:inherit;white-space:nowrap;text-align:center}
 .nav-btn.active{border-color:#e8c46a;background:#e8c46a20;color:#e8c46a;font-weight:700}
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
 .stat-card{background:#222835;border:1px solid #2e3545;border-radius:8px;padding:16px 18px;transition:border-color .15s,background .15s}
@@ -502,7 +502,7 @@ var CALIBERS=[
   // Other
   'Other'
 ];
-var TYPES=['Pistol','Revolver','Rifle','Shotgun','Carbine','Suppressor','Other'];
+var TYPES=['Semi-Auto Pistol','Single Action Pistol','Double Action Pistol','Single Action Revolver','Double Action Revolver','Semi-Auto Rifle','Bolt-Action Rifle','Lever-Action Rifle','Pump-Action Rifle','Single Shot Rifle','Break-Action Rifle','AR-Style Rifle','Bullpup Rifle','Pump-Action Shotgun','Semi-Auto Shotgun','Over/Under Shotgun','Side-by-Side Shotgun','Single Shot Shotgun','Break-Action Shotgun','Lever-Action Shotgun','Semi-Auto Carbine','Lever-Action Carbine','Pistol Caliber Carbine','Full-Auto','Select-Fire','Suppressor','SBR','SBS','AOW','Destructive Device','Antique','Black Powder','Flintlock','Other'];
 
 var guns=[];
 var VIEW='dashboard';
@@ -706,11 +706,24 @@ function onCalChange(sel){
   var ci = document.getElementById('cal_custom');
   if(ci) ci.style.display = (sel.value === 'Other') ? 'block' : 'none';
 }
+
+function getStorageSuggestions(){
+  var seen={};
+  return guns.reduce(function(a,g){
+    if(g.storageLocation&&!seen[g.storageLocation]){
+      seen[g.storageLocation]=1;
+      a.push(g.storageLocation);
+    }
+    return a;
+  },[]).map(function(s){
+    return '<option value="'+eh(s)+'"/>';
+  }).join('');
+}
 function rnd(){
   var fab=document.getElementById('fab_add');
   if(fab) fab.style.display=(VIEW==='add')?'none':'flex';
   var nav=document.getElementById('nav');
-  nav.innerHTML='<div style="grid-column:1/2">'+rCollDropdown()+'</div>'+'<button class="nav-btn'+(VIEW==="dashboard"?' active':'')+'" onclick="go(\'dashboard\')" style="grid-column:2/3">&#9632; Dashboard</button>'+'<button class="nav-btn'+(VIEW==="reports"?' active':'')+'" onclick="go(\'reports\')" style="grid-column:1/2">&#128202; Reports</button>'+'<button class="nav-btn'+(VIEW==="list"?' active':'')+'" onclick="go(\'list\')" style="grid-column:2/3">Inventory</button>';
+  nav.innerHTML='<div style="width:100%">'+rCollDropdown()+'</div>'+'<div style="display:flex;gap:4px;width:100%">'+'<button class="nav-btn'+(VIEW==="dashboard"?' active':'')+'" onclick="go(\'dashboard\')" style="flex:1">&#9632; Dashboard</button>'+'<button class="nav-btn'+(VIEW==="reports"?' active':'')+'" onclick="go(\'reports\')" style="flex:1">&#128202; Reports</button>'+'<button class="nav-btn'+(VIEW==="list"?' active':'')+'" onclick="go(\'list\')" style="flex:1">Inventory</button>'+'</div>';
   if(VIEW==='dashboard')app.innerHTML=rDash();
   else if(VIEW==='list')app.innerHTML=rList();
   else if(VIEW==='add')app.innerHTML=rAdd();
@@ -976,7 +989,7 @@ function rAdd(){
     +'<div class="form-group"><label class="lbl">Year</label><input type="text" id="f_yr" value="'+eh(f.year)+'" placeholder="Auto-filled or enter manually"/><div id="yr_st" style="font-size:12px;margin-top:5px;display:none"></div></div>'
     +'<div class="form-group"><label class="lbl">Type</label><select id="f_type" onchange="FORM.type=this.value"><option value="">Select type...</option>'+typeOpts+'</select></div>'
     +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange=\"FORM.caliber=this.value;onCalChange(this)\"><option value="">Select caliber...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
-    +'<div class="form-group"><label class="lbl">Storage Location</label><input type="text" id="f_storage" value="'+eh(f.storageLocation)+'" placeholder="e.g. Gun safe #1, Bedroom cabinet"/></div>'
+    +'<div class="form-group"><label class="lbl">Storage Location</label><input type="text" id="f_storage" list="stor_list" value="'+eh(f.storageLocation)+'" placeholder="e.g. Gun safe #1, Bedroom cabinet"/></div>'
     +'<div class="form-group"><label class="lbl">Last Cleaned</label><input type="date" id="f_cleaned" value="'+eh(f.lastCleaned)+'" style="color-scheme:dark"/></div>'
     +'</div>';
 
@@ -3449,51 +3462,26 @@ function picSwipe(dir){
 
 // Swipe detection for picture page AND edit page
 function initSwipeNav(){
-  var startX=0, startY=0, startTime=0;
-
-  document.addEventListener('touchstart', function(e){
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    startTime = Date.now();
-  }, {passive:true});
-
-  document.addEventListener('touchend', function(e){
-    var dx = e.changedTouches[0].clientX - startX;
-    var dy = e.changedTouches[0].clientY - startY;
-    var dt = Date.now() - startTime;
-
-    // Pull down from top = refresh current page only
-    if(dy > 80 && Math.abs(dx) < 40 && dt < 600 && startY < 120){
-      // Re-render current view without changing VIEW variable
-      var current = VIEW;
-      rnd();
-      toast('Refreshed');
-      return;
-    }
-
-    // Only process horizontal swipes
-    if(Math.abs(dx) < 40 || Math.abs(dy) > 80 || dt > 500) return;
-
-    // Right swipe from left edge = back
-    if(dx > 60 && startX < 30){
-      handleBack();
-      return;
-    }
-
-    // Left/right swipe for gun navigation
-    if(Math.abs(dx) > 80 && startX > 40){
-      if(VIEW === 'pic'){
-        picSwipe(dx < 0 ? 1 : -1);
-      } else if(VIEW === 'add' && editId){
-        var all = filtered();
-        var idx = all.findIndex(function(x){return x.id===editId;});
-        if(idx >= 0){
-          var next = all[(idx + (dx<0?1:-1) + all.length) % all.length];
-          if(next) editGun(next.id);
-        }
+  var startX=0,startY=0,startTime=0;
+  document.addEventListener('touchstart',function(e){
+    startX=e.touches[0].clientX;startY=e.touches[0].clientY;startTime=Date.now();
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    var dx=e.changedTouches[0].clientX-startX;
+    var dy=e.changedTouches[0].clientY-startY;
+    var dt=Date.now()-startTime;
+    if(dy>80&&Math.abs(dx)<40&&dt<600&&startY<120){rnd();toast('Refreshed');return;}
+    if(Math.abs(dx)<40||Math.abs(dy)>80||dt>500) return;
+    if(dx>60&&startX<30){handleBack();return;}
+    if(Math.abs(dx)>80&&startX>40){
+      if(VIEW==='pic'){picSwipe(dx<0?1:-1);}
+      else if(VIEW==='add'&&editId){
+        var all=filtered();
+        var ix=all.findIndex(function(x){return x.id===editId;});
+        if(ix>=0){var nxt=all[(ix+(dx<0?1:-1)+all.length)%all.length];if(nxt)editGun(nxt.id);}
       }
     }
-  }, {passive:true});
+  },{passive:true});
 }
 function closeQR(){var m=document.getElementById("qr_modal");if(m)m.remove();}
 
