@@ -3,11 +3,6 @@
 <head>
 <meta charset="UTF-8"/>
 <style>
-  /* Font override - load before main styles */
-  :root {
-    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  }
-
 .report-btn{background:#1a2535;color:#a0c0ff;border:2px solid #a0c0ff50;padding:11px 15px;font-size:13px;border-radius:6px;cursor:pointer;font-weight:600}
 .report-btn:hover{background:#1e2e45;border-color:#a0c0ff}
 .chart-bar{background:#e8c46a22;border-radius:4px;margin-bottom:6px;overflow:hidden;height:28px;display:flex;align-items:center}
@@ -116,235 +111,438 @@
 .pic-val{color:#f0f2f5;font-weight:600;text-align:right;max-width:55%}
 .pic-actions{display:flex;gap:10px;padding:20px;padding-top:0}
 
-#app_header_row{display:flex!important;align-items:center!important;justify-content:space-between!important;width:100%!important;box-sizing:border-box!important}
-#app_header_row .logo{flex:1!important;min-width:0!important}
-#app_header_row .hamburger-btn{flex-shrink:0!important;margin-left:8px!important}
 
-.fab{position:fixed;bottom:24px;right:20px;z-index:500;background:#e8c46a;color:#1a1d24;border:none;border-radius:50px;padding:14px 20px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px #e8c46a40;letter-spacing:.02em;display:flex;align-items:center;gap:8px;-webkit-tap-highlight-color:transparent}
-.fab:active{transform:scale(0.96);box-shadow:0 2px 10px #e8c46a30}
 
 /* ── ARSENAL VAULT DESIGN TOKENS ─────────────────────────────────── */
 :root {
-  --bg-primary:    #0F131A;
-  --bg-secondary:  #121722;
-  --panel:         #1A2130;
-  --panel-alt:     #1E2840;
-  --border:        #2E3D52;
-  --border-soft:   rgba(255,255,255,0.05);
-  --gold:          #D5B15C;
-  --gold-dark:     #A88433;
-  --gold-glow:     rgba(213,177,92,0.12);
-  --success:       #4ED36F;
-  --danger:        #E16464;
-  --text-primary:  #E7ECF3;
-  --text-secondary:#8D97A8;
-  --text-muted:    #6F7888;
+  --bg-primary:    #111318;
+  --bg-secondary:  #0D1016;
+  --panel:         #161C26;
+  --panel-shell:   #111820;
+  --panel-inner:   #1A2232;
+  --panel-header:  #0B0E18;
+  --border:        #2C3848;
+  --border-accent: #3A4A60;
+  --border-gold:   rgba(196,144,16,0.45);
+  --gold:          #C49010;
+  --gold-dim:      #8A6808;
+  --gold-glow:     rgba(196,144,16,0.10);
+  --success:       #52C84A;
+  --danger:        #C84848;
+  --text-primary:  #D8E2EE;
+  --text-secondary:#8898AB;
+  --text-muted:    #526070;
+  --inset:         rgba(0,0,0,0.5);
 }
 
-/* ── DASHBOARD LAYOUT ─────────────────────────────────────────────── */
-.av-dashboard { padding: 12px 14px 100px; background: var(--bg-primary); min-height: 100vh; }
-
-/* ── COMMAND STRIP ────────────────────────────────────────────────── */
-.cmd-strip {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--gold);
-  padding: 10px 14px;
-  margin-bottom: 14px;
+/* ── HEADER ───────────────────────────────────────────────────────── */
+.av-header {
+  background: linear-gradient(180deg, #0C1018 0%, #0F1520 100%);
+  border-bottom: 2px solid #1C2535;
+  padding: 14px 14px 0;
   position: relative;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.8);
 }
-.cmd-strip-label {
-  font-size: 9px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-  font-weight: 600;
-}
-.cmd-strip-value {
-  font-size: 11px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  font-weight: 600;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-.cmd-strip-value .cmd-num { color: var(--gold); font-weight: 700; }
-.cmd-strip-value .cmd-sep { color: var(--border); }
-
-/* ── METRIC CARDS ─────────────────────────────────────────────────── */
-.stat-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.metric-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 14px 14px 10px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color .15s, background .15s;
-}
-.metric-card::before {
+.av-header::after {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--gold) 0%, transparent 100%);
-  opacity: 0.5;
+  bottom: -1px; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #C49010 0%, rgba(196,144,16,0.3) 50%, transparent 100%);
+  opacity: 0.7;
 }
-.metric-card.clickable { cursor: pointer; }
-.metric-card.clickable:active { background: var(--panel-alt); border-color: var(--gold); }
-.metric-card.metric-wide { grid-column: span 2; }
-
-.metric-sys {
-  font-size: 9px;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  font-weight: 700;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.metric-sys::before {
-  content: '';
-  display: inline-block;
-  width: 4px;
-  height: 4px;
-  background: var(--gold);
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.metric-label {
-  font-size: 11px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.metric-value {
-  font-size: 36px;
-  font-weight: 800;
-  letter-spacing: -.01em;
-  line-height: 1;
-  margin-bottom: 8px;
-}
-.metric-value.value-lg { font-size: 28px; }
-.metric-footer {
-  font-size: 10px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  padding-top: 8px;
-  border-top: 1px solid var(--border-soft);
+.av-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-.metric-footer .tap-hint { opacity: 0.5; font-size: 9px; }
-
-/* ── DASHBOARD TABS ───────────────────────────────────────────────── */
-.dash-tabs {
-  display: flex;
   margin-bottom: 12px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  overflow: hidden;
 }
-.dash-tab {
-  flex: 1;
+.av-brand { display: flex; align-items: center; gap: 12px; }
+.av-insignia {
+  width: 50px; height: 50px;
+  border: 2px solid #9A7010;
+  border-radius: 8px 8px 50% 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; color: #C49010;
+  background: linear-gradient(145deg, #1C2435 0%, #0C1018 100%);
+  box-shadow:
+    0 0 0 1px #4A3400,
+    inset 0 1px 0 rgba(196,144,16,0.18),
+    0 4px 14px rgba(0,0,0,0.8);
+  flex-shrink: 0;
+  text-shadow: 0 0 12px rgba(196,144,16,0.4);
+}
+.av-brand-text { display: flex; flex-direction: column; gap: 2px; }
+.av-brand-name {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #C49010;
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(196,144,16,0.3);
+}
+.av-brand-sub {
+  font-size: 8px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #48545E;
+  font-weight: 600;
+}
+.av-menu-btn {
+  width: 42px; height: 38px;
+  background: linear-gradient(180deg, #1C2232 0%, #141820 100%);
+  border: 1px solid #2C3848;
+  border-top: 1px solid #3A4860;
+  border-bottom: 2px solid #080C12;
+  border-radius: 4px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 5px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 3px 10px rgba(0,0,0,0.7);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.av-menu-btn:active { background: linear-gradient(180deg, #121820 0%, #0C1018 100%); transform: translateY(1px); }
+.av-menu-line { display: block; width: 18px; height: 2px; background: #9AAABB; border-radius: 1px; }
+
+/* ── COLLECTION ROW ───────────────────────────────────────────────── */
+.av-coll-row {
+  margin-bottom: 4px;
+}
+
+/* ── TABS ─────────────────────────────────────────────────────────── */
+.av-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
   background: transparent;
-  border: none;
-  border-right: 1px solid var(--border);
-  color: var(--text-muted);
-  padding: 10px 6px;
-  font-size: 10px;
-  font-weight: 700;
+}
+.av-tab {
+  flex: 1;
+  background: linear-gradient(180deg, #1C2232 0%, #141820 100%);
+  border: 1px solid #2C3848;
+  border-top: 1px solid #3A4860;
+  border-bottom: 2px solid #080C12;
+  border-radius: 3px;
+  color: #607080;
+  padding: 10px 4px;
+  font-size: 9px;
+  font-weight: 800;
   letter-spacing: .12em;
   text-transform: uppercase;
   cursor: pointer;
   font-family: inherit;
-  transition: background .15s, color .15s;
+  transition: all .1s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 3px 8px rgba(0,0,0,0.6);
+  -webkit-tap-highlight-color: transparent;
 }
-.dash-tab:last-child { border-right: none; }
-.dash-tab.active {
-  background: var(--gold-glow);
-  color: var(--gold);
-  border-bottom: 2px solid var(--gold);
+.av-tab-active {
+  background: linear-gradient(180deg, #8C6A00 0%, #5A4000 100%);
+  border-color: #B88000;
+  border-top-color: #DCA010;
+  border-bottom-color: #3A2800;
+  color: #E0A020;
+  box-shadow:
+    inset 0 1px 0 rgba(255,210,60,0.22),
+    inset 0 -1px 0 rgba(0,0,0,0.4),
+    0 0 12px rgba(180,120,0,0.22),
+    0 3px 8px rgba(0,0,0,0.6);
 }
-.dash-tab:active { background: var(--panel-alt); }
+.av-tab:not(.av-tab-active):active { background: linear-gradient(180deg, #141820 0%, #0E1219 100%); }
 
-/* ── SECTION PANELS ───────────────────────────────────────────────── */
-.av-panel {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 14px;
-  margin-bottom: 10px;
+/* ── DASHBOARD LAYOUT ─────────────────────────────────────────────── */
+.av-dashboard {
+  padding: 0;
+  background: #111318;
+  min-height: 100vh;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.013) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.009) 40px);
+  position: relative;
 }
-.av-panel-title {
+
+/* ── COMMAND STRIP ────────────────────────────────────────────────── */
+.cmd-strip {
+  background: linear-gradient(180deg, #181D28 0%, #111620 100%);
+  border: 1px solid #2C3848;
+  border-radius: 3px;
+  margin: 0 10px 10px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    inset 0 -1px 0 rgba(0,0,0,0.4),
+    0 3px 10px rgba(0,0,0,0.65);
+}
+.cmd-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  padding: 7px 12px;
+}
+.cmd-row:first-child {
+  border-bottom: 1px solid rgba(0,0,0,0.45);
+  background: rgba(0,0,0,0.12);
+}
+.cmd-row:last-child { background: rgba(0,0,0,0.22); }
+.cmd-dash { color: #3A4558; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+.cmd-coll-label { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: #586878; font-weight: 600; }
+.cmd-coll-name {
   font-size: 9px;
   letter-spacing: .16em;
   text-transform: uppercase;
-  color: var(--text-muted);
-  font-weight: 700;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-soft);
+  color: #C49010;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
 }
+.cmd-s-sep { color: #3A4558; font-size: 8px; margin: 0 1px; }
+.cmd-s-num { font-size: 9px; font-weight: 900; letter-spacing: .05em; color: #C8D4E0; }
+.cmd-s-num.sg { color: #52C84A; }
+.cmd-s-num.sr { color: #C84848; }
+.cmd-s-num.sa { color: #C49010; }
+.cmd-s-lbl { font-size: 8px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: #526070; }
+
+/* ── SECTION WRAPPER ──────────────────────────────────────────────── */
+.av-dash-section { padding: 0 10px 8px; }
+
+/* ── CARDS GRID ───────────────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  padding: 6px 10px 8px;
+}
+.stat-grid > :last-child:nth-child(odd) { grid-column: span 2; }
+
+/* ── METRIC CARD ──────────────────────────────────────────────────── */
+.metric-card {
+  background: linear-gradient(180deg, #161C26 0%, #111820 100%);
+  border: 1px solid #2A3545;
+  border-top: 1px solid #3A4860;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px #080B10,
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 6px 20px rgba(0,0,0,0.75);
+}
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, #9A7010 0%, rgba(154,112,16,0.25) 70%, transparent 100%);
+  z-index: 1;
+}
+.metric-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 18px; height: 18px;
+  background: linear-gradient(135deg, transparent 50%, #0A0D14 50%);
+  z-index: 2;
+}
+.metric-card.clickable { cursor: pointer; }
+.metric-card.clickable:active {
+  border-color: rgba(196,144,16,0.5);
+  box-shadow: 0 0 0 1px rgba(196,144,16,0.18), 0 4px 12px rgba(0,0,0,0.6);
+}
+.metric-card-head {
+  background: linear-gradient(180deg, #1C2235 0%, #161A2C 100%);
+  border-bottom: 1px solid #0A0C16;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04);
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.metric-sys {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 8px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #9AAAC0;
+  font-weight: 700;
+}
+.metric-sys-icon {
+  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+  opacity: 0.85;
+}
+.metric-card-dots {
+  font-size: 10px;
+  color: #2E3C50;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+.metric-card-body {
+  background: linear-gradient(180deg, #0D1018 0%, #0B0E16 100%);
+  padding: 10px 12px 9px;
+}
+.metric-card--danger .metric-card-body {
+  background: radial-gradient(ellipse at 30% 58%, rgba(200,72,72,0.22) 0%, #0D1018 62%);
+}
+.metric-card--goldglow .metric-card-body {
+  background: radial-gradient(ellipse at 30% 58%, rgba(196,144,16,0.14) 0%, #0D1018 62%);
+}
+.metric-label {
+  font-size: 11px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #B8C8DA;
+  font-weight: 700;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.metric-value { font-size: 52px; font-weight: 900; letter-spacing: -.03em; line-height: 1; margin-bottom: 2px; }
+.metric-value.val-md { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+.metric-value.val-sm { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+.metric-foot-lbl { font-size: 9px; color: #485868; font-weight: 500; letter-spacing: .04em; margin-top: 6px; display: block; }
+
+/* ── BREAKDOWN PANEL ──────────────────────────────────────────────── */
+.dash-panel {
+  background: linear-gradient(180deg, #161C26 0%, #111820 100%);
+  border: 1px solid #2A3545;
+  border-top: 1px solid #3A4860;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px #080B10, 0 4px 14px rgba(0,0,0,0.65);
+}
+.dash-panel-head { padding: 10px 12px 0; }
+.dash-panel-body { padding: 0 12px 12px; }
+.dash-tabs { display: flex; border-bottom: 1px solid #1A2030; margin-bottom: 12px; }
+.dash-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  padding: 8px 4px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: -1px;
+  transition: color .1s;
+}
+.dash-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
 
 /* ── TYPE CARDS ───────────────────────────────────────────────────── */
-.type-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; }
+.type-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; }
 .type-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 10px 8px;
+  background: linear-gradient(180deg, #161C26 0%, #111820 100%);
+  border: 1px solid #2A3545;
+  border-top: 1px solid #3A4860;
+  border-radius: 2px;
+  padding: 10px 6px 8px;
   text-align: center;
   cursor: pointer;
-  transition: border-color .15s;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 0 0 1px #080B10;
 }
-.type-card:active { border-color: var(--gold); }
-.type-card-num {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--gold);
-  line-height: 1;
-  margin-bottom: 4px;
+.type-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, #9A7010 0%, transparent 70%);
+  opacity: 0.35;
 }
-.type-card-lbl {
-  font-size: 9px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  font-weight: 600;
-}
+.type-card:active { border-color: rgba(196,144,16,0.4); background: #1A2030; }
+.type-card-num { font-size: 22px; font-weight: 900; color: var(--gold); line-height: 1; margin-bottom: 4px; }
+.type-card-lbl { font-size: 7px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); font-weight: 700; }
 
-/* ── LOG FIREARM BUTTON ───────────────────────────────────────────── */
+/* ── ALERT PANELS ─────────────────────────────────────────────────── */
+.av-alert-panel {
+  background: linear-gradient(180deg, #161C26 0%, #111820 100%);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--danger);
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px #080B10, 0 4px 14px rgba(0,0,0,0.65);
+}
+.av-alert-head {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(200,72,72,0.14);
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(200,72,72,0.05);
+}
+.av-alert-title { font-size: 8px; letter-spacing: .18em; text-transform: uppercase; color: var(--danger); font-weight: 700; }
+.av-alert-count { font-size: 8px; color: var(--text-muted); font-weight: 600; letter-spacing: .06em; }
+.av-alert-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03);
+  cursor: pointer; gap: 10px; -webkit-tap-highlight-color: transparent;
+}
+.av-alert-row:last-child { border-bottom: none; }
+.av-alert-row:active { background: rgba(255,255,255,0.02); }
+.av-alert-gun { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+.av-alert-cal { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; margin-top: 2px; }
+
+/* ── STARRED PANEL ────────────────────────────────────────────────── */
+.av-starred-panel {
+  background: linear-gradient(180deg, #161C26 0%, #111820 100%);
+  border: 1px solid var(--border);
+  border-top: 1px solid rgba(196,144,16,0.35);
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px #080B10, 0 4px 14px rgba(0,0,0,0.65);
+}
+.av-starred-head {
+  padding: 8px 12px; border-bottom: 1px solid rgba(196,144,16,0.10);
+  display: flex; align-items: center; gap: 8px;
+}
+.av-starred-title { font-size: 8px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+.av-starred-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03);
+  cursor: pointer; gap: 10px; -webkit-tap-highlight-color: transparent;
+}
+.av-starred-row:last-child { border-bottom: none; }
+.av-starred-row:active { background: rgba(196,144,16,0.04); }
+.av-starred-val { font-size: 12px; font-weight: 800; color: var(--gold); letter-spacing: .02em; flex-shrink: 0; }
+
+/* ── EMPTY STATE ──────────────────────────────────────────────────── */
+.av-empty { text-align: center; padding: 60px 20px 40px; }
+.av-empty-icon { font-size: 32px; margin-bottom: 14px; opacity: 0.2; }
+.av-empty-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; letter-spacing: .12em; text-transform: uppercase; }
+.av-empty-sub { font-size: 11px; color: var(--text-muted); letter-spacing: .04em; line-height: 1.7; }
+
+/* ── FAB ──────────────────────────────────────────────────────────── */
 .fab {
   position: fixed;
   bottom: 20px;
-  right: 16px;
-  left: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 500;
-  background: var(--panel);
-  color: var(--gold);
-  border: 1px solid var(--gold-dark);
-  border-top: 2px solid var(--gold);
-  border-radius: 4px;
-  padding: 16px;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: .14em;
+  width: auto;
+  min-width: 230px;
+  max-width: 300px;
+  background: linear-gradient(180deg, #1C2435 0%, #111820 100%);
+  color: #C49010;
+  border: 2px solid #9A7810;
+  border-top: 2px solid #C49010;
+  border-bottom: 2px solid #4A3400;
+  border-radius: 6px;
+  padding: 16px 28px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .22em;
   text-transform: uppercase;
   cursor: pointer;
   font-family: inherit;
@@ -352,64 +550,35 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  transition: background .15s, border-color .15s;
+  box-shadow:
+    0 0 0 1px #4A3400,
+    inset 0 1px 0 rgba(196,144,16,0.18),
+    inset 0 -2px 4px rgba(0,0,0,0.5),
+    0 8px 28px rgba(0,0,0,0.85),
+    0 0 18px rgba(150,100,0,0.14);
+  transition: all .12s;
+  white-space: nowrap;
 }
-.fab::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(213,177,92,0.06) 0%, transparent 100%);
-  border-radius: 4px;
-  pointer-events: none;
-}
-.fab:active { background: var(--gold-glow); border-color: var(--gold); }
-.fab[style*="display:none"] { display: none !important; }
-
-/* ── SERVICE ALERT PANEL ──────────────────────────────────────────── */
-.service-panel {
-  background: var(--panel);
-  border: 1px solid rgba(225,100,100,0.3);
-  border-left: 3px solid var(--danger);
-  border-radius: 4px;
-  padding: 14px;
-  margin-bottom: 10px;
-}
-.service-panel-title {
-  font-size: 9px;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  color: var(--danger);
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-.service-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border-soft);
-}
-.service-row:last-child { border-bottom: none; }
-
-/* ── STARRED PANEL ────────────────────────────────────────────────── */
-.starred-panel {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-top: 2px solid rgba(213,177,92,0.4);
-  border-radius: 4px;
-  padding: 14px;
-  margin-bottom: 10px;
+.fab:active {
+  transform: translateX(-50%) translateY(1px);
+  box-shadow: 0 0 0 1px #4A3400, inset 0 2px 6px rgba(0,0,0,0.5), 0 4px 14px rgba(0,0,0,0.6);
 }
 
-/* ── EMPTY STATE ──────────────────────────────────────────────────── */
-.av-empty {
-  text-align: center;
-  padding: 48px 20px;
-  color: var(--text-muted);
-}
-.av-empty-icon { font-size: 40px; margin-bottom: 14px; opacity: 0.5; }
-.av-empty-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; letter-spacing: .04em; }
-.av-empty-sub { font-size: 13px; color: var(--text-secondary); }
+/* ── CONDITION BAR ────────────────────────────────────────────────── */
+.dash-cond-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.dash-cond-lbl { width: 76px; font-size: 8px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); text-align: right; flex-shrink: 0; }
+.dash-cond-track { flex: 1; height: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 1px; overflow: hidden; }
+.dash-cond-fill { height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 3px; }
+.dash-cond-count { font-size: 7px; font-weight: 900; color: #090C11; }
+.dash-cond-pct { width: 24px; font-size: 8px; color: var(--text-muted); flex-shrink: 0; text-align: right; }
+
+/* ── DASHBOARD MICRO-COMPONENTS ───────────────────────────────────── */
+.dash-nodata { text-align: center; padding: 14px 0; font-size: 8px; color: var(--text-muted); letter-spacing: .12em; text-transform: uppercase; }
+.dash-panel-count { font-size: 8px; color: var(--text-muted); font-weight: 600; letter-spacing: .06em; }
+.btn-review { font-size: 8px; letter-spacing: .1em; padding: 5px 10px; flex-shrink: 0; }
+.av-overdue-days { font-size: 9px; color: var(--danger); font-weight: 700; letter-spacing: .08em; }
+
+/* ── FORCED ID-BASED OVERRIDES ────────────────────────────────────── */
 
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -422,15 +591,6 @@ input,select,textarea,button{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 header{border-bottom:2px solid #2e3545;padding:14px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px}
 .logo{font-size:15px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a}
 nav{display:flex;flex-direction:column;gap:4px;padding:6px 0 10px}
-.nav-btn{padding:9px 6px;font-size:11px;letter-spacing:.03em;text-transform:uppercase;border:1px solid #3a4455;background:transparent;color:#c8d0e0;cursor:pointer;border-radius:6px;font-family:inherit;white-space:nowrap;text-align:center}
-.nav-btn.active{border-color:#e8c46a;background:#e8c46a20;color:#e8c46a;font-weight:700}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
-.stat-card{background:#222835;border:1px solid #2e3545;border-radius:8px;padding:16px 18px;transition:border-color .15s,background .15s}
-.stat-card.clickable{cursor:pointer}
-.stat-card.clickable:hover{border-color:#e8c46a;background:#252c3a}
-.stat-lbl{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#a0aec0;margin-bottom:6px;font-weight:600}
-.stat-val{font-size:26px;font-weight:700}
-.stat-sub{font-size:12px;color:#7a8598;margin-top:3px}
 .panel{background:#222835;border:1px solid #2e3545;border-radius:10px;padding:22px;margin-bottom:18px}
 .sec-title{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:14px;font-weight:800}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -452,8 +612,6 @@ select option{background:#222835;color:#f0f2f5}
 table{width:100%;border-collapse:collapse}
 th{text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#a8b4c8;padding:10px 13px;border-bottom:2px solid #2e3545;font-weight:700}
 td{padding:13px 14px;font-size:15px;border-bottom:1px solid #252c38;vertical-align:middle;color:#e8eef8}
-tr.row{cursor:pointer;-webkit-tap-highlight-color:rgba(232,196,106,0.2)}
-tr.row:hover,tr.row:active{background:#2a3040}
 .toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
 .toolbar input{flex:1;min-width:180px}
 .ai-box{background:#13161d;border:2px solid #a0b8ff40;border-radius:8px;padding:14px;margin-top:12px}
@@ -496,10 +654,6 @@ tr.row:hover,tr.row:active{background:#2a3040}
 .star-btn:hover{transform:scale(1.2)}
 .star-on{color:#e8c46a}
 .star-off{color:#3a4455}
-.type-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:18px}
-.type-card{background:#222835;border:1px solid #2e3545;border-radius:8px;padding:10px;text-align:center}
-.type-card-num{font-size:20px;font-weight:700;color:#e8c46a}
-.type-card-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8a95a8;margin-top:3px}
 .quick-toggle{display:flex;gap:8px;margin-bottom:16px}
 .quick-btn{padding:9px 16px;border-radius:6px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;border:2px solid #3a4455}
 .quick-btn.active{background:#e8c46a20;border-color:#e8c46a;color:#e8c46a;font-weight:700}
@@ -545,8 +699,21 @@ tr.row:hover,tr.row:active{background:#2a3040}
 </head>
 <body>
 <div class="wrap">
-  <header style="padding:10px 16px 0">
-    <div id="app_header_row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;width:100%;box-sizing:border-box"><div class="logo" style="flex:1;min-width:0">⊕ Arsenal Vault <span id="save_ind" style="display:none;font-size:10px;color:#60e880;font-weight:400;margin-left:8px">✓ Saved</span></div><button class="hamburger-btn" onclick="toggleHam()" title="Menu">&#9776;</button></div>
+  <header class="av-header">
+    <div class="av-header-row">
+      <div class="av-brand">
+        <div class="av-insignia">&#9678;</div>
+        <div class="av-brand-text">
+          <div class="av-brand-name">Arsenal Vault <span id="save_ind" style="display:none;font-size:9px;color:#4ED36F;font-weight:600;margin-left:8px;letter-spacing:.06em">&#10003; SAVED</span></div>
+          <div class="av-brand-sub">Private Armory Management</div>
+        </div>
+      </div>
+      <button class="av-menu-btn" onclick="toggleHam()" title="Menu">
+        <span class="av-menu-line"></span>
+        <span class="av-menu-line"></span>
+        <span class="av-menu-line"></span>
+      </button>
+    </div>
     <nav id="nav"></nav>
   </header>
   <div id="app"></div>
@@ -556,10 +723,6 @@ tr.row:hover,tr.row:active{background:#2a3040}
 <input type="file" id="photoIn" accept="image/*" multiple style="display:none"/>
 <input type="file" id="schIn" accept="image/*,.pdf" style="display:none"/>
 <input type="file" id="importIn" accept=".json" style="display:none"/>
-<script src="js/state.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/app.js"></script>
 <script>
 // ── CORRECT QR CODE ENGINE v2 ─────────────────────────────────────────
 // Version 2-M, handles up to ~77 bytes, reliable phone camera scanning
@@ -859,14 +1022,16 @@ function sv(){
   var data=guns;
   // Always keep in-memory backup
   window._gunBackup=JSON.stringify(data);
-  // Try IndexedDB first
+  // Single transaction covering both STORE and meta — prevents divergence between stores
   openDB(function(db){
     if(db){
       try{
-        var tx=db.transaction([STORE],'readwrite');
+        var tx=db.transaction([STORE,'meta'],'readwrite');
         var store=tx.objectStore(STORE);
         store.clear();
         data.forEach(function(g){store.put(g);});
+        tx.objectStore('meta').put(customPrices,'customPrices');
+        tx.objectStore('meta').put(priceLastUpdated||'','priceLastUpdated');
         tx.oncomplete=function(){
           var ind=document.getElementById('save_ind');
           if(ind){ind.style.display='inline';setTimeout(function(){ind.style.display='none';},2000);}
@@ -875,16 +1040,6 @@ function sv(){
       }catch(e){svFallback(data);}
     } else {
       svFallback(data);
-    }
-  });
-  // Also save meta
-  openDB(function(db){
-    if(db){
-      try{
-        var tx=db.transaction(['meta'],'readwrite');
-        tx.objectStore('meta').put(customPrices,'customPrices');
-        tx.objectStore('meta').put(priceLastUpdated||'','priceLastUpdated');
-      }catch(e){}
     }
   });
 }
@@ -960,15 +1115,18 @@ function eh(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;
 function toast(m,t){var el=document.getElementById('toast');el.textContent=m;el.className='toast '+(t||'ok');el.style.display='block';setTimeout(function(){el.style.display='none';},3000);}
 
 function go(v){
+  showCustodyForm=false;
+  editingCustodyId=null;
+  aiLoad=null;
   if(v==='add'){FORM=ef();editId=null;aiVal=null;aiDiag=null;playRack();}
   if(v==='pic'&&!picGunId&&guns.length){picGunId=guns[0].id;}
-  history.pushState({page:v,ts:Date.now()},"",window.location.href);history.pushState({page:v,ts:Date.now()},"",window.location.href);history.pushState({page:v,ts:Date.now()},"",window.location.href);VIEW=v;rnd();
+  history.pushState({page:v,ts:Date.now()},"",window.location.href);VIEW=v;rnd();
 }
 
 function stats(){
-  var tv=0,tc=0,w=0,nr=0;
-  for(var i=0;i<guns.length;i++){tv+=parseFloat(guns[i].currentValue)||0;tc+=parseFloat(guns[i].purchasePrice)||0;if(guns[i].working)w++;else nr++;}
-  return{total:guns.length,working:w,needsRepair:nr,totalValue:tv,totalCost:tc};
+  var tv=0,tc=0,w=0,nr=0,ta=0;
+  for(var i=0;i<guns.length;i++){tv+=parseFloat(guns[i].currentValue)||0;tc+=parseFloat(guns[i].purchasePrice)||0;ta+=parseFloat(guns[i].ammoCount)||0;if(guns[i].working)w++;else nr++;}
+  return{total:guns.length,working:w,needsRepair:nr,totalValue:tv,totalCost:tc,totalAmmo:ta};
 }
 
 function filtered(){
@@ -1106,7 +1264,7 @@ function rnd(){
   var fab=document.getElementById('fab_add');
   if(fab) fab.style.display=(VIEW==='add')?'none':'flex';
   var nav=document.getElementById('nav');
-  nav.innerHTML='<div style="width:100%">'+rCollDropdown()+'</div>'+'<div style="display:flex;gap:4px;width:100%;align-items:stretch">'+'<button class="nav-btn'+(VIEW==="dashboard"?' active':'')+'" onclick="go(\'dashboard\')" style="flex:1">&#9632; Dashboard</button>'+'<button class="nav-btn'+(VIEW==="reports"?' active':'')+'" onclick="go(\'reports\')" style="flex:1">&#128202; Reports</button>'+'<div style="flex:1;background:#1e2535;border:1px solid #3a4455;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;cursor:pointer" onclick="go(\'list\')">'  +'<span style="font-size:18px;font-weight:800;color:#e8c46a;line-height:1">'+guns.length+'</span>'+'<span style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;margin-top:2px">Firearms</span>'+'</div>'+'</div>';
+  nav.innerHTML='<div class="av-coll-row">'+rCollDropdown()+'</div>'+'<div class="av-tabs">'+'<button class="av-tab'+(VIEW==="dashboard"?' av-tab-active':'')+'" onclick="go(\'dashboard\')">&#9632; Dashboard</button>'+'<button class="av-tab'+(VIEW==="reports"?' av-tab-active':'')+'" onclick="go(\'reports\')">&#9778; Reports</button>'+'<button class="av-tab'+(VIEW==="list"?' av-tab-active':'')+'" onclick="go(\'list\')">&#9783; Inventory</button>'+'</div>';
   if(VIEW==='dashboard')app.innerHTML=rDash();
   else if(VIEW==='list')app.innerHTML=rList();
   else if(VIEW==='add')app.innerHTML=rAdd();
@@ -1120,72 +1278,79 @@ function rnd(){
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────
+
+
+// ── Metric card builder ────────────────────────────────────────────
+function mCard(sys, lbl, val, valColor, foot, action, extraCls){
+  var vStr=String(val);
+  var valCls='metric-value'+(vStr.length>6?' val-sm':vStr.length>4?' val-md':'');
+  var cls='metric-card'+(action?' clickable':'')+(extraCls?' '+extraCls:'');
+  var click=action?' onclick="'+action+'"':'';
+  return '<div class="'+cls+'"'+click+'>'
+    +'<div class="metric-card-head">'
+      +'<div class="metric-sys">'+sys+'</div>'
+      +'<span class="metric-card-dots">&middot;&middot;&middot;</span>'
+    +'</div>'
+    +'<div class="metric-card-body">'
+      +'<div class="metric-label">'+lbl+'</div>'
+      +'<div class="'+valCls+'" style="color:'+valColor+'">'+val+'</div>'
+      +'<span class="metric-foot-lbl">'+foot+'</span>'
+    +'</div>'
+    +'</div>';
+}
+
 function rDash(){
   var s=stats();
   var gain=s.totalValue-s.totalCost;
   var gainStr=(s.totalValue&&s.totalCost)?((gain>=0?'+':'')+fm(gain)):'\u2014';
-  var collName=collections[activeCollection]?collections[activeCollection].name:'My Collection';
+  var collName=collections[activeCollection]?collections[activeCollection].name.toUpperCase():'MY COLLECTION';
 
   // ── Command Strip ──────────────────────────────────────────────────
-  var opCount=s.working;
-  var svcCount=s.needsRepair;
   var cmdStrip='<div class="cmd-strip">'
-    +'<div class="cmd-strip-label">Active Collection</div>'
-    +'<div class="cmd-strip-value">'
-      +'<span class="cmd-num">'+s.total+'</span>'
-      +'<span style="color:var(--text-muted);font-size:10px">FIREARMS</span>'
-      +'<span class="cmd-sep">&bull;</span>'
-      +'<span class="cmd-num" style="color:var(--success)">'+opCount+'</span>'
-      +'<span style="color:var(--text-muted);font-size:10px">OPERATIONAL</span>'
-      +(svcCount?'<span class="cmd-sep">&bull;</span>'
-        +'<span class="cmd-num" style="color:var(--danger)">'+svcCount+'</span>'
-        +'<span style="color:var(--text-muted);font-size:10px">SERVICE REQ.</span>':'')
-      +(s.totalValue?'<span class="cmd-sep">&bull;</span>'
-        +'<span class="cmd-num">'+fm(s.totalValue)+'</span>':'')
+    +'<div class="cmd-row">'
+      +'<span class="cmd-dash">-&nbsp;</span>'
+      +'<span class="cmd-coll-label">Active Collection:&nbsp;</span>'
+      +'<span class="cmd-coll-name">'+eh(collName)+'</span>'
+      +'<span class="cmd-dash">&nbsp;-</span>'
+    +'</div>'
+    +'<div class="cmd-row">'
+      +'<span class="cmd-dash">-&nbsp;</span>'
+      +'<span class="cmd-s-num">'+s.total+'</span>&nbsp;'
+      +'<span class="cmd-s-lbl">Firearms</span>'
+      +(s.working?'<span class="cmd-s-sep">&nbsp;&middot;&nbsp;</span>'
+        +'<span class="cmd-s-num sg">'+s.working+'</span>&nbsp;'
+        +'<span class="cmd-s-lbl">Operational</span>':'')
+      +(s.needsRepair?'<span class="cmd-s-sep">&nbsp;&middot;&nbsp;</span>'
+        +'<span class="cmd-s-num sr">'+s.needsRepair+'</span>&nbsp;'
+        +'<span class="cmd-s-lbl">Service Req</span>':'')
+      +(s.totalValue?'<span class="cmd-s-sep">&nbsp;&middot;&nbsp;</span>'
+        +'<span class="cmd-s-lbl">Value&nbsp;</span>'
+        +'<span class="cmd-s-num sa">'+fm(s.totalValue)+'</span>':'')
+      +'<span class="cmd-dash">&nbsp;-</span>'
     +'</div>'
     +'</div>';
 
+
   // ── Metric Cards ───────────────────────────────────────────────────
-  var mc=[
-    {sys:'Asset Count', lbl:'Total Firearms', val:s.total, valColor:'var(--gold)',
-      foot:'Inventory Total', action:"goFilter('All','All')", wide:false},
-    {sys:'Readiness', lbl:'Operational', val:opCount, valColor:'var(--success)',
-      foot:'Active Status', action:"goFilter('Working','All')", wide:false},
-    {sys:'Service Status', lbl:'Service Required', val:svcCount, valColor:'var(--danger)',
-      foot:'Attention Needed', action:"goFilter('Not Working','All')", wide:false},
-    {sys:'Market Value', lbl:'Estimated Value', val:fm(s.totalValue), valColor:'var(--gold)',
-      foot:'Current Market', action:null, wide:false, valLg:true},
-    {sys:'Cost Basis', lbl:'Purchase Record', val:fm(s.totalCost), valColor:'var(--text-primary)',
-      foot:'Acquisition Cost', action:null, wide:false, valLg:true},
-    {sys:'Gain / Loss', lbl:'Value Change', val:gainStr,
-      valColor:(gain>=0?'var(--success)':'var(--danger)'),
-      foot:(gain>=0?'Appreciated':'Depreciated'), action:null, wide:false, valLg:true},
-    {sys:'Ammo Stock', lbl:'Rounds on Hand', val:s.totalAmmo>0?s.totalAmmo.toLocaleString():'\u2014',
-      valColor:'#A0B8D8', foot:'Total Inventory', action:null, wide:false, valLg:true},
-  ];
+  var cards=
+    mCard('<span class="metric-sys-icon" style="color:#9878D0">&#x229E;</span>&thinsp;Asset Count','Total Firearms',s.total,'var(--gold)','Inventory Total',"goFilter('All','All')")
+    +mCard('<span class="metric-sys-icon" style="color:#C09030">&#9671;</span>&thinsp;Readiness','Operational',s.working,'var(--success)','Active Status',"goFilter('Working','All')")
+    +mCard('<span class="metric-sys-icon" style="color:#9AAABB">&#9673;</span>&thinsp;Service Status','Service Required',s.needsRepair,'var(--danger)','Attention Needed',"goFilter('Not Working','All')",'metric-card--danger')
+    +mCard('<span class="metric-sys-icon" style="color:#8A6808">&#9652;</span>&thinsp;Market Value','Estimated Value',fm(s.totalValue),'var(--gold)','Current Market',null,'metric-card--goldglow')
+    +mCard('<span class="metric-sys-icon" style="color:#6080A0">&#x229E;</span>&thinsp;Cost Basis','Purchase Record',fm(s.totalCost)||'—','var(--text-primary)','Acquisition Cost',null)
+    +mCard('<span class="metric-sys-icon" style="color:#5890C0">&#8635;</span>&thinsp;Gain / Loss','Value Change',gainStr,(gain>=0?'var(--success)':'var(--danger)'),'Appreciation',null)
+    +mCard('<span class="metric-sys-icon" style="color:#607890">&#x229E;</span>&thinsp;Ammo Stock','Rounds on Hand',s.totalAmmo>0?s.totalAmmo.toLocaleString():'—','#8EB4D8','Total Stock',null);
 
-  var cards=mc.map(function(c){
-    var cls='metric-card'+(c.action?' clickable':'')+(c.wide?' metric-wide':'');
-    var click=c.action?' onclick="'+c.action+'"':'';
-    var hint=c.action?'<span class="tap-hint">&#9655;</span>':'';
-    var valCls='metric-value'+(c.valLg?' value-lg':'');
-    return '<div class="'+cls+'"'+click+'>'
-      +'<div class="metric-sys">'+c.sys+'</div>'
-      +'<div class="metric-label">'+c.lbl+'</div>'
-      +'<div class="'+valCls+'" style="color:'+c.valColor+'">'+c.val+'</div>'
-      +'<div class="metric-footer"><span>'+c.foot+'</span>'+hint+'</div>'
-      +'</div>';
-  }).join('');
 
-  // ── Tab section ────────────────────────────────────────────────────
+  // ── Breakdown Tabs ─────────────────────────────────────────────────
   var typeCounts={};
   TYPES.forEach(function(t){typeCounts[t]=0;});
   guns.forEach(function(g){
-    if(g.type&&typeCounts[g.type]!==undefined) typeCounts[g.type]++;
-    else if(g.type) typeCounts['Other']=(typeCounts['Other']||0)+1;
+    if(g.type&&typeCounts[g.type]!==undefined)typeCounts[g.type]++;
+    else if(g.type)typeCounts['Other']=(typeCounts['Other']||0)+1;
   });
   var typeCards=TYPES.filter(function(t){return typeCounts[t]>0;}).map(function(t){
-    return '<div class="type-card" onclick="goFilter(\'All\',\'All\',\'\',\''+t+'\')">'+'<div class="type-card-num">'+typeCounts[t]+'</div>'+'<div class="type-card-lbl">'+t+'</div>'+'</div>';
+    return '<div class="type-card" onclick="goFilter(\'All\',\'All\',\'\',\''+t+'\')"><div class="type-card-num">'+typeCounts[t]+'</div><div class="type-card-lbl">'+t+'</div></div>';
   }).join('');
 
   var condDist={};
@@ -1194,47 +1359,61 @@ function rDash(){
   var condBar=CONDITIONS.filter(function(c){return condDist[c]>0;}).map(function(c){
     var pct=guns.length>0?Math.round((condDist[c]/guns.length)*100):0;
     var col=CC[c]||'#8a95a8';
-    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-      +'<div style="width:90px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);text-align:right;flex-shrink:0">'+c+'</div>'
-      +'<div style="flex:1;height:16px;background:var(--bg-secondary);border:1px solid var(--border-soft);border-radius:2px;overflow:hidden">'
-        +'<div style="height:100%;background:'+col+';width:'+pct+'%;border-radius:2px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px;min-width:'+(condDist[c]>0?'24px':'0')+'">'
-          +'<span style="font-size:9px;font-weight:800;color:#0F131A;letter-spacing:.04em">'+condDist[c]+'</span>'
+    return '<div class="dash-cond-row">'
+      +'<div class="dash-cond-lbl">'+c+'</div>'
+      +'<div class="dash-cond-track">'
+        +'<div class="dash-cond-fill" style="background:'+col+';width:'+pct+'%;min-width:'+(condDist[c]>0?'18px':'0')+'">'
+          +'<span class="dash-cond-count">'+condDist[c]+'</span>'
         +'</div>'
       +'</div>'
-      +'<div style="width:28px;font-size:10px;color:var(--text-muted);flex-shrink:0;text-align:right">'+pct+'%</div>'
+      +'<div class="dash-cond-pct">'+pct+'%</div>'
     +'</div>';
   }).join('');
 
-  var tabSection='<div class="av-panel" style="margin-bottom:10px">'
-    +'<div class="dash-tabs">'
-      +'<button class="dash-tab'+(dashTab==='types'?' active':'')+'" onclick="dashTab=\'types\';rnd()">By Type</button>'
-      +'<button class="dash-tab'+(dashTab==='condition'?' active':'')+'" onclick="dashTab=\'condition\';rnd()">Condition</button>'
+  var tabSection='<div class="av-dash-section"><div class="dash-panel">'
+    +'<div class="dash-panel-head"><div class="dash-tabs">'
+      +'<button class="dash-tab'+(dashTab==='types'?' active':'')+'\" onclick=\"dashTab=\'types\';rnd()\">By Type</button>'
+      +'<button class="dash-tab'+(dashTab==='condition'?' active':'')+'\" onclick=\"dashTab=\'condition\';rnd()\">By Condition</button>'
+    +'</div></div>'
+    +'<div class="dash-panel-body">'
+      +(dashTab==='types'
+        ?(typeCards?'<div class="type-grid">'+typeCards+'</div>'
+          :'<div class="dash-nodata">No Data</div>')
+        :(condBar||'<div class="dash-nodata">No Data</div>'))
     +'</div>'
-    +(dashTab==='types'
-      ? (typeCards?'<div class="type-grid">'+typeCards+'</div>':'<div style="text-align:center;padding:16px;font-size:12px;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase">No data</div>')
-      : (condBar||'<div style="text-align:center;padding:16px;font-size:12px;color:var(--text-muted)">No data</div>'))
-    +'</div>';
+    +'</div></div>';
 
   // ── Starred ────────────────────────────────────────────────────────
   var starred=guns.filter(function(g){return g.starred;});
-  var starredPanel=starred.length?'<div class="starred-panel">'
-    +'<div class="av-panel-title">Starred Assets ('+starred.length+')</div>'
-    +starred.map(function(g){
-      return '<div class="service-row" style="cursor:pointer" onclick="openDet(\''+g.id+'\')">'+'<div><div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+eh(g.make)+' '+eh(g.model)+'</div>'+'<div style="font-size:11px;color:var(--text-muted);letter-spacing:.04em;text-transform:uppercase">'+eh(g.caliber)+'</div></div>'+'<span style="color:var(--gold);font-weight:700;font-size:13px">'+fm(g.currentValue)+'</span>'+'</div>';
-    }).join('')
-    +'</div>':'';
+  var starredPanel=starred.length
+    ?'<div class="av-dash-section"><div class="av-starred-panel">'
+      +'<div class="av-starred-head"><span class="av-starred-title">&#9733; Starred</span>'
+      +'<span class="dash-panel-count">'+starred.length+'</span></div>'
+      +starred.map(function(g){
+        return '<div class="av-starred-row" onclick="editGun(\''+g.id+'\')">'
+          +'<div><div class="av-alert-gun">'+eh(g.make)+' '+eh(g.model)+'</div>'
+          +'<div class="av-alert-cal">'+eh(g.caliber)+'</div></div>'
+          +'<span class="av-starred-val">'+fm(g.currentValue)+'</span>'
+          +'</div>';
+      }).join('')
+      +'</div></div>'
+    :'';
 
   // ── Service Required ───────────────────────────────────────────────
   var broken=guns.filter(function(g){return !g.working;});
-  var svcPanel='';
-  if(broken.length){
-    svcPanel='<div class="service-panel">'
-      +'<div class="service-panel-title">&#9651; Service Required ('+broken.length+')</div>'
+  var svcPanel=broken.length
+    ?'<div class="av-dash-section"><div class="av-alert-panel">'
+      +'<div class="av-alert-head"><span class="av-alert-title">&#9651; Service Required</span>'
+      +'<span class="av-alert-count">'+broken.length+'</span></div>'
       +broken.map(function(g){
-        return '<div class="service-row">'+'<div><div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+eh(g.make)+' '+eh(g.model)+'</div>'+'<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">'+eh(g.caliber)+'</div></div>'+'<button class="btn-g" style="font-size:11px;letter-spacing:.06em" onclick="editGun(\''+g.id+'\')">REVIEW</button>'+'</div>';
+        return '<div class="av-alert-row" onclick="editGun(\''+g.id+'\')">'
+          +'<div><div class="av-alert-gun">'+eh(g.make)+' '+eh(g.model)+'</div>'
+          +'<div class="av-alert-cal">'+eh(g.caliber)+'</div></div>'
+          +'<button class="btn-g btn-review" onclick="event.stopPropagation();editGun(\''+g.id+'\')">REVIEW</button>'
+          +'</div>';
       }).join('')
-      +'</div>';
-  }
+      +'</div></div>'
+    :'';
 
   // ── Overdue Cleaning ───────────────────────────────────────────────
   var today=new Date();
@@ -1242,21 +1421,25 @@ function rDash(){
     if(!g.lastCleaned)return false;
     return(today-new Date(g.lastCleaned))/(1000*60*60*24)>90;
   });
-  var overduePanel='';
-  if(overdue.length){
-    overduePanel='<div class="service-panel">'
-      +'<div class="service-panel-title">&#9661; Overdue Cleaning ('+overdue.length+')</div>'
+  var overduePanel=overdue.length
+    ?'<div class="av-dash-section"><div class="av-alert-panel">'
+      +'<div class="av-alert-head"><span class="av-alert-title">&#9661; Overdue Maintenance</span>'
+      +'<span class="av-alert-count">'+overdue.length+'</span></div>'
       +overdue.map(function(g){
         var days=Math.floor((today-new Date(g.lastCleaned))/(1000*60*60*24));
-        return '<div class="service-row" style="cursor:pointer" onclick="openDet(\''+g.id+'\')">'
-          +'<div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+eh(g.make)+' '+eh(g.model)+'</div>'+'<span style="font-size:11px;color:var(--danger);letter-spacing:.04em;text-transform:uppercase">'+days+' DAYS</span>'+'</div>';
+        return '<div class="av-alert-row" onclick="editGun(\''+g.id+'\')">'
+          +'<div><div class="av-alert-gun">'+eh(g.make)+' '+eh(g.model)+'</div>'
+          +'<div class="av-alert-cal">'+eh(g.caliber)+'</div></div>'
+          +'<span class="av-overdue-days">'+days+' days</span>'
+          +'</div>';
       }).join('')
-      +'</div>';
-  }
+      +'</div></div>'
+    :'';
 
   // ── Empty State ────────────────────────────────────────────────────
-  var empty=guns.length?'':'<div class="av-empty">'
-    +'<div class="av-empty-icon">&#9673;</div>'
+  var empty=guns.length?''
+    :'<div class="av-empty">'
+    +'<div class="av-empty-icon">&#11043;</div>'
     +'<div class="av-empty-title">Vault Empty</div>'
     +'<div class="av-empty-sub">No firearms logged.<br/>Tap Log Firearm to begin.</div>'
     +'</div>';
@@ -1269,8 +1452,10 @@ function rDash(){
     +overduePanel
     +svcPanel
     +empty
+    +'<div style="height:80px"></div>'
     +'</div>';
 }
+
 
 // ── LIST ──────────────────────────────────────────────────────────────
 function rList(){
@@ -1295,7 +1480,7 @@ function rList(){
       +'</div>';
     }
     return '<button type="button" '
-      +'onclick="openDet(\'' + g.id + '\')" '
+      +'onclick="editGun(\'' + g.id + '\')" '
       +'style="display:block;width:100%;text-align:left;background:transparent;border:none;'
         +'border-bottom:1px solid #252c38;padding:14px 16px;cursor:pointer;'
         +'-webkit-tap-highlight-color:rgba(232,196,106,0.3);font-family:monospace;">'
@@ -1515,12 +1700,11 @@ function collect(){
 
 function doSave(){
   collect();
+  if(!FORM.photos||!FORM.photos.length)FORM.photos=FORM.photo?[FORM.photo]:[];
   if(!FORM.make||!FORM.model){toast('Make and Model are required','err');return;}
   if(editId){guns=guns.map(function(g){return g.id===editId?Object.assign({},FORM,{id:editId}):g;});toast('Firearm updated');haptic('save');}
   else{guns.push(Object.assign({},FORM,{id:gid()}));toast('Added to inventory');haptic('save');}
-  // Ensure photos array populated from legacy photo field
-if(!FORM.photos||!FORM.photos.length)FORM.photos=FORM.photo?[FORM.photo]:[];
-sv();checkMilestones('save');FORM=ef();editId=null;aiVal=null;aiDiag=null;VIEW='list';rnd();
+  sv();checkMilestones('save');FORM=ef();editId=null;aiVal=null;aiDiag=null;VIEW='list';rnd();
 }
 
 function viewSchematics(id){
@@ -1675,7 +1859,7 @@ function rMaint(){
       +'</div>'
       +'<div style="text-align:right">'
         +'<div class="'+cls+'">'+txt+'</div>'
-        +(days>90?'<div style="font-size:11px;color:#ff7070">Needs cleaning!</div>':days>30?'<div style="font-size:11px;color:#ffd060">Due soon</div>':'<div style="font-size:11px;color:#60e880">Good</div>')+'<button onclick="logCleaning(\''+g.g.id+'\')" style="margin-top:6px;background:#1a2e1a;border:1px solid #60e88060;color:#60e880;padding:5px 12px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">&#10003; Log Cleaning</button>'
+        +(days>90?'<div style="font-size:11px;color:#ff7070">Needs cleaning!</div>':days>30?'<div style="font-size:11px;color:#ffd060">Due soon</div>':'<div style="font-size:11px;color:#60e880">Good</div>')+'<button onclick="logCleaning(\''+g.id+'\')" style="margin-top:6px;background:#1a2e1a;border:1px solid #60e88060;color:#60e880;padding:5px 12px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">&#10003; Log Cleaning</button>'
       +'</div>'
     +'</div>';
   }).join('');
@@ -3032,6 +3216,11 @@ function switchCollection(collId){
 
   // Reset state
   collMenuOpen=false;
+  bulkMode=false;
+  bulkSelected=[];
+  showCustodyForm=false;
+  editingCustodyId=null;
+  aiLoad=null;
   VIEW='dashboard';
   selId=null;editId=null;
   FORM=ef();srch='';
@@ -3160,6 +3349,30 @@ function deleteCollection(collId){
 function toggleCollMenu(){
   collMenuOpen=!collMenuOpen;
   rnd();
+  if(collMenuOpen){
+    // Register one-time outside-click and Escape handlers
+    // 300ms delay prevents the opening tap from immediately self-dismissing
+    setTimeout(function(){
+      function _collDismissClick(e){
+        if(!e.target.closest('.coll-dropdown')){
+          collMenuOpen=false;
+          rnd();
+          document.removeEventListener('click',_collDismissClick);
+          document.removeEventListener('keydown',_collDismissKey);
+        }
+      }
+      function _collDismissKey(e){
+        if(e.key==='Escape'){
+          collMenuOpen=false;
+          rnd();
+          document.removeEventListener('click',_collDismissClick);
+          document.removeEventListener('keydown',_collDismissKey);
+        }
+      }
+      document.addEventListener('click',_collDismissClick);
+      document.addEventListener('keydown',_collDismissKey);
+    },300);
+  }
 }
 
 function rCollDropdown(){
@@ -4219,15 +4432,8 @@ function editGun(id){
   editId=id;aiVal=null;aiDiag=null;VIEW='add';rnd();
 }
 
-function delGun(id){
-  if(!confirm('Remove this firearm from inventory?'))return;
-  guns=guns.filter(function(g){return g.id!==id;});sv();toast('Firearm removed');VIEW='list';rnd();
-}
 
-function openDet(id){
-  // Tapping a firearm goes straight to edit form
-  editGun(id);
-}
+
 
 // ── DETAIL ────────────────────────────────────────────────────────────
 function rDet(){
@@ -4236,7 +4442,10 @@ function rDet(){
   var gain=(parseFloat(g.currentValue)||0)-(parseFloat(g.purchasePrice)||0);
   var gainStr=(g.currentValue&&g.purchasePrice)?((gain>=0?'+':'')+fm(gain)):'';
 
-  // Photo handled by gPhotos below
+  var _photos=((g.photos&&g.photos.length)?g.photos:(g.photo?[g.photo]:[]));
+  var ph=_photos.length
+    ?'<img src="'+_photos[0]+'" class="ph-img" style="width:130px;height:95px;object-fit:cover;border-radius:6px;border:2px solid #3a4455;flex-shrink:0;cursor:pointer" onclick="openLb('+JSON.stringify(_photos)+',0)"/>'
+    :'<div class="ph-none" style="width:130px;height:95px">No Photo</div>';
 
   var tc='';
   if(dTab==='info'){
@@ -4289,7 +4498,7 @@ function rDet(){
     tc='<div class="panel"><div class="sec-title">⚙ Maintenance History</div>'+(g.maintenanceLog?'<div style="font-size:15px;white-space:pre-wrap;line-height:1.7;color:#e0e6f0">'+eh(g.maintenanceLog)+'</div>':'<div style="color:#8a95a8;font-size:14px">No maintenance records yet.</div>')+'<button class="btn-g" style="margin-top:16px" onclick="editGun(\''+g.id+'\')">Edit Maintenance Log</button></div>';
   }
 
-  return '<div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><button class="btn-g" onclick="go(\'list\')">← Back to List</button><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+'<button class="star-btn '+(g.starred?'star-on':'star-off')+'" onclick="toggleStar(\''+g.id+'\')" title="Star">'+(g.starred?'⭐':'☆')+'</button>'+'<button class="btn-pr" onclick="pOne(\''+g.id+'\')">⎙ Print Sheet</button><button class="btn-g" onclick="editGun(\''+g.id+'\')">Edit</button><button class="btn-d" onclick="delGun(\''+g.id+'\')">Delete</button></div></div>'+
+  return '<div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><button class="btn-g" onclick="go(\'list\')">← Back to List</button><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+'<button class="star-btn '+(g.starred?'star-on':'star-off')+'" onclick="toggleStar(\''+g.id+'\')" title="Star">'+(g.starred?'⭐':'☆')+'</button>'+'<button class="btn-pr" onclick="pOneOpts(\''+g.id+'\',true)">⎙ Print Sheet</button><button class="btn-g" onclick="editGun(\''+g.id+'\')">Edit</button><button class="btn-d" onclick="deleteGun(\''+g.id+'\')">Delete</button></div></div>'+
   '<div class="panel" style="border-color:#e8c46a40"><div style="display:flex;gap:18px;flex-wrap:wrap">'+ph+
   '<div style="flex:1;min-width:200px"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px"><div><div style="font-size:24px;font-weight:700;color:#f0f2f5">'+eh(g.make)+' '+eh(g.model)+'</div><div style="color:#a0aab8;font-size:14px;margin-top:4px">'+eh(g.type||'')+(g.type?' · ':'')+eh(g.caliber)+'</div><div style="color:#7a8598;font-size:13px;margin-top:3px">SN: '+(eh(g.serialNumber)||'N/A')+(g.year?' · '+eh(g.year):'')+'</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:700;color:#e8c46a">'+fm(g.currentValue)+'</div><div style="font-size:12px;color:#8a95a8">current value</div><div style="margin-top:6px">'+bj(g.condition,CC[g.condition]||'#8a95a8')+'</div></div></div>'+
   '<div style="margin-top:11px;display:flex;gap:18px;flex-wrap:wrap"><span style="color:'+(g.working?'#60e880':'#ff7070')+';font-size:14px;font-weight:700">'+(g.working?'✓ Operational':'✗ Needs Repair')+'</span>'+(g.purchasePrice?'<span style="color:#8a95a8;font-size:13px">Paid: '+fm(g.purchasePrice)+'</span>':'')+(gainStr?'<span style="color:'+(gain>=0?'#60e880':'#ff7070')+';font-size:13px;font-weight:600">'+gainStr+'</span>':'')+'</div></div></div></div>'+
@@ -4333,6 +4542,15 @@ function doVal(){
 }
 
 function valLookup(make,model,caliber,condition,year){
+  // Custom price override — check before built-in lookup
+  var _cpKey=(make+'|'+model).toLowerCase();
+  if(customPrices[_cpKey]){
+    var _cp=customPrices[_cpKey];
+    var _cpMult={'Excellent':1.15,'Good':1.0,'Fair':0.75,'Poor':0.5,'Needs Repair':0.35};
+    var _cpM=_cpMult[condition]||1.0;
+    return{low:Math.round(_cp.low*_cpM),mid:Math.round(_cp.mid*_cpM),high:Math.round(_cp.high*_cpM),
+      notes:_cp.notes+' — Updated '+_cp.updated+' ('+(condition||'Good')+' condition)'};
+  }
   var m=make.toLowerCase();
   var md=model.toLowerCase();
   var cond=condition||'Good';
@@ -4974,12 +5192,22 @@ function loadSch(id){
   scLoad=true;SCH=null;rnd();
   var done=false;
   var timer=setTimeout(function(){
-    if(!done){done=true;scLoad=false;SCH={_notFound:true,make:g.make,model:g.model};rnd();toast('Schematic lookup timed out','err');}
+    if(!done){
+      done=true;
+      scLoad=false; // always clear spinner
+      if(VIEW==='detail'&&selId===id){
+        SCH={_notFound:true,make:g.make,model:g.model};
+        rnd();
+        toast('Schematic lookup timed out','err');
+      }
+    }
   },20000);
   claude('Firearms technical expert. For the '+g.make+' '+g.model+' ('+g.caliber+' '+(g.type||'')+'), provide detailed field strip and assembly info. Respond ONLY with JSON no markdown: {"assemblySteps":[{"step":1,"title":"title","description":"detail","caution":null}],"disassemblySteps":[{"step":1,"title":"title","description":"detail","caution":null}],"partsList":[{"partNumber":"1","name":"name","description":"function","replaceable":true}],"safetyWarnings":["warning"],"toolsRequired":["tool"],"notes":"notes"} Include 7+ disassembly steps, 7+ assembly steps, 18+ parts.',2500,function(e,txt){
     clearTimeout(timer);if(done)return;done=true;
-    if(e){scLoad=false;SCH={_notFound:true,make:g.make,model:g.model};rnd();toast('Could not load schematics','err');}
-    else{try{SCH=JSON.parse(txt);}catch(ex){SCH={_notFound:true,make:g.make,model:g.model};}scLoad=false;rnd();}
+    scLoad=false; // always clear spinner
+    if(VIEW!=='detail'||selId!==id)return; // skip state+render if user navigated away
+    if(e){SCH={_notFound:true,make:g.make,model:g.model};rnd();toast('Could not load schematics','err');}
+    else{try{SCH=JSON.parse(txt);}catch(ex){SCH={_notFound:true,make:g.make,model:g.model};}rnd();}
   });
 }
 
@@ -5051,10 +5279,6 @@ function pAll(){
   W.document.close();W.print();
 }
 
-function pOne(id){
-  // Default: print with photos
-  pOneOpts(id, true);
-}
 
 function showPrintMenu(id){
   var existing=document.getElementById('print_menu');
@@ -5188,6 +5412,7 @@ function pOnePDF(id){
 
 // ── PRICE UPDATE SYSTEM ───────────────────────────────────────────────
 var customPrices={};
+var priceLastUpdated='';
 
 
 function loadCustomPrices(){
@@ -5200,20 +5425,6 @@ function saveCustomPrices(){
 }
 
 
-
-// Wrap valLookup to check custom prices first
-var _baseVal=valLookup;
-valLookup=function(make,model,caliber,condition,year){
-  var key=(make+'|'+model).toLowerCase();
-  if(customPrices[key]){
-    var p=customPrices[key];
-    var mult={'Excellent':1.15,'Good':1.0,'Fair':0.75,'Poor':0.5,'Needs Repair':0.35};
-    var cm=mult[condition]||1.0;
-    return{low:Math.round(p.low*cm),mid:Math.round(p.mid*cm),high:Math.round(p.high*cm),
-      notes:p.notes+' — Updated '+p.updated+' ('+( condition||'Good')+' condition)'};
-  }
-  return _baseVal(make,model,caliber,condition,year);
-};
 
 // ── BUILT-IN SCHEMATICS DATABASE ─────────────────────────────────────
 function schDB(make,model,caliber,type){
@@ -6118,16 +6329,20 @@ function doImport(data){
     }catch(e){}
   }
   loadSettings();
+  initPINLock();
 loadCollections();
 loadMilestones();
 loadTransferred();
 loadCustomPrices();
 initNavigation();
 initSwipeNav();
+  document.addEventListener('touchstart', unlockAudio);
+  document.addEventListener('click', unlockAudio);
+  checkNFCScan();
   ld(); // rnd() called inside ld() after async DB load
 })();
 </script>
 
-  <button class="fab" onclick="go('add')" id="fab_add">&#9673; LOG FIREARM</button>
+  <button class="fab" onclick="go('add')" id="fab_add">&#9678; LOG FIREARM</button>
 </body>
 </html>
