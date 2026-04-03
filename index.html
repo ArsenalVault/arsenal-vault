@@ -122,6 +122,295 @@
 
 .fab{position:fixed;bottom:24px;right:20px;z-index:500;background:#e8c46a;color:#1a1d24;border:none;border-radius:50px;padding:14px 20px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px #e8c46a40;letter-spacing:.02em;display:flex;align-items:center;gap:8px;-webkit-tap-highlight-color:transparent}
 .fab:active{transform:scale(0.96);box-shadow:0 2px 10px #e8c46a30}
+
+/* ── ARSENAL VAULT DESIGN TOKENS ─────────────────────────────────── */
+:root {
+  --bg-primary:    #0F131A;
+  --bg-secondary:  #121722;
+  --panel:         #1A2130;
+  --panel-alt:     #1E2840;
+  --border:        #2E3D52;
+  --border-soft:   rgba(255,255,255,0.05);
+  --gold:          #D5B15C;
+  --gold-dark:     #A88433;
+  --gold-glow:     rgba(213,177,92,0.12);
+  --success:       #4ED36F;
+  --danger:        #E16464;
+  --text-primary:  #E7ECF3;
+  --text-secondary:#8D97A8;
+  --text-muted:    #6F7888;
+}
+
+/* ── DASHBOARD LAYOUT ─────────────────────────────────────────────── */
+.av-dashboard { padding: 12px 14px 100px; background: var(--bg-primary); min-height: 100vh; }
+
+/* ── COMMAND STRIP ────────────────────────────────────────────────── */
+.cmd-strip {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.cmd-strip-label {
+  font-size: 9px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.cmd-strip-value {
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.cmd-strip-value .cmd-num { color: var(--gold); font-weight: 700; }
+.cmd-strip-value .cmd-sep { color: var(--border); }
+
+/* ── METRIC CARDS ─────────────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.metric-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px 14px 10px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .15s, background .15s;
+}
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold) 0%, transparent 100%);
+  opacity: 0.5;
+}
+.metric-card.clickable { cursor: pointer; }
+.metric-card.clickable:active { background: var(--panel-alt); border-color: var(--gold); }
+.metric-card.metric-wide { grid-column: span 2; }
+
+.metric-sys {
+  font-size: 9px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.metric-sys::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: var(--gold);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.metric-label {
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.metric-value {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.metric-value.value-lg { font-size: 28px; }
+.metric-footer {
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-top: 8px;
+  border-top: 1px solid var(--border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.metric-footer .tap-hint { opacity: 0.5; font-size: 9px; }
+
+/* ── DASHBOARD TABS ───────────────────────────────────────────────── */
+.dash-tabs {
+  display: flex;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.dash-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 10px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s, color .15s;
+}
+.dash-tab:last-child { border-right: none; }
+.dash-tab.active {
+  background: var(--gold-glow);
+  color: var(--gold);
+  border-bottom: 2px solid var(--gold);
+}
+.dash-tab:active { background: var(--panel-alt); }
+
+/* ── SECTION PANELS ───────────────────────────────────────────────── */
+.av-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.av-panel-title {
+  font-size: 9px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+/* ── TYPE CARDS ───────────────────────────────────────────────────── */
+.type-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; }
+.type-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.type-card:active { border-color: var(--gold); }
+.type-card-num {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.type-card-lbl {
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── LOG FIREARM BUTTON ───────────────────────────────────────────── */
+.fab {
+  position: fixed;
+  bottom: 20px;
+  right: 16px;
+  left: 16px;
+  z-index: 500;
+  background: var(--panel);
+  color: var(--gold);
+  border: 1px solid var(--gold-dark);
+  border-top: 2px solid var(--gold);
+  border-radius: 4px;
+  padding: 16px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: background .15s, border-color .15s;
+}
+.fab::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(213,177,92,0.06) 0%, transparent 100%);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.fab:active { background: var(--gold-glow); border-color: var(--gold); }
+.fab[style*="display:none"] { display: none !important; }
+
+/* ── SERVICE ALERT PANEL ──────────────────────────────────────────── */
+.service-panel {
+  background: var(--panel);
+  border: 1px solid rgba(225,100,100,0.3);
+  border-left: 3px solid var(--danger);
+  border-radius: 4px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.service-panel-title {
+  font-size: 9px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--danger);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.service-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.service-row:last-child { border-bottom: none; }
+
+/* ── STARRED PANEL ────────────────────────────────────────────────── */
+.starred-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-top: 2px solid rgba(213,177,92,0.4);
+  border-radius: 4px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+/* ── EMPTY STATE ──────────────────────────────────────────────────── */
+.av-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+}
+.av-empty-icon { font-size: 40px; margin-bottom: 14px; opacity: 0.5; }
+.av-empty-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; letter-spacing: .04em; }
+.av-empty-sub { font-size: 13px; color: var(--text-secondary); }
+
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Arsenal Vault</title>
@@ -701,6 +990,100 @@ function filtered(){
 }
 
 
+
+// ── WORK ORDER SYSTEM ────────────────────────────────────────────────
+function renderWorkOrders(log){
+  var orders = [];
+  try{ orders = typeof log==='string' ? JSON.parse(log) : (Array.isArray(log)?log:[]); }catch(e){ 
+    // Legacy plain text - show as single entry
+    return '<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:12px;font-size:13px;color:#c0c8d8;white-space:pre-wrap">'+eh(log)+'</div>';
+  }
+  if(!orders.length) return '<div style="text-align:center;padding:20px;color:#4a5568;font-size:13px">No maintenance records yet.</div>';
+  return orders.map(function(o,i){
+    var statusColor = o.status==='Completed'?'#60e880':o.status==='In Progress'?'#ffd060':'#8a95a8';
+    return '<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+        +'<div style="font-size:12px;font-weight:700;color:#e8c46a">WO-'+(String(i+1).padStart(3,'0'))+'</div>'
+        +'<div style="display:flex;gap:6px;align-items:center">'
+          +'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+statusColor+'20;color:'+statusColor+';border:1px solid '+statusColor+'50">'+o.status+'</span>'
+          +'<button onclick="removeWorkOrder('+i+')" style="background:none;border:none;color:#ff707070;cursor:pointer;font-size:14px;padding:0 4px">&#10005;</button>'
+        +'</div>'
+      +'</div>'
+      +'<div style="font-size:13px;font-weight:600;color:#f0f2f5;margin-bottom:4px">'+eh(o.type)+'</div>'
+      +(o.date?'<div style="font-size:11px;color:#8a95a8;margin-bottom:4px">'+o.date+(o.tech?' &middot; '+eh(o.tech):'')+'</div>':'')
+      +(o.notes?'<div style="font-size:13px;color:#c0c8d8;line-height:1.5">'+eh(o.notes)+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+
+function addWorkOrder(){
+  var modal = document.createElement('div');
+  modal.id = 'wo_modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = '<div style="background:#222835;border-top:2px solid #3a4455;border-radius:12px 12px 0 0;padding:20px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto">'
+    +'<div style="font-size:15px;font-weight:700;color:#e8c46a;margin-bottom:16px">+ New Work Order</div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Type of Work</label>'
+    +'<select id="wo_type" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit">'
+    +'<option value="">Select work type...</option>'
+    +'<option>Cleaning &amp; Lubrication</option>'
+    +'<option>Part Replacement</option>'
+    +'<option>Inspection</option>'
+    +'<option>Repair</option>'
+    +'<option>Modification</option>'
+    +'<option>Function Test</option>'
+    +'<option>Professional Service</option>'
+    +'<option>Other</option>'
+    +'</select></div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Date</label>'
+    +'<input type="date" id="wo_date" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;color-scheme:dark" value="'+new Date().toISOString().split("T")[0]+'"/></div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Performed By</label>'
+    +'<input type="text" id="wo_tech" placeholder="e.g. Self, Joe&#39;s Gun Shop" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;box-sizing:border-box"/></div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Status</label>'
+    +'<select id="wo_status" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit">'
+    +'<option>Completed</option><option>In Progress</option><option>Scheduled</option>'
+    +'</select></div>'
+    +'<div style="margin-bottom:16px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Notes</label>'
+    +'<textarea id="wo_notes" placeholder="Parts replaced, observations, cost, etc." rows="3" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea></div>'
+    +'<div style="display:flex;gap:10px">'
+    +'<button onclick="document.getElementById(\'wo_modal\').remove()" style="flex:1;background:#1a1d24;border:1px solid #3a4455;color:#8a95a8;padding:13px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit">Cancel</button>'
+    +'<button onclick="saveWorkOrder()" style="flex:1;background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Save Work Order</button>'
+    +'</div>'
+    +'</div>';
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  document.body.appendChild(modal);
+}
+
+function saveWorkOrder(){
+  var type = document.getElementById('wo_type').value;
+  if(!type){ toast('Please select a work type','err'); return; }
+  var order = {
+    type: type,
+    date: document.getElementById('wo_date').value,
+    tech: document.getElementById('wo_tech').value,
+    status: document.getElementById('wo_status').value,
+    notes: document.getElementById('wo_notes').value,
+    id: Date.now()
+  };
+  var orders = [];
+  try{ orders = FORM.maintenanceLog ? JSON.parse(FORM.maintenanceLog) : []; }catch(e){ orders = []; }
+  orders.unshift(order);
+  FORM.maintenanceLog = JSON.stringify(orders);
+  document.getElementById('wo_modal').remove();
+  haptic('save');
+  toast('Work order saved');
+  rnd();
+}
+
+function removeWorkOrder(idx){
+  if(!confirm('Remove this work order?')) return;
+  var orders = [];
+  try{ orders = JSON.parse(FORM.maintenanceLog); }catch(e){ return; }
+  orders.splice(idx,1);
+  FORM.maintenanceLog = JSON.stringify(orders);
+  haptic('light');
+  rnd();
+}
+
 function onCalChange(sel){
   FORM.caliber = sel.value;
   var ci = document.getElementById('cal_custom');
@@ -723,7 +1106,7 @@ function rnd(){
   var fab=document.getElementById('fab_add');
   if(fab) fab.style.display=(VIEW==='add')?'none':'flex';
   var nav=document.getElementById('nav');
-  nav.innerHTML='<div style="width:100%">'+rCollDropdown()+'</div>'+'<div style="display:flex;gap:4px;width:100%">'+'<button class="nav-btn'+(VIEW==="dashboard"?' active':'')+'" onclick="go(\'dashboard\')" style="flex:1">&#9632; Dashboard</button>'+'<button class="nav-btn'+(VIEW==="reports"?' active':'')+'" onclick="go(\'reports\')" style="flex:1">&#128202; Reports</button>'+'<button class="nav-btn'+(VIEW==="list"?' active':'')+'" onclick="go(\'list\')" style="flex:1">Inventory</button>'+'</div>';
+  nav.innerHTML='<div style="width:100%">'+rCollDropdown()+'</div>'+'<div style="display:flex;gap:4px;width:100%;align-items:stretch">'+'<button class="nav-btn'+(VIEW==="dashboard"?' active':'')+'" onclick="go(\'dashboard\')" style="flex:1">&#9632; Dashboard</button>'+'<button class="nav-btn'+(VIEW==="reports"?' active':'')+'" onclick="go(\'reports\')" style="flex:1">&#128202; Reports</button>'+'<div style="flex:1;background:#1e2535;border:1px solid #3a4455;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;cursor:pointer" onclick="go(\'list\')">'  +'<span style="font-size:18px;font-weight:800;color:#e8c46a;line-height:1">'+guns.length+'</span>'+'<span style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;margin-top:2px">Firearms</span>'+'</div>'+'</div>';
   if(VIEW==='dashboard')app.innerHTML=rDash();
   else if(VIEW==='list')app.innerHTML=rList();
   else if(VIEW==='add')app.innerHTML=rAdd();
@@ -740,51 +1123,71 @@ function rnd(){
 function rDash(){
   var s=stats();
   var gain=s.totalValue-s.totalCost;
-  var gainStr=(s.totalValue&&s.totalCost)?((gain>=0?'+':'')+fm(gain)):'—';
-  var sc=[
-    {l:'Total Firearms',big:true,v:s.total,c:'#e8c46a',sub:'in inventory',action:'goFilter(\'All\',\'All\')'},
-    {l:'Working',big:true,v:s.working,c:'#60e880',sub:'operational',action:'goFilter(\'Working\',\'All\')'},
-    {l:'Needs Repair',big:true,v:s.needsRepair,c:'#ff7070',sub:'require attention',action:'goFilter(\'Not Working\',\'All\')'},
-    {l:'Est. Total Value',big:true,v:fm(s.totalValue),c:'#e8c46a',sub:'current market',action:null},
-    {l:'Cost Basis',v:fm(s.totalCost),c:'#f0f2f5',sub:'purchase price',action:null},
-    {l:'Gain / Loss',v:gainStr,c:(gain>=0?'#60e880':'#ff7070'),sub:'vs purchase',action:null},
-    {l:'Total Ammo',v:s.totalAmmo>0?s.totalAmmo.toLocaleString():'—',c:'#a0c0ff',sub:'rounds on hand',action:null},
+  var gainStr=(s.totalValue&&s.totalCost)?((gain>=0?'+':'')+fm(gain)):'\u2014';
+  var collName=collections[activeCollection]?collections[activeCollection].name:'My Collection';
+
+  // ── Command Strip ──────────────────────────────────────────────────
+  var opCount=s.working;
+  var svcCount=s.needsRepair;
+  var cmdStrip='<div class="cmd-strip">'
+    +'<div class="cmd-strip-label">Active Collection</div>'
+    +'<div class="cmd-strip-value">'
+      +'<span class="cmd-num">'+s.total+'</span>'
+      +'<span style="color:var(--text-muted);font-size:10px">FIREARMS</span>'
+      +'<span class="cmd-sep">&bull;</span>'
+      +'<span class="cmd-num" style="color:var(--success)">'+opCount+'</span>'
+      +'<span style="color:var(--text-muted);font-size:10px">OPERATIONAL</span>'
+      +(svcCount?'<span class="cmd-sep">&bull;</span>'
+        +'<span class="cmd-num" style="color:var(--danger)">'+svcCount+'</span>'
+        +'<span style="color:var(--text-muted);font-size:10px">SERVICE REQ.</span>':'')
+      +(s.totalValue?'<span class="cmd-sep">&bull;</span>'
+        +'<span class="cmd-num">'+fm(s.totalValue)+'</span>':'')
+    +'</div>'
+    +'</div>';
+
+  // ── Metric Cards ───────────────────────────────────────────────────
+  var mc=[
+    {sys:'Asset Count', lbl:'Total Firearms', val:s.total, valColor:'var(--gold)',
+      foot:'Inventory Total', action:"goFilter('All','All')", wide:false},
+    {sys:'Readiness', lbl:'Operational', val:opCount, valColor:'var(--success)',
+      foot:'Active Status', action:"goFilter('Working','All')", wide:false},
+    {sys:'Service Status', lbl:'Service Required', val:svcCount, valColor:'var(--danger)',
+      foot:'Attention Needed', action:"goFilter('Not Working','All')", wide:false},
+    {sys:'Market Value', lbl:'Estimated Value', val:fm(s.totalValue), valColor:'var(--gold)',
+      foot:'Current Market', action:null, wide:false, valLg:true},
+    {sys:'Cost Basis', lbl:'Purchase Record', val:fm(s.totalCost), valColor:'var(--text-primary)',
+      foot:'Acquisition Cost', action:null, wide:false, valLg:true},
+    {sys:'Gain / Loss', lbl:'Value Change', val:gainStr,
+      valColor:(gain>=0?'var(--success)':'var(--danger)'),
+      foot:(gain>=0?'Appreciated':'Depreciated'), action:null, wide:false, valLg:true},
+    {sys:'Ammo Stock', lbl:'Rounds on Hand', val:s.totalAmmo>0?s.totalAmmo.toLocaleString():'\u2014',
+      valColor:'#A0B8D8', foot:'Total Inventory', action:null, wide:false, valLg:true},
   ];
-  var cards=sc.map(function(x){
-    var cls='stat-card'+(x.action?' clickable':'')+(x.big?' big':'');
-    var click=x.action?' onclick="'+x.action+'"':'';
-    var hint=x.action?' <span style="font-size:9px;opacity:.6">&#9655; tap</span>':'';
+
+  var cards=mc.map(function(c){
+    var cls='metric-card'+(c.action?' clickable':'')+(c.wide?' metric-wide':'');
+    var click=c.action?' onclick="'+c.action+'"':'';
+    var hint=c.action?'<span class="tap-hint">&#9655;</span>':'';
+    var valCls='metric-value'+(c.valLg?' value-lg':'');
     return '<div class="'+cls+'"'+click+'>'
-      +'<div class="stat-lbl">'+x.l+'</div>'
-      +'<div class="stat-val" style="color:'+x.c+'">'+x.v+'</div>'
-      +'<div class="stat-sub">'+x.sub+hint+'</div>'
+      +'<div class="metric-sys">'+c.sys+'</div>'
+      +'<div class="metric-label">'+c.lbl+'</div>'
+      +'<div class="'+valCls+'" style="color:'+c.valColor+'">'+c.val+'</div>'
+      +'<div class="metric-footer"><span>'+c.foot+'</span>'+hint+'</div>'
       +'</div>';
   }).join('');
 
-  var broken=guns.filter(function(g){return !g.working;});
-  var rep='';
-  if(broken.length){
-    var rows=broken.map(function(g){return '<div class="ri"><div><strong style="font-size:15px;color:#f0f2f5">'+eh(g.make)+' '+eh(g.model)+'</strong> <span style="font-size:13px;color:#8a95a8">'+eh(g.caliber)+'</span></div><div style="font-size:13px;color:#b0bac8;flex:1;text-align:right;padding:0 10px">'+(eh(g.repairNotes)||'No details entered')+'</div><button class="btn-g" onclick="editGun(\''+g.id+'\')">Review</button></div>';}).join('');
-    rep='<div class="panel" style="border-color:#ff707050"><div class="sec-title" style="color:#ff7070">⚠ Needs Attention ('+broken.length+')</div>'+rows+'</div>';
-  }
-
-  var recent='';
-
-  var empty=guns.length?'':'<div class="empty"><div style="font-size:44px;margin-bottom:14px">🔫</div><div style="font-size:17px;font-weight:700;color:#d0d8e8;margin-bottom:6px">No firearms logged yet</div><div style="font-size:14px;color:#8a95a8;margin-bottom:20px">Tap + Add Firearm to get started</div><button class="btn-p" onclick="go(\'add\')">+ Add First Firearm</button></div>';
-
-  // Type breakdown
+  // ── Tab section ────────────────────────────────────────────────────
   var typeCounts={};
   TYPES.forEach(function(t){typeCounts[t]=0;});
-  guns.forEach(function(g){if(g.type&&typeCounts[g.type]!==undefined)typeCounts[g.type]++;else if(g.type)typeCounts['Other']=(typeCounts['Other']||0)+1;});
+  guns.forEach(function(g){
+    if(g.type&&typeCounts[g.type]!==undefined) typeCounts[g.type]++;
+    else if(g.type) typeCounts['Other']=(typeCounts['Other']||0)+1;
+  });
   var typeCards=TYPES.filter(function(t){return typeCounts[t]>0;}).map(function(t){
-    return '<div class="type-card" style="cursor:pointer" onclick="goFilter(\'All\',\'All\',\'\',\''+t+'\')">'
-      +'<div class="type-card-num">'+typeCounts[t]+'</div>'
-      +'<div class="type-card-lbl">'+t+'</div>'
-      +'</div>';
+    return '<div class="type-card" onclick="goFilter(\'All\',\'All\',\'\',\''+t+'\')">'+'<div class="type-card-num">'+typeCounts[t]+'</div>'+'<div class="type-card-lbl">'+t+'</div>'+'</div>';
   }).join('');
-  var typeSection=typeCards?'<div class="type-grid">'+typeCards+'</div>':'';
 
-  // Condition distribution
   var condDist={};
   CONDITIONS.forEach(function(c){condDist[c]=0;});
   guns.forEach(function(g){if(condDist[g.condition]!==undefined)condDist[g.condition]++;});
@@ -792,48 +1195,81 @@ function rDash(){
     var pct=guns.length>0?Math.round((condDist[c]/guns.length)*100):0;
     var col=CC[c]||'#8a95a8';
     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-      +'<div style="width:80px;font-size:11px;color:#8a95a8;text-align:right;flex-shrink:0">'+c+'</div>'
-      +'<div style="flex:1;height:18px;background:#13161d;border-radius:4px;overflow:hidden">'
-        +'<div style="height:100%;background:'+col+';width:'+pct+'%;border-radius:4px;transition:width .4s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;min-width:'+(condDist[c]>0?'28px':'0')+'">'
-          +'<span style="font-size:10px;font-weight:700;color:#1a1d24">'+condDist[c]+'</span>'
+      +'<div style="width:90px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);text-align:right;flex-shrink:0">'+c+'</div>'
+      +'<div style="flex:1;height:16px;background:var(--bg-secondary);border:1px solid var(--border-soft);border-radius:2px;overflow:hidden">'
+        +'<div style="height:100%;background:'+col+';width:'+pct+'%;border-radius:2px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px;min-width:'+(condDist[c]>0?'24px':'0')+'">'
+          +'<span style="font-size:9px;font-weight:800;color:#0F131A;letter-spacing:.04em">'+condDist[c]+'</span>'
         +'</div>'
       +'</div>'
-      +'<div style="width:32px;font-size:11px;color:#4a5568;flex-shrink:0">'+pct+'%</div>'
+      +'<div style="width:28px;font-size:10px;color:var(--text-muted);flex-shrink:0;text-align:right">'+pct+'%</div>'
     +'</div>';
   }).join('');
-  var condSection=condBar?'<div class="panel" style="margin-bottom:16px"><div class="sec-title">&#9679; Condition Distribution</div>'+condBar+'</div>':'';
 
-  // Starred firearms
+  var tabSection='<div class="av-panel" style="margin-bottom:10px">'
+    +'<div class="dash-tabs">'
+      +'<button class="dash-tab'+(dashTab==='types'?' active':'')+'" onclick="dashTab=\'types\';rnd()">By Type</button>'
+      +'<button class="dash-tab'+(dashTab==='condition'?' active':'')+'" onclick="dashTab=\'condition\';rnd()">Condition</button>'
+    +'</div>'
+    +(dashTab==='types'
+      ? (typeCards?'<div class="type-grid">'+typeCards+'</div>':'<div style="text-align:center;padding:16px;font-size:12px;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase">No data</div>')
+      : (condBar||'<div style="text-align:center;padding:16px;font-size:12px;color:var(--text-muted)">No data</div>'))
+    +'</div>';
+
+  // ── Starred ────────────────────────────────────────────────────────
   var starred=guns.filter(function(g){return g.starred;});
-  var starredPanel=starred.length?'<div class="panel" style="border-color:#e8c46a40"><div class="sec-title">⭐ Starred ('+starred.length+')</div>'
-    +starred.map(function(g){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #252c38;cursor:pointer" onclick="openDet(\''+g.id+'\')">'
-      +'<div><strong style="color:#f0f2f5">'+eh(g.make)+' '+eh(g.model)+'</strong><span style="color:#8a95a8;font-size:12px;margin-left:8px">'+eh(g.caliber)+'</span></div>'
-      +'<span style="color:#e8c46a;font-weight:700">'+fm(g.currentValue)+'</span>'
-      +'</div>';}).join('')
+  var starredPanel=starred.length?'<div class="starred-panel">'
+    +'<div class="av-panel-title">Starred Assets ('+starred.length+')</div>'
+    +starred.map(function(g){
+      return '<div class="service-row" style="cursor:pointer" onclick="openDet(\''+g.id+'\')">'+'<div><div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+eh(g.make)+' '+eh(g.model)+'</div>'+'<div style="font-size:11px;color:var(--text-muted);letter-spacing:.04em;text-transform:uppercase">'+eh(g.caliber)+'</div></div>'+'<span style="color:var(--gold);font-weight:700;font-size:13px">'+fm(g.currentValue)+'</span>'+'</div>';
+    }).join('')
     +'</div>':'';
 
-  // Overdue cleaning (>90 days since last cleaned)
+  // ── Service Required ───────────────────────────────────────────────
+  var broken=guns.filter(function(g){return !g.working;});
+  var svcPanel='';
+  if(broken.length){
+    svcPanel='<div class="service-panel">'
+      +'<div class="service-panel-title">&#9651; Service Required ('+broken.length+')</div>'
+      +broken.map(function(g){
+        return '<div class="service-row">'+'<div><div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+eh(g.make)+' '+eh(g.model)+'</div>'+'<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">'+eh(g.caliber)+'</div></div>'+'<button class="btn-g" style="font-size:11px;letter-spacing:.06em" onclick="editGun(\''+g.id+'\')">REVIEW</button>'+'</div>';
+      }).join('')
+      +'</div>';
+  }
+
+  // ── Overdue Cleaning ───────────────────────────────────────────────
   var today=new Date();
   var overdue=guns.filter(function(g){
     if(!g.lastCleaned)return false;
-    var d=new Date(g.lastCleaned);
-    return(today-d)/(1000*60*60*24)>90;
+    return(today-new Date(g.lastCleaned))/(1000*60*60*24)>90;
   });
-  var overduePanel=overdue.length?'<div class="panel" style="border-color:#ff707050"><div class="sec-title" style="color:#ff7070">🧹 Overdue Cleaning ('+overdue.length+')</div>'
-    +overdue.map(function(g){
-      var days=Math.floor((today-new Date(g.lastCleaned))/(1000*60*60*24));
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #1a0a0a;cursor:pointer;flex-wrap:wrap;gap:6px" onclick="openDet(\''+g.id+'\')">'
-        +'<div><strong style="color:#f0f2f5">'+eh(g.make)+' '+eh(g.model)+'</strong></div>'
-        +'<span style="color:#ff7070;font-size:12px">'+days+' days since cleaned</span>'
-        +'</div>';}).join('')+'</div>':'';
-  var tabSection='<div class="panel" style="margin-bottom:16px">'
-    +'<div style="display:flex;border-bottom:1px solid #2e3545;margin-bottom:12px">'
-      +'<button onclick="dashTab=\'types\';rnd()" style="flex:1;background:none;border:none;border-bottom:3px solid '+(dashTab==='types'?'#e8c46a':'transparent')+';color:'+(dashTab==='types'?'#e8c46a':'#4a5568')+';padding:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.06em">BY TYPE</button>'
-      +'<button onclick="dashTab=\'condition\';rnd()" style="flex:1;background:none;border:none;border-bottom:3px solid '+(dashTab==='condition'?'#e8c46a':'transparent')+';color:'+(dashTab==='condition'?'#e8c46a':'#4a5568')+';padding:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.06em">CONDITION</button>'
-    +'</div>'
-    +(dashTab==='types'?typeSection:condSection)
+  var overduePanel='';
+  if(overdue.length){
+    overduePanel='<div class="service-panel">'
+      +'<div class="service-panel-title">&#9661; Overdue Cleaning ('+overdue.length+')</div>'
+      +overdue.map(function(g){
+        var days=Math.floor((today-new Date(g.lastCleaned))/(1000*60*60*24));
+        return '<div class="service-row" style="cursor:pointer" onclick="openDet(\''+g.id+'\')">'
+          +'<div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+eh(g.make)+' '+eh(g.model)+'</div>'+'<span style="font-size:11px;color:var(--danger);letter-spacing:.04em;text-transform:uppercase">'+days+' DAYS</span>'+'</div>';
+      }).join('')
+      +'</div>';
+  }
+
+  // ── Empty State ────────────────────────────────────────────────────
+  var empty=guns.length?'':'<div class="av-empty">'
+    +'<div class="av-empty-icon">&#9673;</div>'
+    +'<div class="av-empty-title">Vault Empty</div>'
+    +'<div class="av-empty-sub">No firearms logged.<br/>Tap Log Firearm to begin.</div>'
     +'</div>';
-  return '<div class="stat-grid">'+cards+'</div>'+tabSection+''+starredPanel+overduePanel+rep+empty;
+
+  return '<div class="av-dashboard">'
+    +cmdStrip
+    +'<div class="stat-grid">'+cards+'</div>'
+    +tabSection
+    +starredPanel
+    +overduePanel
+    +svcPanel
+    +empty
+    +'</div>';
 }
 
 // ── LIST ──────────────────────────────────────────────────────────────
@@ -985,10 +1421,10 @@ function rAdd(){
   var basicHtml='<div class="form-grid">'
     +'<div class="form-group"><label class="lbl">Make *</label><div class="ac-wrap"><input type="text" id="f_make" value="'+eh(f.make)+'" placeholder="e.g. Smith &amp; Wesson" autocomplete="off" oninput="acInput(this.value)" onkeydown="acKey(event)" onblur="acBlur()"/><div id="ac_list" class="ac-list"></div></div></div>'
     +'<div class="form-group"><label class="lbl">Model *</label><input type="text" id="f_model" value="'+eh(f.model)+'" placeholder="e.g. 686, G17, 1911"/></div>'
+    +'<div class="form-group"><label class="lbl">Type</label><select id="f_type" onchange="FORM.type=this.value"><option value="">Select type...</option>'+typeOpts+'</select></div>'
+    +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange=\\"FORM.caliber=this.value;onCalChange(this)\\"><option value="">Select caliber...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
     +'<div class="form-group"><label class="lbl">Serial Number</label><div style="display:flex;gap:8px"><input type="text" id="f_sn" value="'+eh(f.serialNumber)+'" placeholder="Enter serial number" style="flex:1"/><button id="sn_btn" class="btn-ai" onclick="doSnLookup()" style="white-space:nowrap;flex-shrink:0">&#128269; Look Up Year</button></div></div>'
     +'<div class="form-group"><label class="lbl">Year</label><input type="text" id="f_yr" value="'+eh(f.year)+'" placeholder="Auto-filled or enter manually"/><div id="yr_st" style="font-size:12px;margin-top:5px;display:none"></div></div>'
-    +'<div class="form-group"><label class="lbl">Type</label><select id="f_type" onchange="FORM.type=this.value"><option value="">Select type...</option>'+typeOpts+'</select></div>'
-    +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange=\"FORM.caliber=this.value;onCalChange(this)\"><option value="">Select caliber...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
     +'<div class="form-group"><label class="lbl">Storage Location</label><input type="text" id="f_storage" list="stor_list" value="'+eh(f.storageLocation)+'" placeholder="e.g. Gun safe #1, Bedroom cabinet"/></div>'
     +'<div class="form-group"><label class="lbl">Last Cleaned</label><input type="date" id="f_cleaned" value="'+eh(f.lastCleaned)+'" style="color-scheme:dark"/></div>'
     +'</div>';
@@ -1001,7 +1437,14 @@ function rAdd(){
     +'</div></div>'
     +'</div>'+rep
     +'<hr style="border:none;border-top:1px solid #2e3545;margin:14px 0"/>'
-    +'<div class="form-group"><label class="lbl">Maintenance Log</label><textarea id="f_mnt" placeholder="Cleaning dates, part replacements, modifications...">'+eh(f.maintenanceLog)+'</textarea></div>';
+    +'<div class="form-group" style="grid-column:span 2">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    +'<label class="lbl" style="margin:0">&#128221; Maintenance Log</label>'
+    +'<button class="btn-ai" style="font-size:12px" onclick="addWorkOrder()">+ New Work Order</button>'
+    +'</div>'
+    +(FORM.maintenanceLog&&FORM.maintenanceLog.length?renderWorkOrders(FORM.maintenanceLog):
+      '<div style="text-align:center;padding:20px;color:#4a5568;font-size:13px">No maintenance records yet.<br/>Tap + New Work Order to add one.</div>')
+    +'</div>';
 
   var valueHtml='<div class="form-grid">'
     +'<div class="form-group"><label class="lbl">Purchase Price ($)</label><input type="number" id="f_pp" value="'+eh(f.purchasePrice)+'" placeholder="0.00"/></div>'
@@ -1592,47 +2035,18 @@ function _popstateHandler(){
 }
 
 function initNavigation(){
-  // Push deep history stack so Android back button fires popstate
-  for(var x=0;x<8;x++) history.pushState({page:'app',n:x},'',window.location.href);
-  window.addEventListener('popstate', _popstateHandler);
+  for(var x=0;x<10;x++) history.pushState({page:'app',n:x},'',window.location.href);
+  window.removeEventListener('popstate',_popstateHandler);
+  window.addEventListener('popstate',_popstateHandler);
 }
 
 function handleBack(){
-  // Close any open modals first
   var modals=['qr_modal','label_modal','settings_modal','print_menu',
-    'unsaved_modal','identifier_modal','nfc_modal',
-    'bulk_modal','import_modal','pin_forgot_modal'];
-  for(var i=0;i<modals.length;i++){
-    var m=document.getElementById(modals[i]);
-    if(m){
-      m.remove();
-      history.pushState({page:'app'},'',window.location.href);
-      return;
-    }
-  }
-
-  // Close hamburger if open
-  if(hamOpen){
-    closeHam();
-    history.pushState({page:'app'},'',window.location.href);
-    return;
-  }
-
-  // Unsaved changes on edit form
-  if(VIEW==='add' && editId && _hasUnsavedChanges()){
-    showUnsavedWarning();
-    history.pushState({page:'app'},'',window.location.href);
-    return;
-  }
-
-  // If already on dashboard -> show exit confirmation
-  if(VIEW==='dashboard'){
-    showExitConfirm();
-    history.pushState({page:'app'},'',window.location.href);
-    return;
-  }
-
-  // Any other page -> go to dashboard
+    'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal'];
+  for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();history.pushState({page:'app'},'',window.location.href);return;}}
+  if(hamOpen){closeHam();history.pushState({page:'app'},'',window.location.href);return;}
+  if(VIEW==='add'&&editId&&_hasUnsavedChanges()){showUnsavedWarning();history.pushState({page:'app'},'',window.location.href);return;}
+  if(VIEW==='dashboard'){showExitConfirm();history.pushState({page:'app'},'',window.location.href);return;}
   history.pushState({page:'app'},'',window.location.href);
   haptic('light');
   go('dashboard');
@@ -5714,6 +6128,6 @@ initSwipeNav();
 })();
 </script>
 
-  <button class="fab" onclick="go('add')" id="fab_add">&#43; Add Firearm</button>
+  <button class="fab" onclick="go('add')" id="fab_add">&#9673; LOG FIREARM</button>
 </body>
 </html>
