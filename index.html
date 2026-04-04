@@ -115,96 +115,116 @@
 
 /* ── ARSENAL VAULT DESIGN TOKENS ─────────────────────────────────── */
 :root {
-  --bg-primary:    #111318;
-  --bg-secondary:  #0D1016;
-  --panel:         #161C26;
-  --panel-shell:   #111820;
-  --panel-inner:   #1A2232;
-  --panel-header:  #0B0E18;
-  --border:        #2C3848;
-  --border-accent: #3A4A60;
-  --border-gold:   rgba(196,144,16,0.45);
-  --gold:          #C49010;
-  --gold-dim:      #8A6808;
-  --gold-glow:     rgba(196,144,16,0.10);
-  --success:       #52C84A;
-  --danger:        #C84848;
-  --text-primary:  #D8E2EE;
-  --text-secondary:#8898AB;
-  --text-muted:    #526070;
-  --inset:         rgba(0,0,0,0.5);
+  --bg-primary:    #090C11;
+  --bg-secondary:  #0E1118;
+  --panel:         #141920;
+  --panel-shell:   #0F1319;
+  --panel-inner:   #181F2A;
+  --panel-header:  #0C1016;
+  --border:        #2A3545;
+  --border-accent: #374457;
+  --border-gold:   rgba(213,177,92,0.35);
+  --gold:          #D5B15C;
+  --gold-dim:      #A88433;
+  --gold-glow:     rgba(213,177,92,0.08);
+  --success:       #4ED36F;
+  --danger:        #C95050;
+  --text-primary:  #E2E8F0;
+  --text-secondary:#8D97A8;
+  --text-muted:    #5A6475;
+  --inset:         rgba(0,0,0,0.4);
 }
 
 /* ── HEADER ───────────────────────────────────────────────────────── */
 .av-header {
-  background: linear-gradient(180deg, #0C1018 0%, #0F1520 100%);
-  border-bottom: 2px solid #1C2535;
-  padding: 14px 14px 0;
+  display: block;
+  background: linear-gradient(180deg, #0A0E14 0%, #0D1219 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 14px 0;
   position: relative;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.8);
+  margin-bottom: 0;
 }
 .av-header::after {
   content: '';
   position: absolute;
-  bottom: -1px; left: 0; right: 0;
+  bottom: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, #C49010 0%, rgba(196,144,16,0.3) 50%, transparent 100%);
-  opacity: 0.7;
+  background: linear-gradient(90deg, var(--gold-dim) 0%, transparent 60%);
+  opacity: 0.5;
 }
 .av-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
-.av-brand { display: flex; align-items: center; gap: 12px; }
+.av-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .av-insignia {
-  width: 50px; height: 50px;
-  border: 2px solid #9A7010;
-  border-radius: 8px 8px 50% 50%;
+  width: 36px; height: 43px;
+  clip-path: polygon(50% 0%, 100% 16%, 100% 63%, 50% 100%, 0% 63%, 0% 16%);
+  background: linear-gradient(170deg, #2C3A50 0%, #1C2738 40%, #0E1720 100%);
   display: flex; align-items: center; justify-content: center;
-  font-size: 24px; color: #C49010;
-  background: linear-gradient(145deg, #1C2435 0%, #0C1018 100%);
-  box-shadow:
-    0 0 0 1px #4A3400,
-    inset 0 1px 0 rgba(196,144,16,0.18),
-    0 4px 14px rgba(0,0,0,0.8);
+  filter: drop-shadow(0 0 3px rgba(232,196,106,0.45)) drop-shadow(0 3px 10px rgba(0,0,0,0.85));
   flex-shrink: 0;
-  text-shadow: 0 0 12px rgba(196,144,16,0.4);
+  padding-bottom: 5px;
 }
-.av-brand-text { display: flex; flex-direction: column; gap: 2px; }
+.av-boss {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 38% 30%, #283345 0%, #182030 55%, #0C1620 100%);
+  border: 1.5px solid var(--gold-dim);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.6),
+    inset 0 1px 3px rgba(255,255,255,0.07),
+    inset 0 -2px 5px rgba(0,0,0,0.75),
+    0 1px 0 rgba(232,196,106,0.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; font-weight: 900; letter-spacing: .05em;
+  color: var(--gold);
+  text-shadow:
+    0 1px 2px rgba(0,0,0,0.95),
+    0 -1px 0 rgba(255,255,255,0.07);
+}
+.av-brand-text { display: flex; flex-direction: column; gap: 1px; }
 .av-brand-name {
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: .08em;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: .1em;
   text-transform: uppercase;
-  color: #C49010;
+  color: var(--gold);
   line-height: 1;
-  text-shadow: 0 0 18px rgba(196,144,16,0.3);
 }
 .av-brand-sub {
   font-size: 8px;
-  letter-spacing: .22em;
+  letter-spacing: .18em;
   text-transform: uppercase;
-  color: #48545E;
+  color: var(--text-muted);
   font-weight: 600;
 }
 .av-menu-btn {
-  width: 42px; height: 38px;
-  background: linear-gradient(180deg, #1C2232 0%, #141820 100%);
-  border: 1px solid #2C3848;
-  border-top: 1px solid #3A4860;
-  border-bottom: 2px solid #080C12;
-  border-radius: 4px;
+  width: 38px; height: 38px;
+  margin-left: auto;
+  background: linear-gradient(180deg, #1E2838 0%, #141C28 100%);
+  border: 1px solid var(--border-accent);
+  border-bottom: 2px solid #0A0E14;
+  border-radius: 3px;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 5px;
   cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 3px 10px rgba(0,0,0,0.7);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 3px 8px rgba(0,0,0,0.5);
   flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
 }
-.av-menu-btn:active { background: linear-gradient(180deg, #121820 0%, #0C1018 100%); transform: translateY(1px); }
-.av-menu-line { display: block; width: 18px; height: 2px; background: #9AAABB; border-radius: 1px; }
+.av-menu-btn:active { background: #1A2232; transform: translateY(1px); }
+.av-menu-line {
+  display: block;
+  width: 16px; height: 1.5px;
+  background: var(--text-secondary);
+  border-radius: 1px;
+}
 
 /* ── COLLECTION ROW ───────────────────────────────────────────────── */
 .av-coll-row {
@@ -214,215 +234,219 @@
 /* ── TABS ─────────────────────────────────────────────────────────── */
 .av-tabs {
   display: flex;
-  gap: 6px;
-  padding: 8px 10px;
-  background: transparent;
+  gap: 0;
+  margin-bottom: 0;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--panel-shell);
 }
 .av-tab {
   flex: 1;
-  background: linear-gradient(180deg, #1C2232 0%, #141820 100%);
-  border: 1px solid #2C3848;
-  border-top: 1px solid #3A4860;
-  border-bottom: 2px solid #080C12;
-  border-radius: 3px;
-  color: #607080;
-  padding: 10px 4px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 9px 4px;
   font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .12em;
+  font-weight: 700;
+  letter-spacing: .1em;
   text-transform: uppercase;
   cursor: pointer;
   font-family: inherit;
-  transition: all .1s;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 3px 8px rgba(0,0,0,0.6);
-  -webkit-tap-highlight-color: transparent;
+  transition: all .12s;
+  position: relative;
 }
+.av-tab:last-child { border-right: none; }
 .av-tab-active {
-  background: linear-gradient(180deg, #8C6A00 0%, #5A4000 100%);
-  border-color: #B88000;
-  border-top-color: #DCA010;
-  border-bottom-color: #3A2800;
-  color: #E0A020;
-  box-shadow:
-    inset 0 1px 0 rgba(255,210,60,0.22),
-    inset 0 -1px 0 rgba(0,0,0,0.4),
-    0 0 12px rgba(180,120,0,0.22),
-    0 3px 8px rgba(0,0,0,0.6);
+  background: linear-gradient(180deg, rgba(213,177,92,0.12) 0%, rgba(213,177,92,0.04) 100%);
+  color: var(--gold);
+  border-bottom: 2px solid var(--gold);
 }
-.av-tab:not(.av-tab-active):active { background: linear-gradient(180deg, #141820 0%, #0E1219 100%); }
+.av-tab:not(.av-tab-active):active { background: var(--panel-inner); }
 
 /* ── DASHBOARD LAYOUT ─────────────────────────────────────────────── */
 .av-dashboard {
   padding: 0;
-  background: #111318;
+  background: var(--bg-primary);
   min-height: 100vh;
-  background-image:
-    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.013) 40px),
-    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.009) 40px);
-  position: relative;
 }
 
 /* ── COMMAND STRIP ────────────────────────────────────────────────── */
 .cmd-strip {
-  background: linear-gradient(180deg, #181D28 0%, #111620 100%);
-  border: 1px solid #2C3848;
-  border-radius: 3px;
-  margin: 0 10px 10px;
-  overflow: hidden;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.05),
-    inset 0 -1px 0 rgba(0,0,0,0.4),
-    0 3px 10px rgba(0,0,0,0.65);
-}
-.cmd-row {
+  background: linear-gradient(180deg, #0E1520 0%, #090E16 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 14px 12px 16px;
+  position: relative;
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 2px 4px;
-  padding: 7px 12px;
+  flex-direction: column;
+  gap: 8px;
 }
-.cmd-row:first-child {
-  border-bottom: 1px solid rgba(0,0,0,0.45);
-  background: rgba(0,0,0,0.12);
+.cmd-strip::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dim) 100%);
 }
-.cmd-row:last-child { background: rgba(0,0,0,0.22); }
-.cmd-dash { color: #3A4558; font-size: 9px; font-weight: 700; flex-shrink: 0; }
-.cmd-coll-label { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: #586878; font-weight: 600; }
-.cmd-coll-name {
-  font-size: 9px;
-  letter-spacing: .16em;
+.cmd-strip-label {
+  font-size: 8px;
+  letter-spacing: .22em;
   text-transform: uppercase;
-  color: #C49010;
+  color: var(--text-muted);
+  font-weight: 700;
+  display: block;
+}
+.cmd-strip-name {
+  font-size: 14px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-primary);
   font-weight: 800;
+  display: block;
+  margin-top: 1px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 160px;
 }
-.cmd-s-sep { color: #3A4558; font-size: 8px; margin: 0 1px; }
-.cmd-s-num { font-size: 9px; font-weight: 900; letter-spacing: .05em; color: #C8D4E0; }
-.cmd-s-num.sg { color: #52C84A; }
-.cmd-s-num.sr { color: #C84848; }
-.cmd-s-num.sa { color: #C49010; }
-.cmd-s-lbl { font-size: 8px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: #526070; }
+.cmd-strip-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 10px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.cmd-stat-num { color: var(--gold); font-weight: 900; font-size: 13px; letter-spacing: .02em; }
+.cmd-stat-lbl { color: var(--text-muted); font-size: 8px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+.cmd-sep { color: var(--border-accent); font-size: 8px; opacity: .5; }
 
 /* ── SECTION WRAPPER ──────────────────────────────────────────────── */
-.av-dash-section { padding: 0 10px 8px; }
+.av-dash-section { padding: 8px 12px 0; }
 
 /* ── CARDS GRID ───────────────────────────────────────────────────── */
 .stat-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 7px;
-  padding: 6px 10px 8px;
+  gap: 8px;
+  padding: 12px 12px 8px;
 }
 .stat-grid > :last-child:nth-child(odd) { grid-column: span 2; }
 
 /* ── METRIC CARD ──────────────────────────────────────────────────── */
 .metric-card {
-  background: linear-gradient(180deg, #161C26 0%, #111820 100%);
-  border: 1px solid #2A3545;
-  border-top: 1px solid #3A4860;
-  border-radius: 3px;
+  background: var(--panel-shell);
+  border: 1px solid var(--border);
+  border-radius: 2px;
   position: relative;
   overflow: hidden;
+  transition: border-color .12s, background .12s;
   box-shadow:
-    0 0 0 1px #080B10,
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 6px 20px rgba(0,0,0,0.75);
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    inset 0 -1px 0 rgba(0,0,0,0.25),
+    0 2px 6px rgba(0,0,0,0.4);
 }
 .metric-card::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, #9A7010 0%, rgba(154,112,16,0.25) 70%, transparent 100%);
+  background: linear-gradient(90deg, var(--gold-dim) 0%, transparent 60%);
+  opacity: 0.5;
   z-index: 1;
 }
 .metric-card::after {
   content: '';
   position: absolute;
   bottom: 0; right: 0;
-  width: 18px; height: 18px;
-  background: linear-gradient(135deg, transparent 50%, #0A0D14 50%);
-  z-index: 2;
+  width: 12px; height: 12px;
+  background: var(--bg-primary);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
 }
 .metric-card.clickable { cursor: pointer; }
 .metric-card.clickable:active {
-  border-color: rgba(196,144,16,0.5);
-  box-shadow: 0 0 0 1px rgba(196,144,16,0.18), 0 4px 12px rgba(0,0,0,0.6);
+  border-color: rgba(213,177,92,0.5);
+  background: var(--panel-inner);
 }
 .metric-card-head {
-  background: linear-gradient(180deg, #1C2235 0%, #161A2C 100%);
-  border-bottom: 1px solid #0A0C16;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.04);
-  padding: 7px 10px;
+  background: var(--panel-header);
+  border-bottom: 1px solid var(--border);
+  padding: 5px 9px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 .metric-sys {
+  font-size: 7px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 8px;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: #9AAAC0;
-  font-weight: 700;
+  gap: 4px;
 }
-.metric-sys-icon {
-  font-size: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.metric-sys-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--gold-dim);
   flex-shrink: 0;
-  line-height: 1;
-  opacity: 0.85;
 }
-.metric-card-dots {
-  font-size: 10px;
-  color: #2E3C50;
-  letter-spacing: 2px;
-  line-height: 1;
-}
+.metric-card-dots { display: flex; gap: 2px; }
+.metric-card-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border-accent); }
 .metric-card-body {
-  background: linear-gradient(180deg, #0D1018 0%, #0B0E16 100%);
-  padding: 10px 12px 9px;
-}
-.metric-card--danger .metric-card-body {
-  background: radial-gradient(ellipse at 30% 58%, rgba(200,72,72,0.22) 0%, #0D1018 62%);
-}
-.metric-card--goldglow .metric-card-body {
-  background: radial-gradient(ellipse at 30% 58%, rgba(196,144,16,0.14) 0%, #0D1018 62%);
+  padding: 10px 10px 6px;
+  background: linear-gradient(180deg, var(--panel-inner) 0%, var(--panel-shell) 100%);
 }
 .metric-label {
-  font-size: 11px;
-  letter-spacing: .05em;
+  font-size: 9px;
+  letter-spacing: .1em;
   text-transform: uppercase;
-  color: #B8C8DA;
+  color: var(--text-secondary);
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.metric-value { font-size: 52px; font-weight: 900; letter-spacing: -.03em; line-height: 1; margin-bottom: 2px; }
-.metric-value.val-md { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
-.metric-value.val-sm { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
-.metric-foot-lbl { font-size: 9px; color: #485868; font-weight: 500; letter-spacing: .04em; margin-top: 6px; display: block; }
+.metric-value { font-size: 30px; font-weight: 900; letter-spacing: -.02em; line-height: 1; margin-bottom: 2px; }
+.metric-value.val-md { font-size: 22px; font-weight: 800; }
+.metric-value.val-sm { font-size: 17px; font-weight: 800; }
+.metric-card-foot {
+  padding: 5px 9px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  position: relative;
+}
+.metric-foot-lbl { font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+.metric-foot-hint { font-size: 9px; color: var(--gold-dim); opacity: 0.6; }
+.metric-chamfer { position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; overflow: hidden; }
+.metric-chamfer::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 0 10px 10px;
+  border-color: transparent transparent var(--gold-dim) transparent;
+  opacity: 0.3;
+}
 
 /* ── BREAKDOWN PANEL ──────────────────────────────────────────────── */
 .dash-panel {
-  background: linear-gradient(180deg, #161C26 0%, #111820 100%);
-  border: 1px solid #2A3545;
-  border-top: 1px solid #3A4860;
-  border-radius: 3px;
+  background: var(--panel-shell);
+  border: 1px solid var(--border);
+  border-radius: 2px;
   overflow: hidden;
-  box-shadow: 0 0 0 1px #080B10, 0 4px 14px rgba(0,0,0,0.65);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
 }
 .dash-panel-head { padding: 10px 12px 0; }
 .dash-panel-body { padding: 0 12px 12px; }
-.dash-tabs { display: flex; border-bottom: 1px solid #1A2030; margin-bottom: 12px; }
+.dash-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
 .dash-tab {
   flex: 1;
   background: transparent;
@@ -439,55 +463,60 @@
   margin-bottom: -1px;
   transition: color .1s;
 }
+.dash-tab:last-child { border-right: none; }
 .dash-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
 
 /* ── TYPE CARDS ───────────────────────────────────────────────────── */
 .type-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; }
 .type-card {
-  background: linear-gradient(180deg, #161C26 0%, #111820 100%);
-  border: 1px solid #2A3545;
-  border-top: 1px solid #3A4860;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
   border-radius: 2px;
   padding: 10px 6px 8px;
   text-align: center;
   cursor: pointer;
+  transition: border-color .12s, background .12s;
   position: relative;
   overflow: hidden;
   -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 0 0 1px #080B10;
 }
 .type-card::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, #9A7010 0%, transparent 70%);
-  opacity: 0.35;
+  background: var(--gold-dim);
+  opacity: 0.25;
 }
-.type-card:active { border-color: rgba(196,144,16,0.4); background: #1A2030; }
+.type-card:active { border-color: rgba(213,177,92,0.4); background: var(--panel-inner); }
 .type-card-num { font-size: 22px; font-weight: 900; color: var(--gold); line-height: 1; margin-bottom: 4px; }
 .type-card-lbl { font-size: 7px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); font-weight: 700; }
 
 /* ── ALERT PANELS ─────────────────────────────────────────────────── */
 .av-alert-panel {
-  background: linear-gradient(180deg, #161C26 0%, #111820 100%);
+  background: var(--panel-shell);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--danger);
-  border-radius: 3px;
+  border-left: 2px solid var(--danger);
+  border-radius: 2px;
   overflow: hidden;
-  box-shadow: 0 0 0 1px #080B10, 0 4px 14px rgba(0,0,0,0.65);
 }
 .av-alert-head {
   padding: 8px 12px;
-  border-bottom: 1px solid rgba(200,72,72,0.14);
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(200,72,72,0.05);
+  border-bottom: 1px solid rgba(201,80,80,0.12);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .av-alert-title { font-size: 8px; letter-spacing: .18em; text-transform: uppercase; color: var(--danger); font-weight: 700; }
 .av-alert-count { font-size: 8px; color: var(--text-muted); font-weight: 600; letter-spacing: .06em; }
 .av-alert-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03);
-  cursor: pointer; gap: 10px; -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  cursor: pointer;
+  gap: 10px;
+  -webkit-tap-highlight-color: transparent;
 }
 .av-alert-row:last-child { border-bottom: none; }
 .av-alert-row:active { background: rgba(255,255,255,0.02); }
@@ -496,25 +525,32 @@
 
 /* ── STARRED PANEL ────────────────────────────────────────────────── */
 .av-starred-panel {
-  background: linear-gradient(180deg, #161C26 0%, #111820 100%);
+  background: var(--panel-shell);
   border: 1px solid var(--border);
-  border-top: 1px solid rgba(196,144,16,0.35);
-  border-radius: 3px;
+  border-top: 1px solid rgba(213,177,92,0.3);
+  border-radius: 2px;
   overflow: hidden;
-  box-shadow: 0 0 0 1px #080B10, 0 4px 14px rgba(0,0,0,0.65);
 }
 .av-starred-head {
-  padding: 8px 12px; border-bottom: 1px solid rgba(196,144,16,0.10);
-  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(213,177,92,0.08);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .av-starred-title { font-size: 8px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
 .av-starred-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03);
-  cursor: pointer; gap: 10px; -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  cursor: pointer;
+  gap: 10px;
+  -webkit-tap-highlight-color: transparent;
 }
 .av-starred-row:last-child { border-bottom: none; }
-.av-starred-row:active { background: rgba(196,144,16,0.04); }
+.av-starred-row:active { background: rgba(213,177,92,0.04); }
 .av-starred-val { font-size: 12px; font-weight: 800; color: var(--gold); letter-spacing: .02em; flex-shrink: 0; }
 
 /* ── EMPTY STATE ──────────────────────────────────────────────────── */
@@ -531,18 +567,18 @@
   transform: translateX(-50%);
   z-index: 500;
   width: auto;
-  min-width: 230px;
-  max-width: 300px;
-  background: linear-gradient(180deg, #1C2435 0%, #111820 100%);
-  color: #C49010;
-  border: 2px solid #9A7810;
-  border-top: 2px solid #C49010;
-  border-bottom: 2px solid #4A3400;
-  border-radius: 6px;
-  padding: 16px 28px;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: .22em;
+  min-width: 200px;
+  max-width: 280px;
+  background: linear-gradient(180deg, #1E2838 0%, #141C26 100%);
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+  border-top: 2px solid var(--gold);
+  border-bottom: 2px solid #0A0E12;
+  border-radius: 3px;
+  padding: 14px 24px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .2em;
   text-transform: uppercase;
   cursor: pointer;
   font-family: inherit;
@@ -551,18 +587,17 @@
   justify-content: center;
   gap: 10px;
   box-shadow:
-    0 0 0 1px #4A3400,
-    inset 0 1px 0 rgba(196,144,16,0.18),
-    inset 0 -2px 4px rgba(0,0,0,0.5),
-    0 8px 28px rgba(0,0,0,0.85),
-    0 0 18px rgba(150,100,0,0.14);
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 4px 20px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(213,177,92,0.1);
   transition: all .12s;
   white-space: nowrap;
 }
 .fab:active {
   transform: translateX(-50%) translateY(1px);
-  box-shadow: 0 0 0 1px #4A3400, inset 0 2px 6px rgba(0,0,0,0.5), 0 4px 14px rgba(0,0,0,0.6);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 2px 10px rgba(0,0,0,0.5);
 }
+
 
 /* ── CONDITION BAR ────────────────────────────────────────────────── */
 .dash-cond-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
@@ -698,11 +733,10 @@ td{padding:13px 14px;font-size:15px;border-bottom:1px solid #252c38;vertical-ali
 <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjogIkFyc2VuYWwgVmF1bHQiLCAic2hvcnRfbmFtZSI6ICJBcnNlbmFsIFZhdWx0IiwgImRlc2NyaXB0aW9uIjogIlBlcnNvbmFsIEZpcmVhcm1zIEludmVudG9yeSIsICJzdGFydF91cmwiOiAiLiIsICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjMWExZDI0IiwgInRoZW1lX2NvbG9yIjogIiNlOGM0NmEiLCAib3JpZW50YXRpb24iOiAicG9ydHJhaXQiLCAiaWNvbnMiOiBbeyJzcmMiOiAiZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFFZ0FBQUJJQ0FZQUFBQlY3Yk5IQUFBQ0cwbEVRVlI0MnUyY1BXNkRRQkNGQjhRaElrdVJYRkJTY1FnM3JrTEhCZExtQkZTY0lHMHU0STVVTkJ6Q0ZTV0ZKVXZJdDBpYUVHRitsdDAxUCtQZE41V04xN0wzMjNsdmhyWEJJVUhzWHYwZnNpRHFhK1dNdmViWURFWUdsQXM0NHJtN2dDT0c1QUtPR0pJTE9HSklMbENJdzBIMmlBTVpCRUFBQkVBQUJFQUFCRUFBaEFBZ0FBSWdBQUlnQURJc1BOVTNuRStIdStkaFhHdzZnZTczYWNlbHFpbEt5blVCUFV0Y3FwcUlpTEkwK0QrbUE4dDdkTFZFSzdnbG1OVTlpQU9JTUM3eU1DN3k3bU5aT0Rwek1NS2toMkIxWSsvdjV2ZWd0bjdicTZQN1lVdkgzdC9OTGpGdkNrN1gyTEkwb0V0VnM0VzBhaDgwNVBxUGxrM2oreUR1RVNWbC9tZkl4OGFYenFmRGNaRU1hbnVRNkppVkdSUWxKV1ZwTUFqRUZ2OGhVdmpwZWUwK2FPNXFwT3VoTFB1Z3BlRG9XSVMwU1lkeHNXazNQYlR5YS9naHkzOTNxSjVncW9KU2tabkhGWTdLSkpxeFMyU1VsUnRtWTlXWlBTQ2Q3SG1rUXNsQXNuN0xkUXFTc1R1S1VWSytTUUw2ZmpwQVdScG95YXlkRFZNVGYwcVQ1cmhUNEhIM0J0MCthQzZKc1c4VVZUcnA1Z1I3enN4bG1VRkRqWjlvNGt0S2szVVZtK3FRUldDTXJtSnpaSWlSVll4am9GRTBRV0thbFJBU2c4UWdNVWdNRW9QRUxKZVlrZGVzZm4yOFNJOTkvN3paNVVFcWNHVEdHd2RvS2lOVXgrT3ljSlI1QUZvV2tPam1RclpIZmEwY1pKQ014SkJGdzlsejUwR0ExSWZUTTJsQTZqTndwd2JZRElkbzVDNTRUZUEyZ1VTL3JHM3o3bEFTZFhNQUFBQUFTVVZPUks1Q1lJST0iLCAic2l6ZXMiOiAiNzJ4NzIiLCAidHlwZSI6ICJpbWFnZS9wbmcifSwgeyJzcmMiOiAiZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFNQUFBQURBQ0FZQUFBQlMzR3dIQUFBRXRVbEVRVlI0MnUzZFAwNGJRUlFINE4yVkR4RWhJYVdncE9JUWFWS0ZqZ3VrelFtb09FSGFYQ0FkcVdnNFJDcEtGMGhJVmdydVFJb0lCVm5ZM24vam5abjNmVjBVZ29uOWZ2UGVlTlpMMnlSMGNucjIwc0JFbTZkMW0rcDd0d3FleUlGb0ZUNlJnOUFxZkNJSG9WWDRSQTVDcC9pcHhaamE3QlEva1VQUUtud2lqMFNkNGlkeU4rZ1VQNUZEMEhtS2lLeXoraE81QzNTS244Z2g2QlEva1VOZ0Q0QTlnTldmcUYxQUIwQUhzUG9UdFF2b0FPZ0FWbitpZGdFZEFCMEFCQUFDYXMzLzZBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBREROYXVrZjRQZlBUd2UvNXVMcTNpdVZ3ZXZReCtONjAxeGVQK2dBeFBPNDNqUk4welMzTitmTjdjMjVBQkN2K044cUlRUXJMeDF6Ri81N0ljaDFMTklCU0ZiODIwSElzU01JQU1tTDN3ZzAwVnp2VUtENHN3cUF3bzVWK0IvUFRwcW15V3N2MEo2Y25yMG8vanBjWE4zZnZmTThmKzc3OTZsWC9YOEJ5T3RjWjZYNG1TTWdRMS8vWEVMUUtYNGlMNExlQldMUStMTFV2eGNBS0dVUHNPL0FZOWRtS3RjVkFnR1lwZkFQZVEyR0lHQUVndEk2d0s3VmY5ZEZVTHUrL25HOTBRVXlkWG45Y0hkN2N6NzRiZEdjWDg5VndpZXIxOStYY3QwNFJxRFppbi9zMTBMMkhXQk1RVjllUCtnRUJZMUJiLzg4MTZVV05zRWdBRkI0QU1hTU1zWWZxdW9BUXdwYThWUFZKbmk3c0llZUEwQ1JBZGoxVHM3UVFuY0loazB3bERnQ1RUbmR0ZkpUelI1ZzMyR1lUNFJoQklKTUhQMnVFRHBBZnpYZGYrZTlrVGVIRDhZZnZRTzQxYm5peituL3Q4Z0lKQVN4aS85VkRtZEJpKzBCaENCMjhlY1Nna1Uzd1VMQTBoYS9PYTRRNURjV0NBREY2Zk5CSk9FU2dGQUZmK2pmQ0lRQWhDajhROThyY2hBRUlHRGhDOEovTG9Vb1lBTjhyRHRuUkx4RGh3QW8vdEFoRUFERkh6b0VpLzJLSlBZSElJY2lYSHBQY0l6blFBY0lYbVM1UHplcG54OEJ5RkF1STBndVAwZktFQWdBb1R1bEFKajlpOWtRcHdpQkFCQ2FBQkI2RkJJQVFuTXRFRlAzQ0YrT3NPci9NZ0pCQWs2Q001eHBhMy9uWllhdW93T0FBQVRxQ2xaL0FhaDFFK2xuRlFCeVczMmpYS1FuQUJtdnJFc1ZZUW1YYUFpQUVDaCtBUkFDeFQrTmsrQU1RN0R2ZDYybEtNZ3BIOGtzL1NSWUFETHVCS21Ea050bmtaZmdKRGh6ZmNlZnVXNk5lT2o3NVBEdTBKd0IxUUVLN2daekZtYkVld0lKUUtFYjVMbFc0YWhGTHdBVmhXSHVNVWtBS0Q0UTlPY2NBQUVBQVFCN0FCaTgvL0NaWU5BQkNDbmw2bXdQQUFJQUFnQUNBQUlBQWdBQ0FKTTVCMkFTSjhHZ0F4Q1ZrMkFRQUJBQUVBQVFBQkFBRUFESW1uTUFKbkVTREFWemQyakdyTWhMZGh3ZEFBU0FhbGJoSlIvWEpwaFJucCtmZFFCaSt2SHRReldQS3dBVVVmeXBIbDhBc0FrR0FRQUJnUDIrZnY5VDFlTUxBTVdFSU1YanVoUUNJeEFJQUVRTXdPWnAzWG9haUdqenRHNTFBSXhBSUFBUU5RRDJBVVNjLzNVQWRJRHRSRUNVMVY4SFFBZllsUXlvZmZYWEFkQUJEaVVFYWwzOWQzWUFJU0JDOGU4ZGdZU0Eyb3ZmSGdCN2dMSEpnZEpYLzE0ZFFBaW90ZmlicG1rR0ZiZVBUMUpMNFkvYUErZ0cxRlQ4b3piQlFrQXR4VDk0QkRJU1VVdmh6eElBUWFEVXdwODFBSUpBYVlXZkpBQUNRZTRGdiswdmhMRGNWK2FlcHprQUFBQUFTVVZPUks1Q1lJST0iLCAic2l6ZXMiOiAiMTkyeDE5MiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSJ9LCB7InNyYyI6ICJkYXRhOmltYWdlL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQWdBQUFBSUFDQVlBQUFEMGVOVDZBQUFOcjBsRVFWUjQydTNkUFc1YlJ4aUdVZktDaXdnSUVIREJrcFVXNFNhVjJHa0RhYk1DVmxwQjJtekFuVlM1MFNKY3NWUmh3SURnWFRCRklFU2hKWnNpNzgvTXZPZjBrY1dSd3UrNUh5K3ArWXovV2E3V0I2Y0EwSjZuYjQ5enAvQ2Z5TU13NUFGSWo0T0lCMnpnQXlBSVFnTEEwQWRBRElRRWdLRVBnQmdJQ1FCREh3QXhFQlFBQmo4QVFpQW9BQXgrQUlSQVVBQVkvQUFJZ2FBQU1QZ0JFQUpCQVdEd0F5QUVnZ0xBNEFkQUNBeXZNL3dCSUcvR3pSMEtBT1J0QXliZkFCaitBTmdHaEFXQTRRK0FDSmpHUFBGQkEwQkpwbmhKWVBRTmdPRVBBTlBQeHE3MUJ3Z0FJbURDQUREOEFhQ2NXZG0xOW9BQVFBUVVFQUNHUHdDVU56dTcyaDhBQUlpQWdnTEE4QWVBY21kcFY5czNEQUFpb01BQU1Qd0JvUHpaMnBYK0RRSUEvYy9ZcnRSdkRBQVlidFoycFgxREFNRHdNN2NyNVJzQkFNYWJ2WjFqQklBOEZ3V0FxMzhBcUhNTDBFMzFEd01BMDBWQU4vWS9DQUJNSHdIdUFRQ0FRTzhPQUZmL0FGRC9GcUFiK2g4QUFNcUxBQzhCQUVDZ2t3UEExVDhBdExNRnNBRUFBQnNBVi84QWtMQUZzQUVBQUJzQVYvOEFrTEFGc0FFQUFCc0FWLzhBa0xBRnNBRUFBQnNBVi84QWtMQUZzQUVBQUJzQVYvOEFrTEFGc0FFQUFCc0FBQ0F5QUt6L0FhQXRyODEyR3dBQXNBRUFBT0lDd1BvZkFOcDBQT050QUFBZ2ZRTUFBSVFGZ1BVL0FMVHQ1YXkzQVFDQTVBMEFBQ0FBQUlEV0E4RHIvd0NRNFhubTJ3QUFRT29HQUFBUUFBQ0FBQUFBQkFBQUlBQUFnUHJNdlFVUUFHd0FBQUFCQUFBSUFBQkFBQUFBQWdBQUVBQUFnQUFBQUFRQUFDQUFBQUFCQUFBSUFBQkFBQUFBQWdBQUVBQUFnQUFBQUFRQUFDQUFBRUFBQUFBQ0FBQVFBQUNBQUFBQUJBQUFJQUFBQUFFQUFBZ0FBRUFBQUFBQ0FBQVFBQUNBQUFBQUJBQUFJQUFBQUFFQUFBZ0FBRUFBQUlBQUFBQUVBQUFnQUFBQUFRQUFDQUFBUUFBQUFBSUFBQkFBQUlBQUFBQUVBQUFnQUFBQUFRQUFDQUFBUUFBQUFBSUFBQkFBQUlBQUFBQUJBQUFJQUFCQUFBQUFBZ0FBRUFBQWdBQUFBQVFBQUNBQUFBQUJBQUFJQUFCQUFBQUFBZ0FBRUFBQWdBQUFBQVFBQUNBQUFBQUJBQUFDQUFBUUFBQ0FBQUFBQkFBQUlBQUFBQUVBQUFnQUFFQUFBQUFDQUFBUUFBQ0FBQUFBQkFBQUlBQUFBQUVBQUFnQUFFQUFBQUFDQUFBRWdDTUFBQUVBQUFnQUFFQUFBQUFDQUFBUUFBQ0FBQUFBQkFBQUlBQUFBQUVBQUFnQUFHQklDMGZRdnkrZlBnN3lkYTl1SGh3dWVFNFkzZGZIcDlsMnQvZUR0QUVBSU1YWHg2ZlpiRGFiM2QxdVpuZTNHd2NpQUFCSUdmNHZpWUIyZUFrQWdGOE8vdGNpd01zQ05nQUFoQXovNHhDd0VSQUFBQVFOZnlFZ0FBQUlIdjdISVVBOTNBTUFZUEQzeHYwQk5nQUFoQTMvNHhDd0VSQUFBQVFOZnlFZ0FBQUlIdjdISVVCWjNBTUFZUENQR2dIdUQ3QUJBQ0JrK0NNQUFERDhFUUFBSkExLzYvOXl1QWNBd09CSEFGQ3kydittT0dENFV3NHZBUmpTZ09GUG9QbHl0VDQ0Qm9NZk1QeUg5bUc5bk0xbXM5blZ6WU1mbGcyQTRRL1F4K0N2NmNyZmM2WU5nTUVQMFBoVi8yc2JnSmRzQXdTQTRRK2M3ZXJtNGZNNy90LzlmYXF2bVR6ODN3b0FFVEFkN3dJQXFEaFU0Rnp1QVhEMUR6RFoxYi9uVkFGZytBUDBPRlE5dHlJQUFBQUJvRkFCUE1jaUFBQkFBQUJBMzFxNlYwRUFCTEthQXZCY0t3QUFLTUoydC8vc0ZCQUFBSUFBQUdCYVh2OFhBQUNBQUFBQXB0VDBId082dTkzMDlyVXUvYXRiMW1EQVVMYTcvZWU3MjQwL0hvUUE2SFB3OXgwUVFnQ0FFalQzRWtDSncvKzFFQUJvblFzZUFXRDRpd0FBQkVEMjhCY0JBQWlBME9FdkFvQysrVVJBWWpjQUFFQlFBTlI2OVc4TEFMVE1EWURsV3ppQ2YyMTMrNGpnQUlEb0FEaDE0UC9xdnhNRUFBaUFoZ2Yvcjc2ZUVBQ2dKakUzQVc1Mys5NkgvNWhmSCtDRTU2RWkzZ25nOVg4QjBPeFZmeW4vRmdBSWdJSUdzZ2dBb0hSTjN3TXc1U0RlN3ZidUN3Q21lTzU1ODJXQUw1OCtudlFYQTY5dUhrNStLZUhVcjRrTlFOUlZ1RTBBQUFJQUFCQUFLVmZldGdBQUNBQUFRQUFBQUFJQUFCQUE1eXZwN1hmZUNnaUFBQUFBQkVEclY5NnUvZ0VRQUdFRDJQQUhRQUNFUllEaEQ0QUFDSXNBd3grQUdpeFNIdWp6WUI3cWsva01mZ0FFUUZBSUdQd0FDSUFLUStEWnFVRmc0QU1nQUJvT0FnQm9XZlUzQWRiKzEvWStySmQrQ3dFUUFBQ0FBR2g2QytEcUh3QUJFQllCaGo4QUFpQXNBZ3gvQUFSQVdBUVkvZ0NVb01tM0FUNUhRRWx2N1RQNEFSQUFGVzREdm56NjZMY0ZnR1o0R3lBQUNBQUFRQUFBQUFJQUFCQUFBSUFBYU52VnpZTkRBUEJjMjR6NWNyVStPSWJUZUNzZy9Oelh4eWVId0xzY2YwYUtBQmpQd2hFQWhqNGwvUDc0d0xSeGVRbmdIWlFwR1A3NGZSSUFnQ2RyNkZsSkgrRXVBTEFGQU1NZkVTQUFFQUVZL2lBQ0JBQmcrSU1JRUFDMkFHRDRnd2dRQUFFUklBUUFFQUMyQVFCUUJaOEUyRE9mRmtpTHJQK1oybmEzZHdnOTgwbUFBMjREeEFBQUFpQThCcUJtYnNTQzlyZ0hBQUFFQUFBZ0FBQ0FKcmtIQUdqQ0pYZUp1OGNCQVFEUThLQi83OWNVQmdnQWdJWUcvcm4vdGlCQUFBQTBPdlJQL2I3RUFBSUFvT0doTHdZUUFBQUcvMDhmZ3hCQUFBQUVESDRoZ0FBQUNCNzhRb0FhK1NBZ3dQRDNlTEVCQURBSWJRT3dBUURpWFRxNFhBVTdCMndBZ0tEaGIrRFpCbUFEQUJqK09COEVBR0Q0NDV3UUFJRGhMd0pBQUFDR3Z3Z0FBUUFZWXM0UEJBQlEydFcvNFNVQ0VBQ0E0WThJb0JJK0J3Q0FaaU5WV0wxdHZseXRENDRCUExGNlVtMWoyT0gzOWxSZUFnQThpVHJmcUxnU1dBSUFQQmw2SWtRSUNBQUFWNmZPV1FRTEFNQVRIOWdHQ0FBQVY2WE9XeFFMQUFBUUFRSUE4Q1FIQ0FDZ1FkYlJ6bDBnQ3dBQUVBRUNBQUFRQUVCelZ6YlcwTk55L3JZQUFnQUFFQUFBWUFzZ0FBQUFBUUFBQ0FBQU9FT3JMd01JQUFBSXRIQUVBSm0ydS8yMXEvdk5mZXBqdHdFQUFBRUFBQWdBQUVBQUFQVTc1Mk5sL2ZuZ2FUbC9odUFtUUlEY3NMaDNDallBQUlBQUFQamhhdEVoT0hjRUFGQXpmMTdXenhVRUFBQUlBSUMzV1VjN2J3UUFVRG5yWWo5UEJBQ0FxMUxuakFBQVhEWGk1NGdBQUhCMTZud1JBSUNyUjBPcW5PSHY2aDhCQUFBSUFNQVd3TlUvQ0FCQUJCaitJQUNBS1ljWHpnOEJBRFN3QlRERXhoMytydjRSQUlBSU1QeEJBQUFpd1BBSEFRQ0lBTU1mQkFBd2RnUUlnWDdPeFBCSEFBQlZSWUJ0d09YbllQZ3psSVVqQUU0WlFwY004dWYvTm5HWVhYSnVRNS9YZHJlL0ZtYWJleHNBZ0lHSFVkbzJvT1RoRHdJQUdEMENXZytCU3grajRZOEFBSnFNZ0ZaRG9JL0haUGd6RnZjQUFHY1BxVDRHZUF2M0IvUnhEZ1kvWTVzdlYrdURZd0NtSEg0MURzTStIM2VmajllN0xvYU5YaHNBZ0FHMkFhOE5zWktlZVBzZXJxNzZFUUJBRXlFd3hOWG44ZGNjYzJnT2VUVnQrQ01BQU51QUhvWnlMUjlkYlBBakFBQWhVTW5WdXNHUEFBQW9QQVFNZmhBQWdCQXcrRUVBQUNVTnhSWmp3TkJIQUFDRXhJQ2hqd0FBNkdtSWxod0VCajRDQUNBZ0NBeDhCQUJBZ1VQWTUvQ0RBQURFQVhBaWZ3NFlBQVFBQUNBQUFBQUJBQUFJQUFCQUFBQUFBZ0FBRUFBQVFEbDhFQkJBcU8xdWY1MStCbmUzbTNzYkFBQkFBQUFBQWdBQUVBQUFRTTNjQkFnUUt2a0dPR3dBQUVBQUFBQUNBQUFRQUFDQUFBQUFCQUFBSUFBQUFBRUFBQWdBQUVBQUFBQUNBQUFRQUFDQUFBQUFCQUFBSUFBQUFBRUFBQWdBQUVBQUFJQUFBQUFFQUFEUXJvVWpBTWkwM2UydjA4L2c3blp6YndNQUFBZ0FBRUFBQUFBQ0FBQ29tWnNBQVVJbDN3Q0hEUUFBQ0FBQVFBQUFBQUlBQUJBQUFJQUFBQUFFQUFBZ0FBQUFBUUFBQ0FBQVFBQUFBQUlBQUJBQUFJQUFBQUFFQUFBZ0FBQUFBUUFBQ0FBQUVBQUFnQUFBQU5xMWNBUUFtYmE3L1hYNkdkemRidTV0QUFBQUFRQUFDQUFBUUFBQUFEVnpFeUJBcU9RYjRMQUJBQUFCQUVEZHRydTlRM0NtQWdBQUVBQUFnQUFBYUpPWEFaeWxBQUFBQkFDQUsxZWNvUUFBQUJzQUFGekJrbk4yQWdEQUlDUHd6QVFBQUFRU0FBQ3VhQWs4cS9seXRUNzRrUU8wNys4L2YzTUlQL0hIWDkrakhxOEFBREQ0Q1F3Qkx3RUFHUDRFbnBrQUFERElDRHc3QVFCZ2dCRjRoZ0lBd09BaThDd0ZBQUFFRWdBQXJsZ0pQRk1CQUFBMkFBQ0FBQUFBQkFBQUlBQUFBQUVBd05UUy9xQ05NeFVBQUlBQUFIREZpck1VQUFBR0Y4NVFBQUFZWUtTZm5RQUFNTWdJUExQNWNyVSsrSEVEdE0vZkNURDRCUUFBaFBNU0FBQUlBQUFnSWdDZXZqM09IUU1BNUhqNjlqaTNBUUNBeEEyQUl3QUFBUUFBQ0FBQVFBQUFBQUlBQUtnNEFMd1ZFQUF5UE05OEd3QUFTTjBBQUFBQ0FBQklDUUQzQVFCQTIxN09laHNBQUVqZUFBQUFvUUhnWlFBQWFOUHhqTGNCQUlEMERRQUFFQm9BWGdZQWdMYThOdHR0QUFEQUJnQUFpQTBBTHdNQVFCdmVtdWsyQUFCZ0EyQUxBQUN0WC8zYkFBQ0FEWUF0QUFBa1hQM2JBQUNBRFlBdEFBQWtYUDNiQUFDQURZQXRBQUFrWFAzYkFBQ0FEWUF0QUFBa1hQM2JBQUNBRFlBdEFBQWtYUDJmdFFFUUFRQlE5L0EvS3dBQWdQcWRGUUMyQUFCUTc5WC9SUnNBRVFBQWRRNy9pd0pBQkFCQW5jUC80Z0FBQU9wMGNRRFlBZ0JBWFZmL3ZXMEFSQUFBMURQOGV3c0FFUUFBOVF6L1hnTkFCQUJBSGNPLzl3QVFBUUJRL3ZBZkpBQkVBQUNVUDFPNzJyNWhBREQ4Q3c0QUVRQUE1YzdRcnZZSEFBQ0dmNEVCSUFJQW9MeVoyYlgyZ0FEQThDOG9BRVFBQUpRekk3dldIeUFBR1A0L21uUVlMMWZyZ3g4N0FBYi8rTHJVQnc0QXlUT3dTejhBQUVpY2ZVVU5YeThKQUdEd2gyd0FiQU1BTVB6RE53QzJBUUFZL09FQklBUUFNUGlEQTBBSUFHRHdCd2VBRUFEQTRBOE9BQ0VBZ01FZkhBQkNBQUNEUHpnQXhBQUFobjU0QUlnQkFBejk4QUFRQXdBWSt1RUJJQWdBU0IvNEFrQWNBQmp5elA0QlAveHdHd0ttYXhZQUFBQUFTVVZPUks1Q1lJST0iLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSJ9XX0="/>
 </head>
 <body>
-<div class="wrap">
-  <header class="av-header">
-    <div class="av-header-row">
-      <div class="av-brand">
-        <div class="av-insignia">&#9678;</div>
+<header class="av-header">
+  <div class="av-header-row">
+    <div class="av-brand">
+      <div class="av-insignia"><div class="av-boss">AV</div></div>
         <div class="av-brand-text">
           <div class="av-brand-name">Arsenal Vault <span id="save_ind" style="display:none;font-size:9px;color:#4ED36F;font-weight:600;margin-left:8px;letter-spacing:.06em">&#10003; SAVED</span></div>
           <div class="av-brand-sub">Private Armory Management</div>
@@ -715,7 +749,8 @@ td{padding:13px 14px;font-size:15px;border-bottom:1px solid #252c38;vertical-ali
       </button>
     </div>
     <nav id="nav"></nav>
-  </header>
+</header>
+<div class="wrap">
   <div id="app"></div>
   <div class="footer">ARSENAL VAULT · PERSONAL USE ONLY · DATA STORED IN YOUR BROWSER</div>
 </div>
@@ -1281,20 +1316,24 @@ function rnd(){
 
 
 // ── Metric card builder ────────────────────────────────────────────
-function mCard(sys, lbl, val, valColor, foot, action, extraCls){
+function mCard(sys, lbl, val, valColor, foot, action){
   var vStr=String(val);
   var valCls='metric-value'+(vStr.length>6?' val-sm':vStr.length>4?' val-md':'');
-  var cls='metric-card'+(action?' clickable':'')+(extraCls?' '+extraCls:'');
+  var cls='metric-card'+(action?' clickable':'');
   var click=action?' onclick="'+action+'"':'';
   return '<div class="'+cls+'"'+click+'>'
     +'<div class="metric-card-head">'
-      +'<div class="metric-sys">'+sys+'</div>'
-      +'<span class="metric-card-dots">&middot;&middot;&middot;</span>'
+      +'<div class="metric-sys"><span class="metric-sys-dot"></span>'+sys+'</div>'
+      +'<div class="metric-card-dots"><span class="metric-card-dot"></span><span class="metric-card-dot"></span><span class="metric-card-dot"></span></div>'
     +'</div>'
     +'<div class="metric-card-body">'
       +'<div class="metric-label">'+lbl+'</div>'
       +'<div class="'+valCls+'" style="color:'+valColor+'">'+val+'</div>'
+    +'</div>'
+    +'<div class="metric-card-foot">'
       +'<span class="metric-foot-lbl">'+foot+'</span>'
+      +(action?'<span class="metric-foot-hint">&#9655;</span>':'')
+      +'<div class="metric-chamfer"></div>'
     +'</div>'
     +'</div>';
 }
@@ -1307,40 +1346,34 @@ function rDash(){
 
   // ── Command Strip ──────────────────────────────────────────────────
   var cmdStrip='<div class="cmd-strip">'
-    +'<div class="cmd-row">'
-      +'<span class="cmd-dash">-&nbsp;</span>'
-      +'<span class="cmd-coll-label">Active Collection:&nbsp;</span>'
-      +'<span class="cmd-coll-name">'+eh(collName)+'</span>'
-      +'<span class="cmd-dash">&nbsp;-</span>'
+    +'<div>'
+      +'<span class="cmd-strip-label">Active Vault</span>'
+      +'<span class="cmd-strip-name">'+eh(collName)+'</span>'
     +'</div>'
-    +'<div class="cmd-row">'
-      +'<span class="cmd-dash">-&nbsp;</span>'
-      +'<span class="cmd-s-num">'+s.total+'</span>&nbsp;'
-      +'<span class="cmd-s-lbl">Firearms</span>'
-      +(s.working?'<span class="cmd-s-sep">&nbsp;&middot;&nbsp;</span>'
-        +'<span class="cmd-s-num sg">'+s.working+'</span>&nbsp;'
-        +'<span class="cmd-s-lbl">Operational</span>':'')
-      +(s.needsRepair?'<span class="cmd-s-sep">&nbsp;&middot;&nbsp;</span>'
-        +'<span class="cmd-s-num sr">'+s.needsRepair+'</span>&nbsp;'
-        +'<span class="cmd-s-lbl">Service Req</span>':'')
-      +(s.totalValue?'<span class="cmd-s-sep">&nbsp;&middot;&nbsp;</span>'
-        +'<span class="cmd-s-lbl">Value&nbsp;</span>'
-        +'<span class="cmd-s-num sa">'+fm(s.totalValue)+'</span>':'')
-      +'<span class="cmd-dash">&nbsp;-</span>'
+    +'<div class="cmd-strip-stats">'
+      +'<span class="cmd-stat-num">'+s.total+'</span>'
+      +'<span class="cmd-stat-lbl">Total</span>'
+      +'<span class="cmd-sep">&middot;</span>'
+      +'<span class="cmd-stat-num" style="color:var(--success)">'+s.working+'</span>'
+      +'<span class="cmd-stat-lbl">Operational</span>'
+      +(s.needsRepair?'<span class="cmd-sep">&middot;</span>'
+        +'<span class="cmd-stat-num" style="color:var(--danger)">'+s.needsRepair+'</span>'
+        +'<span class="cmd-stat-lbl">Service</span>':'')
+      +(s.totalValue?'<span class="cmd-sep">&middot;</span>'
+        +'<span class="cmd-stat-num">'+fm(s.totalValue)+'</span>'
+        +'<span class="cmd-stat-lbl">Value</span>':'')
     +'</div>'
     +'</div>';
 
-
   // ── Metric Cards ───────────────────────────────────────────────────
   var cards=
-    mCard('<span class="metric-sys-icon" style="color:#9878D0">&#x229E;</span>&thinsp;Asset Count','Total Firearms',s.total,'var(--gold)','Inventory Total',"goFilter('All','All')")
-    +mCard('<span class="metric-sys-icon" style="color:#C09030">&#9671;</span>&thinsp;Readiness','Operational',s.working,'var(--success)','Active Status',"goFilter('Working','All')")
-    +mCard('<span class="metric-sys-icon" style="color:#9AAABB">&#9673;</span>&thinsp;Service Status','Service Required',s.needsRepair,'var(--danger)','Attention Needed',"goFilter('Not Working','All')",'metric-card--danger')
-    +mCard('<span class="metric-sys-icon" style="color:#8A6808">&#9652;</span>&thinsp;Market Value','Estimated Value',fm(s.totalValue),'var(--gold)','Current Market',null,'metric-card--goldglow')
-    +mCard('<span class="metric-sys-icon" style="color:#6080A0">&#x229E;</span>&thinsp;Cost Basis','Purchase Record',fm(s.totalCost)||'—','var(--text-primary)','Acquisition Cost',null)
-    +mCard('<span class="metric-sys-icon" style="color:#5890C0">&#8635;</span>&thinsp;Gain / Loss','Value Change',gainStr,(gain>=0?'var(--success)':'var(--danger)'),'Appreciation',null)
-    +mCard('<span class="metric-sys-icon" style="color:#607890">&#x229E;</span>&thinsp;Ammo Stock','Rounds on Hand',s.totalAmmo>0?s.totalAmmo.toLocaleString():'—','#8EB4D8','Total Stock',null);
-
+    mCard('Asset Count','Total Firearms',s.total,'var(--gold)','Inventory Total',"goFilter('All','All')")
+    +mCard('Readiness','Operational',s.working,'var(--success)','Active Status',"goFilter('Working','All')")
+    +mCard('Service','Service Required',s.needsRepair,'var(--danger)','Attention Needed',"goFilter('Not Working','All')")
+    +mCard('Market Value','Estimated Value',fm(s.totalValue),'var(--gold)','Current Market',null)
+    +mCard('Cost Basis','Purchase Record',fm(s.totalCost)||'\u2014','var(--text-primary)','Acquisition Cost',null)
+    +mCard('Gain / Loss','Value Change',gainStr,(gain>=0?'var(--success)':'var(--danger)'),'Appreciation',null)
+    +mCard('Ammo Stock','Rounds on Hand',s.totalAmmo>0?s.totalAmmo.toLocaleString():'\u2014','#8EB4D8','Total Stock',null);
 
   // ── Breakdown Tabs ─────────────────────────────────────────────────
   var typeCounts={};
@@ -2123,7 +2156,11 @@ function printLabelSheet(){
 var appSettings = {
   haptic: true,
   sounds: true,
-  pinEnabled: false
+  pinEnabled: false,
+  ownerProfile: {
+    name:'', address:'', city:'', state:'', zip:'',
+    phone:'', email:'', dlState:'', dlType:'', dlNumber:''
+  }
 };
 
 function loadSettings(){
@@ -2177,6 +2214,18 @@ function openSettings(){
         +'</button>'
       +'</div>'
     +'</div>'
+    +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;overflow:hidden;margin-bottom:12px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:16px">'
+        +'<div>'
+          +'<div style="font-size:14px;font-weight:600;color:#f0f2f5">Seller Profile</div>'
+          +'<div style="font-size:12px;color:#4a5568;margin-top:2px">'+(appSettings.ownerProfile.name?'&#10003; '+eh(appSettings.ownerProfile.name):'Pre-fills bill of sale seller info')+'</div>'
+        +'</div>'
+        +'<button onclick="document.getElementById(\'settings_modal\').remove();openProfileModal()" '
+          +'style="background:transparent;border:2px solid #3a4455;color:#e8c46a;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'
+          +'Edit &#8250;'
+        +'</button>'
+      +'</div>'
+    +'</div>'
     +'<button onclick="document.getElementById(\'settings_modal\').remove()" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Done</button>'
     +'</div>';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
@@ -2196,7 +2245,94 @@ function avToggle(key){
 }
 
 
-// ── HAPTIC FEEDBACK ───────────────────────────────────────────────────
+// ── OWNER / SELLER PROFILE ────────────────────────────────────────────
+function openProfileModal(){
+  var existing=document.getElementById('profile_modal');
+  if(existing) existing.remove();
+  var p=appSettings.ownerProfile;
+  var dlTypes=['Driver License','State ID','Military ID','Passport'];
+  var dlOpts=dlTypes.map(function(t){
+    return '<option value="'+t+'"'+(p.dlType===t?' selected':'')+'>'+t+'</option>';
+  }).join('');
+
+  function fld(id,label,val,type,ph){
+    type=type||'text';
+    return '<div style="margin-bottom:14px">'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a95a8;margin-bottom:6px">'+label+'</div>'
+      +'<input id="pf_'+id+'" type="'+type+'" value="'+eh(val||'')+'" placeholder="'+ph+'" '
+        +'style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:11px 13px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box"/>'
+      +'</div>';
+  }
+
+  var modal=document.createElement('div');
+  modal.id='profile_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0';
+  modal.innerHTML=
+    '<div style="background:#1a1d24;border:2px solid #3a4455;border-top:2px solid #e8c46a40;border-radius:16px 16px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+        +'<div style="font-size:17px;font-weight:800;color:#e8c46a">&#9654; Seller Profile</div>'
+        +'<button onclick="document.getElementById(\'profile_modal\').remove()" style="background:transparent;border:none;color:#8a95a8;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1">&times;</button>'
+      +'</div>'
+      +'<div style="font-size:12px;color:#4a5568;margin-bottom:22px">Pre-fills your information as the seller on every bill of sale.</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e8c46a;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #2e3545">Personal Information</div>'
+      +fld('name','Full Legal Name',p.name,'text','Your full legal name')
+      +fld('address','Street Address',p.address,'text','123 Main St')
+      +'<div style="display:grid;grid-template-columns:1fr 80px 90px;gap:10px;margin-bottom:14px">'
+        +'<div>'
+          +'<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a95a8;margin-bottom:6px">City</div>'
+          +'<input id="pf_city" type="text" value="'+eh(p.city||'')+'" placeholder="City" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:11px 13px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box"/>'
+        +'</div>'
+        +'<div>'
+          +'<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a95a8;margin-bottom:6px">State</div>'
+          +'<input id="pf_state" type="text" value="'+eh(p.state||'')+'" placeholder="OK" maxlength="2" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:11px 13px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box;text-transform:uppercase"/>'
+        +'</div>'
+        +'<div>'
+          +'<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a95a8;margin-bottom:6px">ZIP</div>'
+          +'<input id="pf_zip" type="text" value="'+eh(p.zip||'')+'" placeholder="73001" maxlength="10" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:11px 13px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box"/>'
+        +'</div>'
+      +'</div>'
+      +fld('phone','Phone',p.phone,'tel','(405) 555-0100')
+      +fld('email','Email',p.email,'email','you@email.com')
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e8c46a;margin:20px 0 14px;padding-bottom:8px;border-bottom:1px solid #2e3545">ID / License Info</div>'
+      +'<div style="font-size:11px;color:#4a5568;margin-bottom:14px">Stored privately. Only a masked version appears on the bill of sale PDF.</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
+        +'<div>'
+          +'<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a95a8;margin-bottom:6px">ID Type</div>'
+          +'<select id="pf_dlType" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:11px 13px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box">'+dlOpts+'</select>'
+        +'</div>'
+        +'<div>'
+          +'<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a95a8;margin-bottom:6px">Issuing State</div>'
+          +'<input id="pf_dlState" type="text" value="'+eh(p.dlState||'')+'" placeholder="OK" maxlength="2" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:11px 13px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box;text-transform:uppercase"/>'
+        +'</div>'
+      +'</div>'
+      +fld('dlNumber','ID Number',p.dlNumber,'text','Full number — masked on PDF')
+      +'<button onclick="saveOwnerProfile()" style="width:100%;background:#e8c46a;color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:6px">Save Profile</button>'
+      +'<button onclick="document.getElementById(\'profile_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:10px">Cancel</button>'
+    +'</div>';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  document.body.appendChild(modal);
+}
+
+function saveOwnerProfile(){
+  var get=function(id){var el=document.getElementById('pf_'+id);return el?el.value.trim():'';};
+  if(!appSettings.ownerProfile) appSettings.ownerProfile={};
+  appSettings.ownerProfile.name    = get('name');
+  appSettings.ownerProfile.address = get('address');
+  appSettings.ownerProfile.city    = get('city');
+  appSettings.ownerProfile.state   = get('state').toUpperCase();
+  appSettings.ownerProfile.zip     = get('zip');
+  appSettings.ownerProfile.phone   = get('phone');
+  appSettings.ownerProfile.email   = get('email');
+  appSettings.ownerProfile.dlType  = get('dlType');
+  appSettings.ownerProfile.dlState = get('dlState').toUpperCase();
+  appSettings.ownerProfile.dlNumber= get('dlNumber');
+  saveSettings();
+  haptic('save');
+  toast('Seller profile saved');
+  document.getElementById('profile_modal').remove();
+}
+
+
 function haptic(type){
   if(!appSettings.haptic) return;
   if(!navigator.vibrate) return;
@@ -3056,6 +3192,316 @@ function printCustodyRecord(gunId){
 }
 
 
+// ── BILL OF SALE ──────────────────────────────────────────────────────
+var billsOfSale=[];
+var bosStep=1;
+var bosGunId=null;
+var bosData={};
+
+function loadBOS(){
+  try{var s=localStorage.getItem('av_bos');if(s)billsOfSale=JSON.parse(s);}catch(e){}
+}
+
+function saveBOS(){
+  try{localStorage.setItem('av_bos',JSON.stringify(billsOfSale));}catch(e){}
+  openDB(function(db){
+    if(!db)return;
+    try{var tx=db.transaction(['meta'],'readwrite');tx.objectStore('meta').put(billsOfSale,'billsOfSale');}catch(e){}
+  });
+}
+
+function genBosNumber(){
+  var yr=new Date().getFullYear();
+  var n=billsOfSale.filter(function(b){return b.bosNumber&&b.bosNumber.indexOf('AV-'+yr)===0;}).length+1;
+  return 'AV-'+yr+'-'+String(n).padStart(4,'0');
+}
+
+function openTransferWizard(gunId){
+  var existing=document.getElementById('bos_modal');if(existing)existing.remove();
+  bosGunId=gunId;bosStep=1;
+  var g=guns.find(function(x){return x.id===gunId;});
+  if(!g){toast('Firearm not found','err');return;}
+  var p=appSettings.ownerProfile||{};
+  bosData={
+    bosNumber:genBosNumber(),gunId:gunId,
+    gunSnapshot:{make:g.make,model:g.model,type:g.type,caliber:g.caliber,serialNumber:g.serialNumber,year:g.year,condition:g.condition,currentValue:g.currentValue,photos:g.photos||[]},
+    status:'draft',createdAt:new Date().toISOString(),
+    transferMethod:'',sameState:null,nfaItem:false,
+    seller:{name:p.name||'',address:p.address||'',city:p.city||'',state:p.state||'',zip:p.zip||'',phone:p.phone||'',email:p.email||'',dlState:p.dlState||'',dlType:p.dlType||'Driver License',dlNumber:p.dlNumber||''},
+    sellerAttestation:false,
+    buyer:{name:'',address:'',city:'',state:'',zip:'',phone:'',email:'',dob:'',dlState:'',dlType:'Driver License',dlNumber:''},
+    buyerAttestation:false,
+    salePrice:'',paymentMethod:'',accessoriesIncluded:'',conditionNotes:g.repairNotes||'',soldAsIs:true,specialTerms:'',
+    fflName:'',fflCity:'',fflState:'',fflLicense:'',
+    sellerSig:'',sellerSigDate:new Date().toISOString().split('T')[0],
+    buyerSig:'',buyerSigDate:new Date().toISOString().split('T')[0],witnessSig:'',completedAt:''
+  };
+  var modal=document.createElement('div');
+  modal.id='bos_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000d0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0';
+  modal.innerHTML='<div id="bos_inner" style="background:#1a1d24;border:2px solid #3a4455;border-top:2px solid #e8c46a;border-radius:16px 16px 0 0;width:100%;max-width:520px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden"></div>';
+  document.body.appendChild(modal);
+  bosRender();
+}
+
+function bosCollect(){
+  var g=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
+  var ch=function(id){var el=document.getElementById(id);return el?el.checked:false;};
+  if(bosStep===1){
+    bosData.transferMethod=g('bos_method');
+    var sm=document.getElementById('bos_same');bosData.sameState=sm?(sm.value==='yes'?true:sm.value==='no'?false:null):null;
+    bosData.nfaItem=ch('bos_nfa');
+  }else if(bosStep===2){
+    bosData.seller={name:g('bs_name'),address:g('bs_address'),city:g('bs_city'),state:g('bs_state').toUpperCase(),zip:g('bs_zip'),phone:g('bs_phone'),email:g('bs_email'),dlState:g('bs_dlState').toUpperCase(),dlType:g('bs_dlType'),dlNumber:g('bs_dlNumber')};
+    bosData.sellerAttestation=ch('bs_ack');
+  }else if(bosStep===3){
+    bosData.buyer={name:g('bb_name'),address:g('bb_address'),city:g('bb_city'),state:g('bb_state').toUpperCase(),zip:g('bb_zip'),phone:g('bb_phone'),email:g('bb_email'),dob:g('bb_dob'),dlState:g('bb_dlState').toUpperCase(),dlType:g('bb_dlType'),dlNumber:g('bb_dlNumber')};
+    bosData.buyerAttestation=ch('bb_ack');
+  }else if(bosStep===4){
+    bosData.salePrice=g('bt_price');bosData.paymentMethod=g('bt_payment');bosData.accessoriesIncluded=g('bt_acc');
+    bosData.conditionNotes=g('bt_cond');bosData.soldAsIs=ch('bt_asis');bosData.specialTerms=g('bt_terms');
+    bosData.fflName=g('bt_fflName');bosData.fflCity=g('bt_fflCity');bosData.fflState=g('bt_fflState').toUpperCase();bosData.fflLicense=g('bt_fflLic');
+  }else if(bosStep===5){
+    bosData.sellerSig=g('sig_seller');bosData.sellerSigDate=g('sig_seller_date');
+    bosData.buyerSig=g('sig_buyer');bosData.buyerSigDate=g('sig_buyer_date');bosData.witnessSig=g('sig_witness');
+  }
+}
+
+function bosValidate(){
+  if(bosStep===1){
+    if(!bosData.transferMethod)return'Select a transfer method.';
+    if(bosData.sameState===null||bosData.sameState===undefined)return'Confirm whether buyer is in your state.';
+    if(bosData.nfaItem)return'NFA_BLOCK';
+    if(!bosData.sameState&&bosData.transferMethod==='private')return'INTERSTATE_WARN';
+  }
+  if(bosStep===2){if(!bosData.seller.name)return'Seller name is required.';if(!bosData.seller.state)return'Seller state is required.';if(!bosData.sellerAttestation)return'Seller attestation required.';}
+  if(bosStep===3){if(!bosData.buyer.name)return'Buyer name is required.';if(!bosData.buyer.state)return'Buyer state is required.';if(!bosData.buyerAttestation)return'Buyer eligibility attestation required.';}
+  if(bosStep===4){if(!bosData.salePrice&&bosData.salePrice!=='0')return'Sale price is required (enter 0 for gift).';}
+  if(bosStep===5){if(!bosData.sellerSig)return'Seller signature required.';if(!bosData.buyerSig)return'Buyer signature required.';}
+  return null;
+}
+
+function bosNext(){
+  bosCollect();
+  var err=bosValidate();
+  if(err==='NFA_BLOCK'){toast('NFA items require ATF Form 4 and ATF approval before transfer.','err');return;}
+  if(err==='INTERSTATE_WARN'){
+    var warn=document.getElementById('bos_interstate_warn');
+    if(warn){warn.style.display='block';return;}
+    return;
+  }
+  if(err){toast(err,'err');return;}
+  if(bosStep<5){bosStep++;bosRender();}else{bosComplete();}
+}
+
+function bosPrev(){bosCollect();if(bosStep>1){bosStep--;bosRender();}}
+
+function bosRender(){
+  var inner=document.getElementById('bos_inner');if(!inner)return;
+  var steps=['Setup','Seller','Buyer','Terms','Sign'];
+  var progress=steps.map(function(s,i){
+    var done=i+1<bosStep,active=i+1===bosStep;
+    var dot='<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;'+(done?'background:#e8c46a;color:#1a1d24':active?'background:#1e2838;border:2px solid #e8c46a;color:#e8c46a':'background:#1e2838;border:1px solid #2e3545;color:#3a4455')+'">'+(done?'&#10003;':(i+1))+'</div>';
+    var lbl='<div style="font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:'+(active?'#e8c46a':'#3a4455');lbl+=';margin-top:4px">'+s+'</div>';
+    return '<div style="display:flex;flex-direction:column;align-items:center;flex:1">'+dot+lbl+'</div>';
+  });
+  var bars=[];for(var i=0;i<4;i++)bars.push('<div style="flex:1;height:1px;background:'+(i+1<bosStep?'#e8c46a':'#2e3545')+';margin-top:13px;align-self:flex-start"></div>');
+  var prog=progress[0];for(var j=0;j<4;j++){prog+=bars[j]+progress[j+1];}
+
+  var content=bosStepContent();
+  var stepTitles=['Transfer Setup','Seller Information','Buyer Information','Sale Terms','Review & Sign'];
+  var g=bosData.gunSnapshot||{};
+
+  inner.innerHTML=
+    '<div style="padding:18px 18px 0;flex-shrink:0">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+      +'<div>'
+        +'<div style="font-size:15px;font-weight:800;color:#e8c46a">&#9654; Transfer / Sell</div>'
+        +'<div style="font-size:12px;color:#4a5568;margin-top:2px">'+eh(g.make||'')+' '+eh(g.model||'')+(g.serialNumber?' · SN: '+eh(g.serialNumber):'')+'</div>'
+      +'</div>'
+      +'<button onclick="document.getElementById(\'bos_modal\').remove()" style="background:transparent;border:none;color:#8a95a8;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1">&times;</button>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;margin-bottom:14px">'+prog+'</div>'
+    +'<div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a95a8;padding-bottom:14px;border-bottom:1px solid #2e3545">'+stepTitles[bosStep-1]+'</div>'
+    +'</div>'
+    +'<div style="padding:18px;overflow-y:auto;flex:1">'+content+'</div>'
+    +'<div style="padding:14px 18px;border-top:1px solid #2e3545;display:flex;gap:10px;background:#1a1d24;flex-shrink:0">'
+      +(bosStep>1?'<button onclick="bosPrev()" style="background:transparent;border:2px solid #3a4455;color:#c0c8d8;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">&#8592;</button>':'')
+      +'<button onclick="bosNext()" style="flex:1;background:#e8c46a;color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit">'
+        +(bosStep<5?'Continue &#8594;':'&#10003; Complete Transfer')
+      +'</button>'
+    +'</div>';
+}
+
+function bosF(id,label,val,type,ph){
+  return '<div style="margin-bottom:13px">'
+    +'<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a95a8;margin-bottom:6px">'+label+'</div>'
+    +'<input id="'+id+'" type="'+(type||'text')+'" value="'+eh(val||'')+'" placeholder="'+(ph||'')+'" '
+    +'style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:11px 13px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box"/>'
+    +'</div>';
+}
+
+function bosG(id,label,val,type,ph,ml){
+  return '<div>'
+    +'<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a95a8;margin-bottom:6px">'+label+'</div>'
+    +'<input id="'+id+'" type="'+(type||'text')+'" value="'+eh(val||'')+'" placeholder="'+(ph||'')+'" '+(ml?'maxlength="'+ml+'" ':'')
+    +'style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:11px 12px;font-size:13px;outline:none;font-family:inherit;box-sizing:border-box"/>'
+    +'</div>';
+}
+
+function bosIdBlock(prefix,dlType,dlState,dlNum){
+  var opts=['Driver License','State ID','Military ID','Passport'].map(function(t){return '<option value="'+t+'"'+(dlType===t?' selected':'')+'>'+t+'</option>';}).join('');
+  return '<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e8c46a;margin:16px 0 10px;padding-top:10px;border-top:1px solid #2e3545">Government ID</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 70px;gap:10px;margin-bottom:13px">'
+      +'<div><div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a95a8;margin-bottom:6px">ID Type</div>'
+        +'<select id="'+prefix+'_dlType" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:11px 12px;font-size:13px;outline:none;font-family:inherit">'+opts+'</select></div>'
+      +bosG(prefix+'_dlState','State',dlState,'text','OK',2)
+    +'</div>'
+    +bosF(prefix+'_dlNumber','ID Number — masked on PDF',dlNum,'text','Full number (private)');
+}
+
+function bosStepContent(){
+  var isFFL=bosData.transferMethod==='ffl';
+  if(bosStep===1){
+    var mOpts=['','private','ffl','other'].map(function(v,i){
+      var lbl=['Select transfer type...','Private Transfer','FFL-Facilitated Transfer','Other (Estate, Consignment, etc.)'][i];
+      return '<option value="'+v+'"'+(bosData.transferMethod===v?' selected':'')+'>'+lbl+'</option>';
+    }).join('');
+    var interstate=(!bosData.sameState&&bosData.transferMethod==='private')?
+      '<div id="bos_interstate_warn" style="background:#2a1500;border:1px solid #ff904050;border-radius:8px;padding:14px;margin-top:12px">'
+        +'<div style="font-size:13px;font-weight:700;color:#ff9040;margin-bottom:6px">&#9888; Interstate Transfer Requires FFL</div>'
+        +'<div style="font-size:12px;color:#c0a060;line-height:1.7">Federal law generally requires out-of-state transfers to go through an FFL in the buyer\'s state. Switch to <strong>FFL-Facilitated Transfer</strong> to continue.</div>'
+      +'</div>':'';
+    return '<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a95a8;margin-bottom:7px">Transfer Method</div>'
+      +'<select id="bos_method" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:12px;font-size:14px;outline:none;font-family:inherit;margin-bottom:16px">'+mOpts+'</select>'
+      +'<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a95a8;margin-bottom:7px">Buyer in Same State?</div>'
+      +'<select id="bos_same" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:12px;font-size:14px;outline:none;font-family:inherit;margin-bottom:16px">'
+        +'<option value="">Select...</option>'
+        +'<option value="yes"'+(bosData.sameState===true?' selected':'')+'>Yes — same state</option>'
+        +'<option value="no"'+(bosData.sameState===false?' selected':'')+'>No — different state</option>'
+      +'</select>'
+      +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:14px;display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">'
+        +'<input type="checkbox" id="bos_nfa"'+(bosData.nfaItem?' checked':'')+' style="width:18px;height:18px;accent-color:#ff7070;flex-shrink:0;margin-top:2px"/>'
+        +'<label for="bos_nfa" style="font-size:13px;color:#c0c8d8;cursor:pointer;line-height:1.6">This is an <strong style="color:#ff9040">NFA item</strong> (suppressor, SBR, SBS, MG, AOW, DD)</label>'
+      +'</div>'
+      +'<div style="background:#0e1a10;border:1px solid #60e88030;border-radius:8px;padding:14px;display:flex;gap:12px;align-items:flex-start">'
+        +'<input type="checkbox" id="bos_buyer_pre" style="width:18px;height:18px;accent-color:#60e880;flex-shrink:0;margin-top:2px"/>'
+        +'<label for="bos_buyer_pre" style="font-size:12px;color:#c0c8d8;cursor:pointer;line-height:1.6"><strong style="color:#60e880">Required:</strong> I have no reason to believe the buyer is prohibited from receiving or possessing firearms under federal or state law.</label>'
+      +'</div>'
+      +interstate;
+  }
+  if(bosStep===2){
+    var s=bosData.seller;
+    return bosF('bs_name','Full Legal Name *',s.name,'text','Your full legal name')
+      +bosF('bs_address','Street Address',s.address,'text','123 Main St')
+      +'<div style="display:grid;grid-template-columns:1fr 55px 85px;gap:8px;margin-bottom:13px">'
+        +bosG('bs_city','City',s.city,'text','City')+bosG('bs_state','ST',s.state,'text','OK',2)+bosG('bs_zip','ZIP',s.zip,'text','73001')
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px">'+bosG('bs_phone','Phone',s.phone,'tel','(405) 555-0100')+bosG('bs_email','Email',s.email,'email','you@email.com')+'</div>'
+      +bosIdBlock('bs',s.dlType,s.dlState,s.dlNumber)
+      +'<div style="background:#0e1a10;border:1px solid #60e88030;border-radius:8px;padding:14px;display:flex;gap:12px;align-items:flex-start;margin-top:4px">'
+        +'<input type="checkbox" id="bs_ack"'+(bosData.sellerAttestation?' checked':'')+' style="width:18px;height:18px;accent-color:#60e880;flex-shrink:0;margin-top:2px"/>'
+        +'<label for="bs_ack" style="font-size:12px;color:#c0c8d8;cursor:pointer;line-height:1.6"><strong style="color:#60e880">Seller Attestation:</strong> I am the lawful owner or otherwise authorized to transfer this firearm.</label>'
+      +'</div>';
+  }
+  if(bosStep===3){
+    var b=bosData.buyer;
+    return bosF('bb_name','Full Legal Name *',b.name,'text','Buyer\'s full name')
+      +bosF('bb_address','Street Address',b.address,'text','123 Main St')
+      +'<div style="display:grid;grid-template-columns:1fr 55px 85px;gap:8px;margin-bottom:13px">'
+        +bosG('bb_city','City',b.city,'text','City')+bosG('bb_state','ST *',b.state,'text','OK',2)+bosG('bb_zip','ZIP',b.zip,'text','73001')
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px">'+bosG('bb_phone','Phone',b.phone,'tel','(405) 555-0100')+bosG('bb_email','Email',b.email,'email','buyer@email.com')+'</div>'
+      +bosF('bb_dob','Date of Birth',b.dob,'date','')
+      +bosIdBlock('bb',b.dlType,b.dlState,b.dlNumber)
+      +'<div style="background:#0e1a10;border:1px solid #60e88030;border-radius:8px;padding:14px;display:flex;gap:12px;align-items:flex-start;margin-top:4px">'
+        +'<input type="checkbox" id="bb_ack"'+(bosData.buyerAttestation?' checked':'')+' style="width:18px;height:18px;accent-color:#60e880;flex-shrink:0;margin-top:2px"/>'
+        +'<label for="bb_ack" style="font-size:12px;color:#c0c8d8;cursor:pointer;line-height:1.6"><strong style="color:#60e880">Buyer Attestation:</strong> I affirm I may lawfully receive and possess this firearm under applicable federal and state law.</label>'
+      +'</div>';
+  }
+  if(bosStep===4){
+    var pmOpts=['Cash','Check','Electronic Transfer','Money Order','Trade','Other'].map(function(p){return '<option value="'+p+'"'+(bosData.paymentMethod===p?' selected':'')+'>'+p+'</option>';}).join('');
+    return bosF('bt_price','Sale Price * (enter 0 for gift)',bosData.salePrice,'number','0.00')
+      +'<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a95a8;margin-bottom:7px">Payment Method</div>'
+      +'<select id="bt_payment" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:12px;font-size:14px;outline:none;font-family:inherit;margin-bottom:13px"><option value="">Select...</option>'+pmOpts+'</select>'
+      +bosF('bt_acc','Accessories / Items Included',bosData.accessoriesIncluded,'text','e.g. 2 mags, original case, manual')
+      +'<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a95a8;margin-bottom:7px">Condition Notes / Known Defects</div>'
+      +'<textarea id="bt_cond" placeholder="Describe condition or known issues..." style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:12px;font-size:14px;outline:none;font-family:inherit;min-height:68px;resize:vertical;margin-bottom:13px;box-sizing:border-box">'+eh(bosData.conditionNotes||'')+'</textarea>'
+      +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:13px;display:flex;gap:12px;align-items:center;margin-bottom:13px">'
+        +'<input type="checkbox" id="bt_asis"'+(bosData.soldAsIs?' checked':'')+' style="width:18px;height:18px;accent-color:#e8c46a;flex-shrink:0"/>'
+        +'<label for="bt_asis" style="font-size:13px;color:#c0c8d8;cursor:pointer">Sold as-is — no warranty or return</label>'
+      +'</div>'
+      +bosF('bt_terms','Special Terms (optional)',bosData.specialTerms,'text','Any additional terms')
+      +(isFFL?'<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e8c46a;margin:14px 0 10px;padding-top:10px;border-top:1px solid #2e3545">FFL Dealer</div>'
+        +bosF('bt_fflName','Dealer Name',bosData.fflName,'text','Licensed dealer name')
+        +'<div style="display:grid;grid-template-columns:1fr 70px;gap:8px;margin-bottom:13px">'
+          +bosG('bt_fflCity','City',bosData.fflCity,'text','City')+bosG('bt_fflState','State',bosData.fflState,'text','OK',2)
+        +'</div>'
+        +bosF('bt_fflLic','FFL License Number',bosData.fflLicense,'text','License #'):'');
+  }
+  if(bosStep===5){
+    var sn=bosData.gunSnapshot||{};
+    var maskId=function(n){return n&&n.length>4?'****'+n.slice(-4):'****';};
+    var summary='<div style="background:#13161d;border:1px solid #e8c46a30;border-radius:10px;padding:16px;margin-bottom:18px">'
+      +'<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e8c46a;margin-bottom:10px">'+bosData.bosNumber+'</div>'
+      +'<div style="font-size:16px;font-weight:700;color:#f0f2f5">'+eh(sn.make)+' '+eh(sn.model)+'</div>'
+      +'<div style="font-size:12px;color:#8a95a8;margin-top:2px">'+eh(sn.type||'')+(sn.type?' · ':'')+eh(sn.caliber)+' · SN: '+eh(sn.serialNumber||'N/A')+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid #2e3545">'
+        +'<div><div style="font-size:10px;color:#4a5568;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Seller</div>'
+          +'<div style="font-size:13px;color:#c0c8d8;font-weight:600">'+eh(bosData.seller.name)+'</div>'
+          +'<div style="font-size:11px;color:#4a5568">'+eh(bosData.seller.city)+', '+eh(bosData.seller.state)+'</div>'
+          +(bosData.seller.dlNumber?'<div style="font-size:10px;color:#3a4455">ID: '+maskId(bosData.seller.dlNumber)+'</div>':'')+'</div>'
+        +'<div><div style="font-size:10px;color:#4a5568;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Buyer</div>'
+          +'<div style="font-size:13px;color:#c0c8d8;font-weight:600">'+eh(bosData.buyer.name)+'</div>'
+          +'<div style="font-size:11px;color:#4a5568">'+eh(bosData.buyer.city)+', '+eh(bosData.buyer.state)+'</div>'
+          +(bosData.buyer.dlNumber?'<div style="font-size:10px;color:#3a4455">ID: '+maskId(bosData.buyer.dlNumber)+'</div>':'')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #2e3545">'
+        +'<div style="font-size:12px;color:#8a95a8">'+bosData.transferMethod.charAt(0).toUpperCase()+bosData.transferMethod.slice(1)+' · '+(bosData.sameState?'Same state':'Interstate')+'</div>'
+        +'<div style="font-size:16px;font-weight:700;color:#e8c46a">'+fm(bosData.salePrice)+'</div>'
+      +'</div>'
+    +'</div>';
+    var sigFld=function(id,role,legalName,val,dateVal){
+      return '<div style="background:#13161d;border:2px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:14px">'
+        +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;margin-bottom:8px">'+role+' Signature</div>'
+        +(legalName?'<div style="font-size:11px;color:#4a5568;margin-bottom:8px">Legal name on file: '+eh(legalName)+'</div>':'')
+        +'<input id="'+id+'" type="text" value="'+eh(val||'')+'" placeholder="Type full legal name to sign" '
+          +'style="width:100%;background:#0d1018;border:1px solid #3a4455;border-radius:6px;color:#e8c46a;padding:11px 13px;font-size:14px;font-style:italic;outline:none;font-family:Georgia,serif;margin-bottom:8px;box-sizing:border-box"/>'
+        +'<input id="'+id+'_date" type="date" value="'+eh(dateVal||new Date().toISOString().split('T')[0])+'" '
+          +'style="width:100%;background:#0d1018;border:1px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:9px 12px;font-size:13px;outline:none;font-family:inherit;color-scheme:dark;box-sizing:border-box"/>'
+      +'</div>';
+    };
+    return summary
+      +sigFld('sig_seller','Seller',bosData.seller.name,bosData.sellerSig,bosData.sellerSigDate)
+      +sigFld('sig_buyer','Buyer',bosData.buyer.name,bosData.buyerSig,bosData.buyerSigDate)
+      +bosF('sig_witness','Witness Name (optional)',bosData.witnessSig,'text','Leave blank if no witness')
+      +'<div style="background:#0e1a10;border:1px solid #60e88030;border-radius:8px;padding:12px;margin-top:6px">'
+        +'<div style="font-size:11px;color:#60e880;font-weight:700;margin-bottom:4px">&#9654; Legal Note</div>'
+        +'<div style="font-size:11px;color:#4a5568;line-height:1.7">Typed full name constitutes legal signature for private-party firearm transfers. Both parties confirm all information is accurate.</div>'
+      +'</div>';
+  }
+  return '';
+}
+
+function bosComplete(){
+  bosData.status='completed';
+  bosData.completedAt=new Date().toISOString();
+  bosData.id=bosData.bosNumber;
+  billsOfSale.push(bosData);
+  saveBOS();
+  var g=guns.find(function(x){return x.id===bosGunId;});
+  if(g){
+    var archived=Object.assign({},g,{transferred:true,transferredAt:bosData.completedAt,bosId:bosData.bosNumber});
+    transferredGuns.push(archived);
+    guns=guns.filter(function(x){return x.id!==bosGunId;});
+    sv();saveTransferred();
+  }
+  haptic('save');
+  document.getElementById('bos_modal').remove();
+  toast((g?g.make+' '+g.model:'Firearm')+' transferred & archived. BOS: '+bosData.bosNumber);
+  VIEW='list';rnd();
+}
+
 // ── CUSTODY REPORT VIEW ───────────────────────────────────────────────
 function rCustodyReport(){
   var allWithCustody=guns.filter(function(g){return g.custody&&g.custody.length>0;});
@@ -3695,7 +4141,22 @@ function buildHamMenu(){
 
   // Context-aware sections
   var editSection='';
-  if(VIEW==='add'&&editId){
+  if(VIEW==='detail'&&selId){
+    var gd=guns.find(function(x){return x.id===selId;})||{};
+    if(!gd.transferred){
+      editSection=
+        '<div class="ham-section">This Firearm</div>'
+        +'<div class="ham-item" onclick="hamAction(function(){openTransferWizard(\''+selId+'\')})" style="color:#e8c46a;font-weight:800">'
+          +'<span class="ham-item-icon">&#128275;</span><span>Transfer / Sell</span>'
+        +'</div>'
+        +'<div class="ham-item" onclick="hamAction(function(){showPrintMenu(\''+selId+'\')})">'
+          +'<span class="ham-item-icon">&#9113;</span><span>Print Sheet</span>'
+        +'</div>'
+        +'<div class="ham-item" onclick="hamAction(function(){openQR(\''+selId+'\')})" style="color:#e8c46a">'
+          +'<span class="ham-item-icon">&#9646;&#9646;</span><span>Generate QR Code</span>'
+        +'</div>';
+    }
+  } else if(VIEW==='add'&&editId){
     var g=guns.find(function(x){return x.id===editId;})||{};
     editSection=
       '<div class="ham-section">This Firearm</div>'
@@ -4498,7 +4959,7 @@ function rDet(){
     tc='<div class="panel"><div class="sec-title">⚙ Maintenance History</div>'+(g.maintenanceLog?'<div style="font-size:15px;white-space:pre-wrap;line-height:1.7;color:#e0e6f0">'+eh(g.maintenanceLog)+'</div>':'<div style="color:#8a95a8;font-size:14px">No maintenance records yet.</div>')+'<button class="btn-g" style="margin-top:16px" onclick="editGun(\''+g.id+'\')">Edit Maintenance Log</button></div>';
   }
 
-  return '<div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><button class="btn-g" onclick="go(\'list\')">← Back to List</button><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+'<button class="star-btn '+(g.starred?'star-on':'star-off')+'" onclick="toggleStar(\''+g.id+'\')" title="Star">'+(g.starred?'⭐':'☆')+'</button>'+'<button class="btn-pr" onclick="pOneOpts(\''+g.id+'\',true)">⎙ Print Sheet</button><button class="btn-g" onclick="editGun(\''+g.id+'\')">Edit</button><button class="btn-d" onclick="deleteGun(\''+g.id+'\')">Delete</button></div></div>'+
+  return '<div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><button class="btn-g" onclick="go(\'list\')">← Back to List</button><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+'<button class="star-btn '+(g.starred?'star-on':'star-off')+'" onclick="toggleStar(\''+g.id+'\')" title="Star">'+(g.starred?'⭐':'☆')+'</button>'+'<button class="btn-pr" onclick="pOneOpts(\''+g.id+'\',true)">⎙ Print Sheet</button><button class="btn-g" onclick="editGun(\''+g.id+'\')">Edit</button><button style="background:#e8c46a15;border:2px solid #e8c46a50;color:#e8c46a;padding:7px 13px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit" onclick="openTransferWizard(\''+g.id+'\')">&#128275; Transfer</button><button class="btn-d" onclick="deleteGun(\''+g.id+'\')">Delete</button></div></div>'+
   '<div class="panel" style="border-color:#e8c46a40"><div style="display:flex;gap:18px;flex-wrap:wrap">'+ph+
   '<div style="flex:1;min-width:200px"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px"><div><div style="font-size:24px;font-weight:700;color:#f0f2f5">'+eh(g.make)+' '+eh(g.model)+'</div><div style="color:#a0aab8;font-size:14px;margin-top:4px">'+eh(g.type||'')+(g.type?' · ':'')+eh(g.caliber)+'</div><div style="color:#7a8598;font-size:13px;margin-top:3px">SN: '+(eh(g.serialNumber)||'N/A')+(g.year?' · '+eh(g.year):'')+'</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:700;color:#e8c46a">'+fm(g.currentValue)+'</div><div style="font-size:12px;color:#8a95a8">current value</div><div style="margin-top:6px">'+bj(g.condition,CC[g.condition]||'#8a95a8')+'</div></div></div>'+
   '<div style="margin-top:11px;display:flex;gap:18px;flex-wrap:wrap"><span style="color:'+(g.working?'#60e880':'#ff7070')+';font-size:14px;font-weight:700">'+(g.working?'✓ Operational':'✗ Needs Repair')+'</span>'+(g.purchasePrice?'<span style="color:#8a95a8;font-size:13px">Paid: '+fm(g.purchasePrice)+'</span>':'')+(gainStr?'<span style="color:'+(gain>=0?'#60e880':'#ff7070')+';font-size:13px;font-weight:600">'+gainStr+'</span>':'')+'</div></div></div></div>'+
@@ -6333,6 +6794,7 @@ function doImport(data){
 loadCollections();
 loadMilestones();
 loadTransferred();
+loadBOS();
 loadCustomPrices();
 initNavigation();
 initSwipeNav();
