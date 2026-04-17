@@ -1,0 +1,860 @@
+/*
+ * ArsenalDB — Firearms Detail View Styles
+ *
+ * Covers all fw-* classes used by the modular detail view modules:
+ *  firearms.detail.js          (shell, info tab, custody tab)
+ *  firearms.detail.service.js  (maintenance/service tab)
+ *  firearms.detail.documents.js (documents tab)
+ *  firearms.detail.transfer.js  (transfer tab)
+ *
+ * Design language matches the existing monolith:
+ *  Dark backgrounds, gold (#e8c46a) accents, green/red status indicators.
+ *
+ * CSS custom properties are defined at :root for consistency with
+ * the monolith's color palette and for use in inline styles generated
+ * by the modules (e.g. var(--color-ok) in service tab status dots).
+ */
+
+
+/* ── Custom Properties ─────────────────────────────────── */
+
+:root {
+  --color-bg-deep:      #13161d;
+  --color-bg-card:      #1a1d24;
+  --color-bg-raised:    #222835;
+  --color-bg-subtle:    #252c38;
+  --color-border:       #2e3545;
+  --color-border-light: #3a4455;
+
+  --color-text:         #f0f2f5;
+  --color-text-sec:     #d0d8e8;
+  --color-text-dim:     #a0aab8;
+  --color-text-muted:   #8a95a8;
+
+  --color-gold:         #e8c46a;
+  --color-ok:           #60e880;
+  --color-warn:         #ffd060;
+  --color-danger:       #ff7070;
+  --color-info:         #a0b8ff;
+}
+
+
+/* ── Detail Shell ──────────────────────────────────────── */
+
+.fw-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  margin-bottom: 8px;
+}
+
+.fw-back-btn {
+  background: transparent;
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-dim);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.fw-back-btn:hover { border-color: var(--color-gold); color: var(--color-gold); }
+
+.fw-detail-heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: center;
+  flex: 1;
+  padding: 0 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fw-edit-btn {
+  background: var(--color-gold);
+  color: var(--color-bg-deep);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.fw-edit-btn:disabled { opacity: 0.4; cursor: default; }
+.fw-edit-btn:not(:disabled):hover { filter: brightness(1.1); }
+
+
+/* ── Tab Bar ───────────────────────────────────────────── */
+
+.fw-tabs-bar {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid var(--color-border);
+}
+.fw-tabs-bar::-webkit-scrollbar { display: none; }
+
+.fw-tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-muted);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.fw-tab-btn:hover { color: var(--color-text-dim); }
+
+.fw-tab-btn--active {
+  color: var(--color-gold);
+  border-bottom-color: var(--color-gold);
+}
+
+.fw-tab-content {
+  min-height: 120px;
+}
+
+
+/* ── Loading / Error / Placeholder ─────────────────────── */
+
+.fw-loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.fw-error {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--color-danger);
+  font-size: 14px;
+  background: #ff707010;
+  border: 1px solid #ff707030;
+  border-radius: 8px;
+}
+
+.fw-tab-placeholder {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.fw-tab-placeholder-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-dim);
+  margin-bottom: 6px;
+}
+
+.fw-tab-placeholder-sub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+
+/* ── Info Tab ──────────────────────────────────────────── */
+
+.fw-info-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fw-info-group {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.fw-info-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fw-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 0;
+  gap: 12px;
+}
+
+.fw-info-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.fw-info-value {
+  font-size: 14px;
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
+}
+
+.fw-info-notes {
+  font-size: 14px;
+  color: var(--color-text-sec);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fw-field-empty {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.fw-mono {
+  font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+  letter-spacing: 0.04em;
+}
+
+.fw-gain {
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+
+/* ── Custody Tab ───────────────────────────────────────── */
+
+.fw-custody-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fw-custody-event {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.fw-custody-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.fw-custody-badge {
+  display: inline-block;
+  background: #e8c46a20;
+  border: 1px solid #e8c46a50;
+  color: var(--color-gold);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.fw-custody-auto {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle);
+  border-radius: 4px;
+  padding: 2px 6px;
+  letter-spacing: 0.08em;
+}
+
+.fw-custody-date {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.fw-custody-notes {
+  font-size: 13px;
+  color: var(--color-text-sec);
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+
+/* ── Service / Maintenance Tab ─────────────────────────── */
+
+.fw-maint-status {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.fw-maint-status--ok {
+  background: #60e88015;
+  border: 1px solid #60e88040;
+  color: var(--color-ok);
+}
+
+.fw-maint-status--warn {
+  background: #ffd06015;
+  border: 1px solid #ffd06040;
+  color: var(--color-warn);
+}
+
+.fw-maint-status--overdue {
+  background: #ff707015;
+  border: 1px solid #ff707040;
+  color: var(--color-danger);
+}
+
+.fw-maint-status--unknown {
+  background: #a0b8ff10;
+  border: 1px solid #a0b8ff30;
+  color: var(--color-info);
+}
+
+.fw-maint-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fw-maint-event {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.fw-maint-event-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.fw-maint-type {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.fw-maint-status-dot {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fw-maint-date {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.fw-maint-by {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.fw-maint-notes {
+  font-size: 13px;
+  color: var(--color-text-sec);
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+
+/* ── Documents Tab ─────────────────────────────────────── */
+
+.fw-doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.fw-doc-header-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.fw-doc-header-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.fw-doc-action-btn {
+  background: var(--color-gold);
+  color: var(--color-bg-deep);
+  border: none;
+  padding: 7px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.fw-doc-action-btn:hover { filter: brightness(1.1); }
+
+.fw-doc-action-btn--secondary {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-dim);
+  border: 1px solid var(--color-border-light);
+}
+.fw-doc-action-btn--secondary:hover { border-color: var(--color-gold); color: var(--color-gold); }
+
+.fw-doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fw-doc-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.fw-doc-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.fw-doc-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+.fw-doc-badge {
+  display: inline-block;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-muted);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.fw-doc-badge--image {
+  background: #a0b8ff15;
+  border-color: #a0b8ff40;
+  color: var(--color-info);
+}
+
+.fw-doc-meta {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.fw-doc-note-body {
+  font-size: 13px;
+  color: var(--color-text-sec);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 8px;
+}
+
+.fw-doc-card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.fw-doc-btn {
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-dim);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.fw-doc-btn:hover { border-color: var(--color-gold); color: var(--color-gold); }
+
+.fw-doc-btn--view {
+  color: var(--color-info);
+  border-color: #a0b8ff40;
+}
+.fw-doc-btn--view:hover { border-color: var(--color-info); }
+
+.fw-doc-btn--delete {
+  color: var(--color-danger);
+  border-color: #ff707040;
+}
+.fw-doc-btn--delete:hover { border-color: var(--color-danger); }
+
+.fw-doc-btn--toggle {
+  color: var(--color-text-muted);
+}
+
+.fw-doc-empty {
+  text-align: center;
+  padding: 32px 20px;
+}
+
+.fw-doc-empty-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-dim);
+  margin-bottom: 6px;
+}
+
+.fw-doc-empty-sub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Document form */
+.fw-doc-form {
+  background: var(--color-bg-card);
+  border: 2px solid #e8c46a40;
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.fw-doc-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.fw-doc-form-error {
+  color: var(--color-danger);
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.fw-doc-file-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.fw-doc-size-info {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+.fw-doc-optional {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+
+/* ── Transfer Tab ──────────────────────────────────────── */
+
+.fw-xfer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.fw-xfer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fw-xfer-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.fw-xfer-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.fw-xfer-badge {
+  display: inline-block;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.fw-xfer-type {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.fw-xfer-meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.fw-xfer-seller,
+.fw-xfer-buyer {
+  font-size: 13px;
+  color: var(--color-text-sec);
+  margin-bottom: 2px;
+}
+
+.fw-xfer-ffl-line {
+  font-size: 12px;
+  color: var(--color-info);
+  margin-top: 4px;
+}
+
+.fw-xfer-card-acts {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.fw-xfer-card-err {
+  font-size: 12px;
+  color: var(--color-danger);
+  margin-top: 6px;
+}
+
+.fw-xfer-empty {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.fw-xfer-blocked {
+  text-align: center;
+  padding: 24px 16px;
+  background: #ff707010;
+  border: 1px solid #ff707030;
+  border-radius: 8px;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+.fw-xfer-inactive {
+  text-align: center;
+  padding: 24px 16px;
+  background: #a0b8ff10;
+  border: 1px solid #a0b8ff30;
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.fw-xfer-alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-bottom: 12px;
+  background: #60e88015;
+  border: 1px solid #60e88040;
+  color: var(--color-ok);
+}
+
+/* Transfer form */
+.fw-xfer-form {
+  background: var(--color-bg-card);
+  border: 2px solid #e8c46a40;
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.fw-xfer-date-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.fw-xfer-date-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.fw-xfer-date-input {
+  background: var(--color-bg-deep);
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  color: var(--color-text);
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color-scheme: dark;
+}
+
+.fw-xfer-date-btns {
+  display: flex;
+  gap: 6px;
+}
+
+/* Transfer advisory panels (D5) */
+.fw-xfer-advisory {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.fw-xfer-advisory--warn {
+  background: #ffd06015;
+  border: 1px solid #ffd06040;
+  color: var(--color-warn);
+}
+
+.fw-xfer-advisory--ok {
+  background: #60e88010;
+  border: 1px solid #60e88030;
+  color: var(--color-ok);
+}
+
+
+/* ── Shared Form Elements ──────────────────────────────── */
+
+.fw-field {
+  margin-bottom: 12px;
+}
+
+.fw-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 5px;
+}
+
+.fw-required {
+  color: var(--color-gold);
+}
+
+.fw-hint {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.fw-input,
+.fw-select,
+.fw-textarea {
+  width: 100%;
+  background: var(--color-bg-deep);
+  border: 2px solid var(--color-border-light);
+  border-radius: 6px;
+  color: var(--color-text);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  color-scheme: dark;
+}
+.fw-input:focus,
+.fw-select:focus,
+.fw-textarea:focus {
+  border-color: var(--color-gold);
+}
+
+.fw-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.fw-field-error {
+  font-size: 11px;
+  color: var(--color-danger);
+  margin-top: 4px;
+}
+
+.fw-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 10px 12px;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.fw-checkbox-text {
+  font-size: 12px;
+  color: var(--color-text-sec);
+  line-height: 1.6;
+}
+
+.fw-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.fw-submit-btn {
+  flex: 1;
+  background: var(--color-gold);
+  color: var(--color-bg-deep);
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+}
+.fw-submit-btn:disabled { opacity: 0.5; cursor: default; }
+.fw-submit-btn:not(:disabled):hover { filter: brightness(1.1); }
+
+.fw-cancel-btn {
+  background: transparent;
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-muted);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.fw-cancel-btn:hover { border-color: var(--color-text-dim); color: var(--color-text-dim); }
