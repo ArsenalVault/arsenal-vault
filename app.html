@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<link rel="stylesheet" href="css/firearms-detail.css"/>
 <style>
 .range-card{background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:16px;margin-bottom:10px;cursor:pointer;transition:border-color .2s}
 .range-card:hover{border-color:#e8c46a60}
@@ -686,10 +687,6 @@
 .av-review-retake{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:14px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
 .av-review-accept{flex:2;background:#D5B15C;border:none;color:#1a1d24;padding:14px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
 /* ── QR TRANSFER ─────────────────────────────────────────────────────── */
-  /* ── Transfer Tab: Advisory strip ── */
-.fw-xfer-advisory        { font-size: 0.8rem; line-height: 1.4; padding: 4px 0; }
-.fw-xfer-advisory--warn  { color: var(--danger); }
-.fw-xfer-advisory--ok    { color: var(--success); }
 .qrt-modal{position:fixed;inset:0;background:#000000d0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0}
 .qrt-inner{background:#1a1d24;border:2px solid #3a4455;border-top:2px solid #e8c46a;border-radius:16px 16px 0 0;width:100%;max-width:520px;height:88vh;display:flex;flex-direction:column;overflow:hidden}
 .qrt-header{padding:18px 18px 0;flex-shrink:0}
@@ -1165,7 +1162,7 @@ loadRangeSessions();
 // ── INDEXEDDB STORAGE ────────────────────────────────────────────────
 var _db=null;
 var DB_NAME='ArsenalVaultDB';
-var DB_VERSION=1;
+var DB_VERSION=2;
 var STORE='firearms';
 
 function openDB(cb){
@@ -1173,11 +1170,35 @@ function openDB(cb){
   var req=indexedDB.open(DB_NAME,DB_VERSION);
   req.onupgradeneeded=function(e){
     var db=e.target.result;
-    if(!db.objectStoreNames.contains(STORE)){
-      db.createObjectStore(STORE,{keyPath:'id'});
+    var oldVersion=e.oldVersion;
+    // v0 → v1: original stores
+    if(oldVersion<1){
+      if(!db.objectStoreNames.contains(STORE)){
+        db.createObjectStore(STORE,{keyPath:'id'});
+      }
+      if(!db.objectStoreNames.contains('meta')){
+        db.createObjectStore('meta');
+      }
     }
-    if(!db.objectStoreNames.contains('meta')){
-      db.createObjectStore('meta');
+    // v1 → v2: modular system stores
+    if(oldVersion<2){
+      if(!db.objectStoreNames.contains('person')){
+        db.createObjectStore('person',{keyPath:'id'});
+      }
+      if(!db.objectStoreNames.contains('transfer')){
+        var ts=db.createObjectStore('transfer',{keyPath:'id'});
+        ts.createIndex('gunId','gunId',{unique:false});
+        ts.createIndex('sellerId','sellerId',{unique:false});
+        ts.createIndex('buyerId','buyerId',{unique:false});
+      }
+      if(!db.objectStoreNames.contains('document')){
+        var ds=db.createObjectStore('document',{keyPath:'id'});
+        ds.createIndex('gunId','gunId',{unique:false});
+      }
+      if(!db.objectStoreNames.contains('custody_event')){
+        var cs=db.createObjectStore('custody_event',{keyPath:'id'});
+        cs.createIndex('gunId','gunId',{unique:false});
+      }
     }
   };
   req.onsuccess=function(e){_db=e.target.result;cb(_db);};
@@ -1436,10 +1457,16 @@ function rnd(){
   if(fab) fab.style.display=(VIEW==='add')?'none':'flex';
   var nav=document.getElementById('nav');
   nav.innerHTML='<div class="av-coll-row">'+rCollDropdown()+'</div>'+'<div class="av-tabs">'+'<button class="av-tab'+(VIEW==="dashboard"?' av-tab-active':'')+'" onclick="go(\'dashboard\')">&#9632; Dashboard</button>'+'<button class="av-tab'+(VIEW==="reports"?' av-tab-active':'')+'" onclick="go(\'reports\')">&#9778; Reports</button>'+'<button class="av-tab'+(VIEW==="list"?' av-tab-active':'')+'" onclick="go(\'list\')">&#9783; Inventory</button>'+'</div>';
+  // Tear down modular detail view when navigating away
+  if(VIEW!=='detail'&&window._arsenal){window._arsenal.destroyDetail();}
   if(VIEW==='dashboard')app.innerHTML=rDash();
   else if(VIEW==='list')app.innerHTML=rList();
   else if(VIEW==='add')app.innerHTML=rAdd();
-  else if(VIEW==='detail')app.innerHTML=rDet();
+  else if(VIEW==='detail'){
+    // Use modular detail view if module system is loaded
+    if(window._arsenal&&window._arsenal.ready){window._arsenal.openDetail(selId);}
+    else{app.innerHTML=rDet();}
+  }
   else if(VIEW==='reports')app.innerHTML=rReports();
   else if(VIEW==='pic')app.innerHTML=rPicturePage();
   else if(VIEW==='range')app.innerHTML=rRange();
@@ -1755,7 +1782,7 @@ function rAdd(){
       +'<div class="form-group"><label class="lbl">Make *</label><div class="ac-wrap"><input type="text" id="f_make" value="'+eh(f.make)+'" placeholder="e.g. Smith &amp; Wesson" autocomplete="off" oninput="acInput(this.value)" onkeydown="acKey(event)" onblur="acBlur()"/><div id="ac_list" class="ac-list"></div></div></div>'
       +'<div class="form-group"><label class="lbl">Model *</label><input type="text" id="f_model" value="'+eh(f.model)+'" placeholder="e.g. 686, G19"/></div>'
       +'<div class="form-group"><label class="lbl">Type</label><select id="f_type" onchange="FORM.type=this.value"><option value="">Select...</option>'+typeOpts+'</select></div>'
-      +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange=\"FORM.caliber=this.value;onCalChange(this)\"><option value="">Select...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
+      +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange="FORM.caliber=this.value;onCalChange(this)"><option value="">Select...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
       +'<div class="form-group"><label class="lbl">Condition</label><select id="f_cond" onchange="FORM.condition=this.value">'+condOpts+'</select></div>'
       +'<div class="form-group"><label class="lbl">Status</label><div class="wbtns">'
       +'<button class="wbtn '+(f.working?'wy':'')+'" onclick="FORM.working=true;rnd()">✓ Working</button>'
@@ -1777,7 +1804,7 @@ function rAdd(){
     +'<div class="form-group"><label class="lbl">Make *</label><div class="ac-wrap"><input type="text" id="f_make" value="'+eh(f.make)+'" placeholder="e.g. Smith &amp; Wesson" autocomplete="off" oninput="acInput(this.value)" onkeydown="acKey(event)" onblur="acBlur()"/><div id="ac_list" class="ac-list"></div></div></div>'
     +'<div class="form-group"><label class="lbl">Model *</label><input type="text" id="f_model" value="'+eh(f.model)+'" placeholder="e.g. 686, G17, 1911"/></div>'
     +'<div class="form-group"><label class="lbl">Type</label><select id="f_type" onchange="FORM.type=this.value"><option value="">Select type...</option>'+typeOpts+'</select></div>'
-    +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange=\\"FORM.caliber=this.value;onCalChange(this)\\"><option value="">Select caliber...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
+    +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange="FORM.caliber=this.value;onCalChange(this)"><option value="">Select caliber...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
     +'<div class="form-group"><label class="lbl">Serial Number</label><div style="display:flex;gap:8px"><input type="text" id="f_sn" value="'+eh(f.serialNumber)+'" placeholder="Enter serial number" style="flex:1"/><button id="sn_btn" class="btn-ai" onclick="doSnLookup()" style="white-space:nowrap;flex-shrink:0">&#128269; Look Up Year</button></div></div>'
     +'<div class="form-group"><label class="lbl">Year</label><input type="text" id="f_yr" value="'+eh(f.year)+'" placeholder="Auto-filled or enter manually"/><div id="yr_st" style="font-size:12px;margin-top:5px;display:none"></div></div>'
     +'<div class="form-group"><label class="lbl">Storage Location</label><input type="text" id="f_storage" list="stor_list" value="'+eh(f.storageLocation)+'" placeholder="e.g. Gun safe #1, Bedroom cabinet"/></div>'
@@ -1838,8 +1865,9 @@ function goFilter(workFilter, condFilter, srchVal, typeFilter){
 // ── STAR / FLAG ───────────────────────────────────────────────────────
 function toggleStar(id){
   guns=guns.map(function(g){return g.id===id?Object.assign({},g,{starred:!g.starred}):g;});
-  sv();rnd();
   var g=guns.find(function(x){return x.id===id;});
+  if(window._arsenal&&window._arsenal.updateFirearm){window._arsenal.updateFirearm(id,{starred:g?g.starred:false});}
+  sv();rnd();
   haptic('star');toast(g&&g.starred?'⭐ Added to starred':'Removed from starred');
 }
 
@@ -1873,7 +1901,12 @@ function doSave(){
   collect();
   if(!FORM.photos||!FORM.photos.length)FORM.photos=FORM.photo?[FORM.photo]:[];
   if(!FORM.make||!FORM.model){toast('Make and Model are required','err');return;}
-  if(editId){guns=guns.map(function(g){return g.id===editId?Object.assign({},FORM,{id:editId}):g;});toast('Firearm updated');haptic('save');}
+  if(editId){
+    var updated=Object.assign({},FORM,{id:editId});
+    guns=guns.map(function(g){return g.id===editId?updated:g;});
+    if(window._arsenal&&window._arsenal.updateFirearm){window._arsenal.updateFirearm(editId,updated);}
+    toast('Firearm updated');haptic('save');
+  }
   else{
     var newId=gid();
     var initCoc=[{
@@ -1883,7 +1916,9 @@ function doSave(){
       notes:'Firearm added to ArsenalDB',
       autoLogged:true
     }];
-    guns.push(Object.assign({},FORM,{id:newId,custody:initCoc}));
+    var newGun=Object.assign({},FORM,{id:newId,custody:initCoc});
+    guns.push(newGun);
+    if(window._arsenal&&window._arsenal.createFirearm){window._arsenal.createFirearm(newGun);}
     toast('Added to inventory');haptic('save');
   }
   sv();checkMilestones('save');FORM=ef();editId=null;aiVal=null;aiDiag=null;VIEW='list';rnd();
@@ -1900,9 +1935,10 @@ function viewSchematics(id){
 function deleteGun(id){
   if(!confirm('Delete this firearm from inventory?'))return;
   guns=guns.filter(function(g){return g.id!==id;});
+  if(window._arsenal&&window._arsenal.deleteFirearm){window._arsenal.deleteFirearm(id);}
   // Remove from IndexedDB
   openDB(function(db){
-    if(db){try{db.transaction([STORE],'readwrite').objectStore(STORE).delete(id);}catch(e){}}
+    if(db){try{db.transaction([STORE],'readwrite').objectStore(STORE).delete(id);}catch(e){};}
   });
   sv();haptic('delete');toast('Firearm deleted');VIEW='list';rnd();
 }
@@ -2264,15 +2300,61 @@ function printLabelSheet(){
 
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
+var APP_VERSION = '0.9.0-dev';
 var appSettings = {
   haptic: true,
   sounds: true,
   pinEnabled: false,
+  tier: 'free',
+  devMode: false,
   ownerProfile: {
     name:'', address:'', city:'', state:'', zip:'',
     phone:'', email:'', dlState:'', dlType:'', dlNumber:''
   }
 };
+
+// ── PRO GATING ──────────────────────────────────────────────────────
+function _tierLevel(t){ return t==='proplus'?3:t==='pro'?2:1; }
+
+function requireTier(minTier, featureName){
+  if(_tierLevel(appSettings.tier)>=_tierLevel(minTier)) return true;
+  var isProPlus=minTier==='proplus';
+  var features={
+    'AI Gun Identifier':'Snap a photo and instantly identify any firearm\'s make, model, type, and caliber.',
+    'AI Diagnosis':'Get expert analysis of issues, severity rating, and repair recommendations.',
+    'AI Schematics':'Generate detailed field strip instructions, assembly guides, and full parts lists for any firearm.',
+    'Schematics & Parts':'Built-in field strip guides, assembly instructions, and full parts lists for popular firearms.',
+    'Bill of Sale':'Generate professional bills of sale with buyer/seller info, attestations, signatures, and PDF export.',
+    'Print & Export':'Print detail sheets and export your inventory to CSV.'
+  };
+  var desc=features[featureName]||'This feature requires ArsenalDB '+(isProPlus?'Pro+':'Pro')+'.';
+  var tierLabel=isProPlus?'Pro+':'Pro';
+  var tierPrice=isProPlus?'$9.99 + $3.99/mo':'$9.99 one-time';
+  var tierDetails=isProPlus
+    ?'AI Gun Identifier &bull; AI Diagnosis &bull; AI Schematics &bull; Early access to new features'
+    :'Unlimited firearms &bull; Schematics &amp; parts &bull; Bill of Sale &bull; Print &amp; export';
+  var modal=document.createElement('div');
+  modal.id='pro_gate_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML='<div style="background:linear-gradient(135deg,#1a1d24,#222835);border:2px solid #e8c46a60;border-radius:16px;padding:28px 24px;max-width:340px;width:100%;text-align:center">'
+    +'<div style="font-size:32px;margin-bottom:8px">&#9733;</div>'
+    +'<div style="font-size:18px;font-weight:800;color:#e8c46a;margin-bottom:4px">'+tierLabel+' Feature</div>'
+    +'<div style="font-size:15px;font-weight:700;color:#f0f2f5;margin-bottom:10px">'+eh(featureName)+'</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:20px;line-height:1.7">'+desc+'</div>'
+    +'<div style="background:#e8c46a10;border:1px solid #e8c46a30;border-radius:10px;padding:14px;margin-bottom:20px">'
+      +'<div style="font-size:13px;font-weight:700;color:#e8c46a;margin-bottom:6px">ArsenalDB '+tierLabel+' — '+tierPrice+'</div>'
+      +'<div style="font-size:12px;color:#8a95a8;line-height:1.6">'+tierDetails+'</div>'
+    +'</div>'
+    +'<button onclick="toast(\'Coming soon — '+tierLabel+' launch in progress\');document.getElementById(\'pro_gate_modal\').remove()" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Upgrade to '+tierLabel+'</button>'
+    +'<button onclick="document.getElementById(\'pro_gate_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Maybe Later</button>'
+  +'</div>';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  document.body.appendChild(modal);
+  return false;
+}
+// Convenience wrappers
+function requirePro(f){ return requireTier('pro',f); }
+function requireProPlus(f){ return requireTier('proplus',f); }
 
 function loadSettings(){
   try{
@@ -2337,7 +2419,13 @@ function openSettings(){
         +'</button>'
       +'</div>'
     +'</div>'
+    +(appSettings.devMode?('<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
+        +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">Developer</div>'
+        +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px">Simulates subscription tier for gate testing.</div>'
+        +'<div style="display:flex;gap:6px">'+_tierBtnHTML('free','Free')+_tierBtnHTML('pro','Pro')+_tierBtnHTML('proplus','Pro+')+'</div>'
+      +'</div>'):'')
     +'<button onclick="document.getElementById(\'settings_modal\').remove()" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Done</button>'
+    +'<div id="settings_ver" onclick="_handleVersionTap()" style="text-align:center;font-size:11px;color:#4a5568;margin-top:10px;cursor:pointer;user-select:none">ArsenalDB v'+APP_VERSION+'</div>'
     +'</div>';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
   document.body.appendChild(modal);
@@ -2354,6 +2442,48 @@ function avToggle(key){
   if(knob) knob.style.left=on?'27px':'3px';
   haptic('light');
 }
+
+
+// ── DEV: tier switcher — remove before public launch ─────────────────
+function _tierBtnHTML(t, label){
+  var active=(appSettings.tier||'free')===t;
+  return '<button id="tier_btn_'+t+'" onclick="setTierDev(\''+t+'\')" '
+    +'style="flex:1;background:'+(active?'#e8c46a':'transparent')+';'
+    +'color:'+(active?'#1a1d24':'#f0f2f5')+';'
+    +'border:2px solid '+(active?'#e8c46a':'#3a4455')+';'
+    +'padding:10px 8px;border-radius:8px;font-size:13px;font-weight:700;'
+    +'cursor:pointer;font-family:inherit">'+label+'</button>';
+}
+var _verTapCount=0, _verTapTimer=null;
+function _handleVersionTap(){
+  _verTapCount++;
+  if(_verTapTimer) clearTimeout(_verTapTimer);
+  _verTapTimer=setTimeout(function(){ _verTapCount=0; }, 3000);
+  if(_verTapCount>=5){
+    _verTapCount=0;
+    appSettings.devMode=!appSettings.devMode;
+    saveSettings();
+    toast(appSettings.devMode?'Developer mode ON':'Developer mode OFF');
+    haptic('medium');
+    var m=document.getElementById('settings_modal');
+    if(m){ m.remove(); openSettings(); }
+  }
+}
+function setTierDev(t){
+  appSettings.tier=t;
+  saveSettings();
+  ['free','pro','proplus'].forEach(function(x){
+    var btn=document.getElementById('tier_btn_'+x);
+    if(!btn) return;
+    var active=(t===x);
+    btn.style.background=active?'#e8c46a':'transparent';
+    btn.style.color=active?'#1a1d24':'#f0f2f5';
+    btn.style.borderColor=active?'#e8c46a':'#3a4455';
+  });
+  toast('Tier: '+(t==='proplus'?'Pro+':t==='pro'?'Pro':'Free'));
+  haptic('light');
+}
+// ── END DEV ──────────────────────────────────────────────────────────
 
 
 // ── OWNER / SELLER PROFILE ────────────────────────────────────────────
@@ -3222,7 +3352,7 @@ function checkNFCScan(){
         var rec=event.message.records[0];
         if(rec&&rec.recordType==='url'){
           var url=new TextDecoder().decode(rec.data);
-          if(url.indexOf('majestic-souffle-9b2ec3.netlify.app')>=0){
+          if(url.indexOf('arsenaldb.com')>=0){
             var params=new URLSearchParams(url.split('?')[1]||'');
             var viewData=params.get('view');
             if(viewData){
@@ -3511,6 +3641,7 @@ function genBosNumber(){
 }
 
 function openTransferWizard(gunId){
+  if(!requirePro('Bill of Sale')) return;
   var existing=document.getElementById('bos_modal');if(existing)existing.remove();
   document.body.style.overflow='';document.body.style.position='';
   bosGunId=gunId;bosStep=1;
@@ -4821,6 +4952,7 @@ function toggleEditMenu(id){
 
 // ── AI GUN IDENTIFIER ────────────────────────────────────────────────
 function openGunIdentifier(){
+  if(!requireProPlus('AI Gun Identifier')) return;
   var modal=document.createElement('div');
   modal.id='identifier_modal';
   modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -7029,6 +7161,7 @@ function snYearLookup(make, sn){
 }
 
 function doDiag(){
+  if(!requireProPlus('AI Diagnosis')) return;
   collect();
   if(!FORM.repairNotes){toast('Describe the issue first','err');return;}
   aiLoad='diag';rnd();
@@ -7043,7 +7176,12 @@ function loadSch(id){
   var g=guns.find(function(x){return x.id===id;});if(!g)return;
   // Check built-in database first
   var db=schDB(g.make,g.model,g.caliber,g.type);
-  if(db){SCH=db;scLoad=false;rnd();return;}
+  if(db){
+    if(!requirePro('Schematics & Parts')) return;
+    SCH=db;scLoad=false;rnd();return;
+  }
+  // Not in database — AI lookup requires Pro+
+  if(!requireProPlus('AI Schematics')) return;
   // Not in database — try AI if online
   if(!navigator.onLine){
     scLoad=false;
@@ -7118,6 +7256,7 @@ function remSch(id){
 
 // ── EXPORT / PRINT ────────────────────────────────────────────────────
 function expCSV(){
+  if(!requirePro('Print & Export')) return;
   var h=['Make','Model','Type','Caliber','Serial Number','Year','Condition','Working','Purchase Price','Current Value','Repair Notes','Maintenance Log'];
   var rows=guns.map(function(g){return[g.make,g.model,g.type,g.caliber,g.serialNumber,g.year,g.condition,g.working?'Yes':'No',g.purchasePrice,g.currentValue,g.repairNotes,g.maintenanceLog].map(function(v){return'"'+((v||'').toString().replace(/"/g,'""'))+'"';}).join(',');});
   var csv=[h.join(',')].concat(rows).join('\n');
@@ -7128,6 +7267,7 @@ function expCSV(){
 }
 
 function pAll(){
+  if(!requirePro('Print & Export')) return;
   var st=stats();
   var W=window.open('','_blank');
   var rows=guns.map(function(g,i){return '<tr><td>'+(i+1)+'</td><td>'+g.make+'</td><td>'+g.model+'</td><td>'+(g.type||'-')+'</td><td>'+g.caliber+'</td><td>'+(g.serialNumber||'-')+'</td><td>'+(g.year||'-')+'</td><td>'+g.condition+'</td><td>'+(g.working?'Yes':'No')+'</td><td>'+fm(g.purchasePrice)+'</td><td>'+fm(g.currentValue)+'</td></tr>';}).join('');
@@ -8212,6 +8352,7 @@ initSwipeNav();
   ld(); // rnd() called inside ld() after async DB load
 })();
 </script>
+<script type="module" src="js/app.js"></script>
 
   <button class="fab" onclick="go('add')" id="fab_add">+ LOG FIREARM</button>
   <button class="ham-fab" onclick="toggleHam()" title="Menu" id="ham_fab"><span class="av-menu-line"></span><span class="av-menu-line"></span><span class="av-menu-line"></span></button>
