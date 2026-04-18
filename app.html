@@ -1310,7 +1310,14 @@ function go(v){
   showCustodyForm=false;
   editingCustodyId=null;
   aiLoad=null;
-  if(v==='add'){FORM=ef();editId=null;aiVal=null;aiDiag=null;playRack();}
+  if(v==='add'){
+    // Free-tier inventory cap: 5 firearms. Pro/Pro+ unlimited.
+    if(appSettings.tier==='free' && guns.length>=5){
+      _showInventoryCapModal();
+      return;
+    }
+    FORM=ef();editId=null;aiVal=null;aiDiag=null;playRack();
+  }
   if(v==='pic'&&!picGunId&&guns.length){picGunId=guns[0].id;}
   history.pushState({page:v,ts:Date.now()},"",window.location.href);VIEW=v;rnd();
 }
@@ -2358,6 +2365,28 @@ function requireTier(minTier, featureName){
 // Convenience wrappers
 function requirePro(f){ return requireTier('pro',f); }
 function requireProPlus(f){ return requireTier('proplus',f); }
+
+function _showInventoryCapModal(){
+  var existing=document.getElementById('inv_cap_modal');
+  if(existing) existing.remove();
+  var modal=document.createElement('div');
+  modal.id='inv_cap_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML='<div style="background:linear-gradient(135deg,#1a1d24,#222835);border:2px solid #e8c46a60;border-radius:16px;padding:28px 24px;max-width:340px;width:100%;text-align:center">'
+    +'<div style="font-size:32px;margin-bottom:8px">&#128230;</div>'
+    +'<div style="font-size:18px;font-weight:800;color:#e8c46a;margin-bottom:4px">Collection Full</div>'
+    +'<div style="font-size:15px;font-weight:700;color:#f0f2f5;margin-bottom:10px">'+guns.length+' of 5 firearms</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:20px;line-height:1.7">Free tier is limited to 5 firearms. Upgrade to Pro for unlimited firearms, plus schematics, Bill of Sale, and export tools.</div>'
+    +'<div style="background:#e8c46a10;border:1px solid #e8c46a30;border-radius:10px;padding:14px;margin-bottom:20px">'
+      +'<div style="font-size:13px;font-weight:700;color:#e8c46a;margin-bottom:6px">ArsenalDB Pro — $9.99 one-time</div>'
+      +'<div style="font-size:12px;color:#8a95a8;line-height:1.6">Unlimited firearms &bull; Schematics &amp; parts &bull; Bill of Sale &bull; Print &amp; export</div>'
+    +'</div>'
+    +'<button onclick="toast(\'Coming soon — Pro launch in progress\');document.getElementById(\'inv_cap_modal\').remove()" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Upgrade to Pro</button>'
+    +'<button onclick="document.getElementById(\'inv_cap_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Maybe Later</button>'
+  +'</div>';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  document.body.appendChild(modal);
+}
 
 function loadSettings(){
   try{
