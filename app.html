@@ -1127,6 +1127,7 @@ var yrResult=null;
 var activeCollection='default';
 var collections={};
 var collMenuOpen=false;
+var _pendingImportData=null;
 var quickAdd=false;
 var transferredGuns=[];
 var editingCustodyId=null;
@@ -8239,6 +8240,7 @@ function restoreData(e){
       }
 
       var count=data.guns.length;
+      _pendingImportData=data;
 
       // Ask how to import
       var modal=document.createElement('div');
@@ -8267,7 +8269,7 @@ function restoreData(e){
           +'</label>'
         +'</div>'
         +'<div style="display:flex;flex-direction:column;gap:8px">'
-          +'<button onclick="doImport('+JSON.stringify(data).replace(/'/g,"&#39;")+')" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Import</button>'
+          +'<button onclick="doImport()" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Import</button>'
           +'<button onclick="document.getElementById(\'import_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
         +'</div>'
         +'</div>';
@@ -8281,6 +8283,9 @@ function restoreData(e){
 }
 
 function doImport(data){
+  // Support legacy calls that pass data directly; otherwise read from staging
+  if(!data) data=_pendingImportData;
+  if(!data||!data.guns){ toast('Import data missing','err'); return; }
   var nameEl=document.getElementById('import_name');
   var modeEl=document.querySelector('input[name="import_mode"]:checked');
   var name=nameEl?nameEl.value.trim():'Imported Collection';
