@@ -2325,7 +2325,9 @@ function requireTier(minTier, featureName){
     'AI Schematics':'Generate detailed field strip instructions, assembly guides, and full parts lists for any firearm.',
     'Schematics & Parts':'Built-in field strip guides, assembly instructions, and full parts lists for popular firearms.',
     'Bill of Sale':'Generate professional bills of sale with buyer/seller info, attestations, signatures, and PDF export.',
-    'Print & Export':'Print detail sheets and export your inventory to CSV.'
+    'Print & Export':'Print detail sheets and export your inventory to CSV.',
+    'Multiple Collections':'Organize your firearms into separate collections for different owners, purposes, or categories.',
+    'Merge Collections':'Combine inventories from multiple sources into one collection. Handle duplicate serials intelligently.'
   };
   var desc=features[featureName]||'This feature requires ArsenalDB '+(isProPlus?'Pro+':'Pro')+'.';
   var tierLabel=isProPlus?'Pro+':'Pro';
@@ -4382,6 +4384,7 @@ function loadGunsFromCollection(collId){
 }
 
 function createCollection(){
+  if(!requireProPlus('Multiple Collections')) return;
   var name=prompt('Collection name:');
   if(!name||!name.trim()) return;
   name=name.trim();
@@ -8254,9 +8257,13 @@ function restoreData(e){
             +'<input type="radio" name="import_mode" value="new" checked style="accent-color:#e8c46a;width:16px;height:16px"/>'
             +'<div><div style="font-size:13px;font-weight:600;color:#f0f2f5">New Collection</div><div style="font-size:11px;color:#4a5568">Creates a separate collection — your data is safe</div></div>'
           +'</label>'
-          +'<label style="display:flex;align-items:center;gap:10px;cursor:pointer">'
+          +'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:8px">'
             +'<input type="radio" name="import_mode" value="replace" style="accent-color:#ff7070;width:16px;height:16px"/>'
             +'<div><div style="font-size:13px;font-weight:600;color:#ff7070">Replace Current Collection</div><div style="font-size:11px;color:#4a5568">Overwrites "'+( collections[activeCollection]?collections[activeCollection].name:'current')+'" — cannot be undone</div></div>'
+          +'</label>'
+          +'<label style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="_handleMergeRadioTap(event)">'
+            +'<input type="radio" name="import_mode" value="merge" style="accent-color:#e8c46a;width:16px;height:16px"/>'
+            +'<div><div style="font-size:13px;font-weight:600;color:#e8c46a">Merge Into Current <span style="background:#e8c46a;color:#1a1d24;font-size:9px;font-weight:800;padding:2px 5px;border-radius:3px;margin-left:4px;letter-spacing:.05em">PRO+</span></div><div style="font-size:11px;color:#4a5568">Combine with "'+( collections[activeCollection]?collections[activeCollection].name:'current')+'" — handles duplicate serials</div></div>'
           +'</label>'
         +'</div>'
         +'<div style="display:flex;flex-direction:column;gap:8px">'
@@ -8305,6 +8312,10 @@ function doImport(data){
     toast('Imported '+guns.length+' firearms into "'+name+'"');
     VIEW='dashboard';
     rnd();
+  } else if(mode==='merge'){
+    // Pro+ gate
+    if(!requireProPlus('Merge Collections')) return;
+    _startMerge(data);
   } else {
     // Replace current collection
     if(!confirm('Replace all firearms in "'+collections[activeCollection].name+'" with '+data.guns.length+' firearms from backup? This cannot be undone.')) return;
@@ -8317,6 +8328,167 @@ function doImport(data){
     rnd();
   }
 }
+
+// ── MERGE IMPORT ─────────────────────────────────────────────────────
+function _normSerial(s){ return (s||'').toString().trim().toLowerCase(); }
+
+function _handleMergeRadioTap(ev){
+  // Pre-flight gate: if Free/Pro user taps the merge option, show upgrade immediately.
+  // The actual merge path also gates in doImport(), so this is UX sugar not security.
+  if(_tierLevel(appSettings.tier)<_tierLevel('proplus')){
+    var radio=ev.currentTarget.querySelector('input[type="radio"]');
+    if(radio){ radio.checked=false; }
+    // Keep the "New Collection" radio selected as fallback
+    var newRadio=document.querySelector('input[name="import_mode"][value="new"]');
+    if(newRadio) newRadio.checked=true;
+    requireProPlus('Merge Collections');
+    ev.preventDefault();
+    ev.stopPropagation();
+  }
+}
+
+function _startMerge(data){
+  var incoming=(data.guns||[]).slice();
+  // Build map of existing serials → gun index
+  var existingBySerial={};
+  for(var i=0;i<guns.length;i++){
+    var s=_normSerial(guns[i].serialNumber);
+    if(s) existingBySerial[s]=i;
+  }
+  // Classify incoming
+  var newOnes=[];
+  var dupes=[]; // [{incoming, mineIdx}]
+  for(var j=0;j<incoming.length;j++){
+    var sn=_normSerial(incoming[j].serialNumber);
+    if(sn && existingBySerial.hasOwnProperty(sn)){
+      dupes.push({ incoming: incoming[j], mineIdx: existingBySerial[sn] });
+    } else {
+      newOnes.push(incoming[j]);
+    }
+  }
+  _showMergePreview(newOnes, dupes, data);
+}
+
+function _showMergePreview(newOnes, dupes, data){
+  var total=newOnes.length+dupes.length;
+  var modal=document.createElement('div');
+  modal.id='merge_preview_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000dd;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+  var dupeBtnHTML = dupes.length>0
+    ? '<button id="merge_review_btn" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Review Duplicates &#8250;</button>'
+    : '<button id="merge_review_btn" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Add '+newOnes.length+' Firearm'+(newOnes.length!==1?'s':'')+'</button>';
+  modal.innerHTML='<div style="background:#222835;border:2px solid #e8c46a60;border-radius:12px;padding:24px;max-width:340px;width:100%">'
+    +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:6px">&#128257; Merge Preview</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:18px">Reviewing '+total+' incoming firearm'+(total!==1?'s':'')+' against "'+eh(collections[activeCollection].name)+'".</div>'
+    +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">'
+      +'<div><div style="font-size:13px;font-weight:600;color:#f0f2f5">New Firearms</div><div style="font-size:11px;color:#4a5568">Will be added</div></div>'
+      +'<div style="font-size:22px;font-weight:800;color:#7eb87e">'+newOnes.length+'</div>'
+    +'</div>'
+    +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:14px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center">'
+      +'<div><div style="font-size:13px;font-weight:600;color:#f0f2f5">Duplicate Serials</div><div style="font-size:11px;color:#4a5568">'+(dupes.length>0?'Needs your review':'None found')+'</div></div>'
+      +'<div style="font-size:22px;font-weight:800;color:'+(dupes.length>0?'#e8c46a':'#4a5568')+'">'+dupes.length+'</div>'
+    +'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+      +dupeBtnHTML
+      +'<button onclick="document.getElementById(\'merge_preview_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
+    +'</div>'
+  +'</div>';
+  document.body.appendChild(modal);
+  // Wire the primary button
+  document.getElementById('merge_review_btn').onclick=function(){
+    modal.remove();
+    if(dupes.length===0){
+      _applyMergeResolutions(newOnes, [], data);
+    } else {
+      _showMergeConflicts(newOnes, dupes, data);
+    }
+  };
+}
+
+function _showMergeConflicts(newOnes, dupes, data){
+  var rows='';
+  for(var i=0;i<dupes.length;i++){
+    var d=dupes[i];
+    var mine=guns[d.mineIdx];
+    var inc=d.incoming;
+    rows+='<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:10px">'
+      +'<div style="font-size:12px;font-weight:700;color:#e8c46a;margin-bottom:8px">Serial: '+eh(inc.serialNumber||'(none)')+'</div>'
+      +'<div style="font-size:11px;color:#8a95a8;margin-bottom:10px">'
+        +'<div><span style="color:#7eb87e;font-weight:700">Mine:</span> '+eh((mine.make||'')+' '+(mine.model||'')).trim()+' ('+eh(mine.condition||'')+')</div>'
+        +'<div style="margin-top:3px"><span style="color:#a0c0ff;font-weight:700">Incoming:</span> '+eh((inc.make||'')+' '+(inc.model||'')).trim()+' ('+eh(inc.condition||'')+')</div>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:4px">'
+        +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#f0f2f5"><input type="radio" name="dup_'+i+'" value="keep" checked style="accent-color:#7eb87e"/>Keep Mine</label>'
+        +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#f0f2f5"><input type="radio" name="dup_'+i+'" value="replace" style="accent-color:#a0c0ff"/>Use Incoming</label>'
+        +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#f0f2f5"><input type="radio" name="dup_'+i+'" value="skip" style="accent-color:#8a95a8"/>Skip</label>'
+      +'</div>'
+    +'</div>';
+  }
+  var modal=document.createElement('div');
+  modal.id='merge_conflicts_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000dd;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML='<div style="background:#222835;border:2px solid #e8c46a60;border-radius:12px;padding:20px;max-width:360px;width:100%;max-height:90vh;display:flex;flex-direction:column">'
+    +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:4px">Resolve '+dupes.length+' Duplicate'+(dupes.length!==1?'s':'')+'</div>'
+    +'<div style="font-size:12px;color:#8a95a8;margin-bottom:14px">For each duplicate serial, choose what to do.</div>'
+    +'<div style="overflow-y:auto;flex:1;margin-bottom:12px">'+rows+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+      +'<button id="merge_apply_btn" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Apply Merge</button>'
+      +'<button onclick="document.getElementById(\'merge_conflicts_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
+    +'</div>'
+  +'</div>';
+  document.body.appendChild(modal);
+  document.getElementById('merge_apply_btn').onclick=function(){
+    var resolutions=[];
+    for(var i=0;i<dupes.length;i++){
+      var el=document.querySelector('input[name="dup_'+i+'"]:checked');
+      resolutions.push(el?el.value:'keep');
+    }
+    modal.remove();
+    _applyMergeResolutions(newOnes, dupes.map(function(d,i){return {dupe:d, choice:resolutions[i]};}), data);
+  };
+}
+
+function _applyMergeResolutions(newOnes, resolved, data){
+  var added=0, replaced=0, kept=0, skipped=0;
+  // Add all non-duplicates with fresh ids to avoid collision with existing guns
+  for(var i=0;i<newOnes.length;i++){
+    var g=Object.assign({}, newOnes[i], { id: Date.now()+i+Math.floor(Math.random()*1000) });
+    guns.push(g);
+    added++;
+  }
+  // Apply duplicate resolutions
+  for(var j=0;j<resolved.length;j++){
+    var r=resolved[j];
+    if(r.choice==='keep'){ kept++; }
+    else if(r.choice==='replace'){
+      // Preserve the existing id so references don't break
+      var existingId=guns[r.dupe.mineIdx].id;
+      guns[r.dupe.mineIdx]=Object.assign({}, r.dupe.incoming, { id: existingId });
+      replaced++;
+    }
+    else if(r.choice==='skip'){ skipped++; }
+  }
+  // Merge customPrices (incoming wins only where mine has no entry)
+  if(data.customPrices){
+    if(!customPrices) customPrices={};
+    for(var k in data.customPrices){
+      if(data.customPrices.hasOwnProperty(k) && !customPrices.hasOwnProperty(k)){
+        customPrices[k]=data.customPrices[k];
+      }
+    }
+  }
+  sv();
+  haptic('save');
+  var parts=[];
+  if(added) parts.push(added+' added');
+  if(replaced) parts.push(replaced+' replaced');
+  if(kept) parts.push(kept+' kept');
+  if(skipped) parts.push(skipped+' skipped');
+  toast('Merged: '+(parts.length?parts.join(', '):'no changes'));
+  VIEW='dashboard';
+  rnd();
+}
+// ── END MERGE IMPORT ─────────────────────────────────────────────────
 
 // Check if opened via QR code scan
 (function(){
