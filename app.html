@@ -1306,7 +1306,7 @@ function bj(l,c){return '<span class="badge" style="background:'+c+'25;color:'+c
 function eh(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function toast(m,t){var el=document.getElementById('toast');el.textContent=m;el.className='toast '+(t||'ok');el.style.display='block';setTimeout(function(){el.style.display='none';},3000);}
 
-function go(v){
+var _viewHistory=[];
   showCustodyForm=false;
   editingCustodyId=null;
   aiLoad=null;
@@ -1932,7 +1932,7 @@ function doSave(){
   sv();checkMilestones('save');FORM=ef();editId=null;aiVal=null;aiDiag=null;VIEW='list';rnd();
 }
 
-function openDet(id){
+
   selId=id;dTab='info';VIEW='detail';rnd();
 }
 
