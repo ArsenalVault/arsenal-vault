@@ -2815,18 +2815,16 @@ function haptic(type){
 var _swipeStartX=0;
 var _swipeStartY=0;
 
-function _hashBackHandler(){
+function _popstateHandler(){
   if(_exiting) return;
-  // Re-add the hash immediately to prevent PWA close / page navigation
-  window.location.hash='app';
+  history.pushState({app:true,ts:Date.now()},'',window.location.href);
   handleBack();
 }
 
 function initNavigation(){
-  // Hash approach — far more reliable than pushState buffers on Android
-  window.location.hash='app';
-  window.removeEventListener('hashchange',_hashBackHandler);
-  window.addEventListener('hashchange',_hashBackHandler);
+  history.pushState({app:true},'',window.location.href);
+  window.removeEventListener('popstate',_popstateHandler);
+  window.addEventListener('popstate',_popstateHandler);
 }
 
 var _backLock=false;
@@ -2836,11 +2834,10 @@ function handleBack(){
   setTimeout(function(){_backLock=false;},350);
   var modals=['qr_modal','label_modal','settings_modal','print_menu',
     'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal','exit_modal'];
-  for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();history.pushState({page:'app'},'',window.location.href);return;}}
-  if(hamOpen){closeHam();history.pushState({page:'app'},'',window.location.href);return;}
-  if(VIEW==='add'&&editId&&_hasUnsavedChanges()){showUnsavedWarning();history.pushState({page:'app'},'',window.location.href);return;}
-  if(VIEW==='dashboard'){showExitConfirm();history.pushState({page:'app'},'',window.location.href);return;}
-  history.pushState({page:'app'},'',window.location.href);
+  for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();return;}}
+  if(hamOpen){closeHam();return;}
+  if(VIEW==='add'&&editId&&_hasUnsavedChanges()){showUnsavedWarning();return;}
+  if(VIEW==='dashboard'){showExitConfirm();return;}
   haptic('light');
   if(_viewHistory.length){
     var prev=_viewHistory.pop();
@@ -2915,13 +2912,11 @@ function showExitConfirm(){
 
 var _exiting = false;
 function doExitApp(){
-  _exiting = true;
-  var m = document.getElementById('exit_modal');
+  _exiting=true;
+  var m=document.getElementById('exit_modal');
   if(m) m.remove();
-  // Remove hash listener so back button closes app naturally
-  window.removeEventListener('hashchange', _hashBackHandler);
-  // Remove hash and let Android handle back press naturally (closes PWA)
-  history.back();
+  window.removeEventListener('popstate',_popstateHandler);
+  history.go(-history.length);
 }
 
 
