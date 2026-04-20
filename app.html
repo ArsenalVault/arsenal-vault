@@ -8486,7 +8486,7 @@ function _applyMergeResolutions(newOnes, resolved, data){
   var added=0, replaced=0, kept=0, skipped=0;
   // Add all non-duplicates with fresh ids to avoid collision with existing guns
   for(var i=0;i<newOnes.length;i++){
-    var g=Object.assign({}, newOnes[i], { id: Date.now()+i+Math.floor(Math.random()*1000) });
+    var g=Object.assign({}, newOnes[i], { id: gid() });
     guns.push(g);
     added++;
   }
