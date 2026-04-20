@@ -2844,10 +2844,14 @@ function handleBack(){
       if(g){FORM=Object.assign({},g);if(!FORM.photos||!FORM.photos.length)FORM.photos=FORM.photo?[FORM.photo]:[];editId=prev.editId;}
       VIEW='add';rnd();
     } else {
-      go(prev.view||'dashboard');
+      VIEW=prev.view||'dashboard';
+      if(VIEW==='dashboard') _viewHistory=[];
+      rnd();
     }
   } else {
-    go('dashboard');
+    VIEW='dashboard';
+    _viewHistory=[];
+    rnd();
   }
 }
 
