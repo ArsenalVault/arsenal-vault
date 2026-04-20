@@ -1470,11 +1470,6 @@ function getStorageSuggestions(){
 }
 function rnd(){
   if(QR_SCAN_MODE) return;
-  // DEBUG BAR v3 — remove before launch
-  var dbg=document.getElementById('_dbgbar');
-  if(!dbg){dbg=document.createElement('div');dbg.id='_dbgbar';dbg.style.cssText='position:fixed;bottom:60px;left:0;right:0;background:#e8c46a;color:#1a1d24;font-size:11px;font-weight:800;text-align:center;padding:4px;z-index:99999;letter-spacing:.05em';document.body.appendChild(dbg);}
-  dbg.textContent='v3 | VIEW:'+VIEW+' | STK:'+_viewHistory.length+' | '+(_viewHistory.map(function(x){return x.view;}).join('→')||'empty');
-  // END DEBUG BAR
   var fab=document.getElementById('fab_add');
   if(fab) fab.style.display=(VIEW==='add')?'none':'flex';
   var nav=document.getElementById('nav');
@@ -2823,11 +2818,12 @@ var _swipeStartY=0;
 function _popstateHandler(){
   if(_exiting) return;
   history.pushState({page:'app',ts:Date.now()},'',window.location.href);
+  history.pushState({page:'app',ts:Date.now()+1},'',window.location.href);
   handleBack();
 }
 
 function initNavigation(){
-  for(var x=0;x<10;x++) history.pushState({page:'app',n:x},'',window.location.href);
+  for(var x=0;x<50;x++) history.pushState({page:'app',n:x},'',window.location.href);
   window.removeEventListener('popstate',_popstateHandler);
   window.addEventListener('popstate',_popstateHandler);
 }
