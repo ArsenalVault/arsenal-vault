@@ -2826,9 +2826,13 @@ function initNavigation(){
   window.addEventListener('popstate',_popstateHandler);
 }
 
+var _backLock=false;
 function handleBack(){
+  if(_backLock) return;
+  _backLock=true;
+  setTimeout(function(){_backLock=false;},350);
   var modals=['qr_modal','label_modal','settings_modal','print_menu',
-    'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal'];
+    'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal','exit_modal'];
   for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();history.pushState({page:'app'},'',window.location.href);return;}}
   if(hamOpen){closeHam();history.pushState({page:'app'},'',window.location.href);return;}
   if(VIEW==='add'&&editId&&_hasUnsavedChanges()){showUnsavedWarning();history.pushState({page:'app'},'',window.location.href);return;}
@@ -2849,9 +2853,8 @@ function handleBack(){
       rnd();
     }
   } else {
-    VIEW='dashboard';
-    _viewHistory=[];
-    rnd();
+    if(VIEW!=='dashboard'){VIEW='dashboard';_viewHistory=[];rnd();}
+    else{showExitConfirm();}
   }
 }
 
