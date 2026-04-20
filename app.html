@@ -2841,6 +2841,7 @@ function handleBack(){
   haptic('light');
   if(_viewHistory.length){
     var prev=_viewHistory.pop();
+    toast('DBG: from='+VIEW+' to='+prev.view+' stk='+_viewHistory.length);
     if(prev.view==='detail'){
       selId=prev.selId;dTab=prev.dTab||'info';VIEW='detail';rnd();
     } else if(prev.view==='add'&&prev.editId){
@@ -2853,6 +2854,7 @@ function handleBack(){
       rnd();
     }
   } else {
+    toast('DBG: empty stk, VIEW='+VIEW);
     if(VIEW!=='dashboard'){VIEW='dashboard';_viewHistory=[];rnd();}
     else{showExitConfirm();}
   }
