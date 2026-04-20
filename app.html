@@ -1307,6 +1307,13 @@ function eh(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;
 function toast(m,t){var el=document.getElementById('toast');el.textContent=m;el.className='toast '+(t||'ok');el.style.display='block';setTimeout(function(){el.style.display='none';},3000);}
 
 var _viewHistory=[];
+function _pushViewState(){
+  var st={view:VIEW};
+  if(VIEW==='detail'){st.selId=selId;st.dTab=dTab;}
+  if(VIEW==='add'){st.editId=editId;}
+  _viewHistory.push(st);
+}
+function go(v){
   showCustodyForm=false;
   editingCustodyId=null;
   aiLoad=null;
@@ -1318,6 +1325,8 @@ var _viewHistory=[];
     }
     FORM=ef();editId=null;aiVal=null;aiDiag=null;playRack();
   }
+  if(v!==VIEW) _pushViewState();
+  if(v==='dashboard') _viewHistory=[];
   if(v==='pic'&&!picGunId&&guns.length){picGunId=guns[0].id;}
   history.pushState({page:v,ts:Date.now()},"",window.location.href);VIEW=v;rnd();
 }
@@ -1932,11 +1941,13 @@ function doSave(){
   sv();checkMilestones('save');FORM=ef();editId=null;aiVal=null;aiDiag=null;VIEW='list';rnd();
 }
 
-
+function openDet(id){
+  _pushViewState();
   selId=id;dTab='info';VIEW='detail';rnd();
 }
 
 function viewSchematics(id){
+  _pushViewState();
   selId=id;dTab='sch';SCH=null;VIEW='detail';rnd();
 }
 
@@ -2818,13 +2829,26 @@ function initNavigation(){
 function handleBack(){
   var modals=['qr_modal','label_modal','settings_modal','print_menu',
     'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal'];
-  for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();haptic('light');return;}}
-  if(hamOpen){closeHam();haptic('light');return;}
-  if(VIEW==='add'&&editId&&_hasUnsavedChanges()){showUnsavedWarning();haptic('light');return;}
-  if(VIEW==='dashboard'){showExitConfirm();haptic('light');return;}
+  for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();history.pushState({page:'app'},'',window.location.href);return;}}
+  if(hamOpen){closeHam();history.pushState({page:'app'},'',window.location.href);return;}
+  if(VIEW==='add'&&editId&&_hasUnsavedChanges()){showUnsavedWarning();history.pushState({page:'app'},'',window.location.href);return;}
+  if(VIEW==='dashboard'){showExitConfirm();history.pushState({page:'app'},'',window.location.href);return;}
+  history.pushState({page:'app'},'',window.location.href);
   haptic('light');
-  haptic('light');
-  go('dashboard');
+  if(_viewHistory.length){
+    var prev=_viewHistory.pop();
+    if(prev.view==='detail'){
+      selId=prev.selId;dTab=prev.dTab||'info';VIEW='detail';rnd();
+    } else if(prev.view==='add'&&prev.editId){
+      var g=guns.find(function(x){return x.id===prev.editId;});
+      if(g){FORM=Object.assign({},g);if(!FORM.photos||!FORM.photos.length)FORM.photos=FORM.photo?[FORM.photo]:[];editId=prev.editId;}
+      VIEW='add';rnd();
+    } else {
+      go(prev.view||'dashboard');
+    }
+  } else {
+    go('dashboard');
+  }
 }
 
 function _hasUnsavedChanges(){
@@ -5941,6 +5965,7 @@ function editGun(id){
   FORM=Object.assign({},g);
   // Migrate legacy single photo to array
   if(!FORM.photos||!FORM.photos.length)FORM.photos=FORM.photo?[FORM.photo]:[];
+  _pushViewState();
   editId=id;aiVal=null;aiDiag=null;VIEW='add';rnd();
 }
 
