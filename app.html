@@ -2815,17 +2815,18 @@ function haptic(type){
 var _swipeStartX=0;
 var _swipeStartY=0;
 
-function _popstateHandler(){
+function _hashBackHandler(){
   if(_exiting) return;
-  history.pushState({page:'app',ts:Date.now()},'',window.location.href);
-  history.pushState({page:'app',ts:Date.now()+1},'',window.location.href);
+  // Re-add the hash immediately to prevent PWA close / page navigation
+  window.location.hash='app';
   handleBack();
 }
 
 function initNavigation(){
-  for(var x=0;x<50;x++) history.pushState({page:'app',n:x},'',window.location.href);
-  window.removeEventListener('popstate',_popstateHandler);
-  window.addEventListener('popstate',_popstateHandler);
+  // Hash approach — far more reliable than pushState buffers on Android
+  window.location.hash='app';
+  window.removeEventListener('hashchange',_hashBackHandler);
+  window.addEventListener('hashchange',_hashBackHandler);
 }
 
 var _backLock=false;
@@ -2917,10 +2918,10 @@ function doExitApp(){
   _exiting = true;
   var m = document.getElementById('exit_modal');
   if(m) m.remove();
-  // Remove popstate listener so Android handles back naturally
-  window.removeEventListener('popstate', _popstateHandler);
-  // Go back through all our pushed states so Android exits
-  history.go(-history.length);
+  // Remove hash listener so back button closes app naturally
+  window.removeEventListener('hashchange', _hashBackHandler);
+  // Remove hash and let Android handle back press naturally (closes PWA)
+  history.back();
 }
 
 
