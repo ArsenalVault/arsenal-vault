@@ -2815,16 +2815,19 @@ function haptic(type){
 var _swipeStartX=0;
 var _swipeStartY=0;
 
-function _popstateHandler(){
+function _hashBackHandler(){
   if(_exiting) return;
-  history.pushState({app:true,ts:Date.now()},'',window.location.href);
+  // Restore hash via pushState — does NOT re-trigger hashchange.
+  // (Using location.hash= here would fire a second hashchange and call handleBack twice.)
+  history.pushState(null,'',location.pathname+location.search+'#app');
   handleBack();
 }
 
 function initNavigation(){
-  history.pushState({app:true},'',window.location.href);
-  window.removeEventListener('popstate',_popstateHandler);
-  window.addEventListener('popstate',_popstateHandler);
+  // Set initial hash silently via pushState — no hashchange event fired.
+  history.pushState(null,'',location.pathname+location.search+'#app');
+  window.removeEventListener('hashchange',_hashBackHandler);
+  window.addEventListener('hashchange',_hashBackHandler);
 }
 
 var _backLock=false;
@@ -2915,7 +2918,7 @@ function doExitApp(){
   _exiting=true;
   var m=document.getElementById('exit_modal');
   if(m) m.remove();
-  window.removeEventListener('popstate',_popstateHandler);
+  window.removeEventListener('hashchange',_hashBackHandler);
   history.go(-history.length);
 }
 
