@@ -1306,7 +1306,7 @@ function bj(l,c){return '<span class="badge" style="background:'+c+'25;color:'+c
 function eh(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function toast(m,t){var el=document.getElementById('toast');el.textContent=m;el.className='toast '+(t||'ok');el.style.display='block';setTimeout(function(){el.style.display='none';},3000);}
 
-function go(v){
+var _viewHistory=[];
   showCustodyForm=false;
   editingCustodyId=null;
   aiLoad=null;
@@ -1318,7 +1318,7 @@ function go(v){
     }
     FORM=ef();editId=null;aiVal=null;aiDiag=null;playRack();
   }
-  if(v==='pic'&&!picGunId&&guns.length){picGunId=guns[0].id;}
+  if(v!==VIEW) _pushViewState();
   history.pushState({page:v,ts:Date.now()},"",window.location.href);VIEW=v;rnd();
 }
 
@@ -2818,11 +2818,11 @@ function initNavigation(){
 function handleBack(){
   var modals=['qr_modal','label_modal','settings_modal','print_menu',
     'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal'];
-  for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();history.pushState({page:'app'},'',window.location.href);return;}}
-  if(hamOpen){closeHam();history.pushState({page:'app'},'',window.location.href);return;}
-  if(VIEW==='add'&&editId&&_hasUnsavedChanges()){showUnsavedWarning();history.pushState({page:'app'},'',window.location.href);return;}
-  if(VIEW==='dashboard'){showExitConfirm();history.pushState({page:'app'},'',window.location.href);return;}
-  history.pushState({page:'app'},'',window.location.href);
+  for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();haptic('light');return;}}
+  if(hamOpen){closeHam();haptic('light');return;}
+  if(VIEW==='add'&&editId&&_hasUnsavedChanges()){showUnsavedWarning();haptic('light');return;}
+  if(VIEW==='dashboard'){showExitConfirm();haptic('light');return;}
+  haptic('light');
   haptic('light');
   go('dashboard');
 }
