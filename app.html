@@ -2815,7 +2815,26 @@ function haptic(type){
 var _swipeStartX=0;
 var _swipeStartY=0;
 
+// ── DIAGNOSTIC OVERLAY (remove after debugging) ──
+function _dbg(msg){
+  try{
+    var o=document.getElementById('_dbg_overlay');
+    if(!o){
+      o=document.createElement('div');
+      o.id='_dbg_overlay';
+      o.style.cssText='position:fixed;top:0;right:0;z-index:99999;background:rgba(0,0,0,.88);color:#60e880;font:11px monospace;padding:6px 10px;max-width:70%;white-space:pre-wrap;pointer-events:none;line-height:1.3';
+      document.body.appendChild(o);
+    }
+    var t=new Date().toTimeString().slice(0,8);
+    o.textContent=(t+' '+msg+'\n'+o.textContent).slice(0,600);
+  }catch(e){}
+}
+window.addEventListener('load',function(){
+  _dbg('LOAD hashes='+(location.hash?'Y':'N')+' arsenal='+(window._arsenal&&window._arsenal.ready?'Y':'N'));
+});
+
 function _hashBackHandler(){
+  _dbg('HASH exit='+_exiting+' lock='+_backLock+' view='+VIEW);
   if(_exiting) return;
   // Always replenish buffer — must maintain history depth even when debouncing.
   // If we skip pushState when locked, the browser consumes an entry with nothing
@@ -2838,21 +2857,23 @@ function initNavigation(){
 
 var _backLock=false;
 function handleBack(){
+  _dbg('BACK view='+VIEW+' rtab='+(typeof reportTab!=='undefined'?reportTab:'n/a')+' lock='+_backLock);
   if(_backLock) return;
   _backLock=true;
   setTimeout(function(){_backLock=false;},350);
   var modals=['qr_modal','label_modal','settings_modal','print_menu',
     'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal','exit_modal'];
-  for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();return;}}
-  if(hamOpen){closeHam();return;}
-  if(VIEW==='add'&&editId&&_hasUnsavedChanges()){showUnsavedWarning();return;}
+  for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){_dbg(' -> close '+modals[i]);m.remove();return;}}
+  if(hamOpen){_dbg(' -> close ham');closeHam();return;}
+  if(VIEW==='add'&&editId&&_hasUnsavedChanges()){_dbg(' -> unsaved warn');showUnsavedWarning();return;}
   // ── Explicit back hierarchy ──
-  if(VIEW==='detail'){haptic('light');go('list');return;}
-  if(VIEW==='reports'&&reportTab!=='worth'){haptic('light');reportTab='worth';rnd();return;}
-  if(VIEW==='list'){haptic('light');go('dashboard');return;}
-  if(VIEW==='reports'){haptic('light');go('dashboard');return;}
-  if(VIEW==='dashboard'){showExitConfirm();return;}
+  if(VIEW==='detail'){_dbg(' -> detail->list');haptic('light');go('list');return;}
+  if(VIEW==='reports'&&reportTab!=='worth'){_dbg(' -> rtab->worth');haptic('light');reportTab='worth';rnd();return;}
+  if(VIEW==='list'){_dbg(' -> list->dash');haptic('light');go('dashboard');return;}
+  if(VIEW==='reports'){_dbg(' -> reports->dash');haptic('light');go('dashboard');return;}
+  if(VIEW==='dashboard'){_dbg(' -> exit confirm');showExitConfirm();return;}
   // Fallback (pic, add without unsaved changes)
+  _dbg(' -> fallback dash');
   haptic('light');
   go('dashboard');
 }
