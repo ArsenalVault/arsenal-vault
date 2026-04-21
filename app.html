@@ -2846,26 +2846,15 @@ function handleBack(){
   for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();return;}}
   if(hamOpen){closeHam();return;}
   if(VIEW==='add'&&editId&&_hasUnsavedChanges()){showUnsavedWarning();return;}
+  // ── Explicit back hierarchy ──
+  if(VIEW==='detail'){haptic('light');go('list');return;}
+  if(VIEW==='reports'&&reportTab!=='worth'){haptic('light');reportTab='worth';rnd();return;}
+  if(VIEW==='list'){haptic('light');go('dashboard');return;}
+  if(VIEW==='reports'){haptic('light');go('dashboard');return;}
   if(VIEW==='dashboard'){showExitConfirm();return;}
+  // Fallback (pic, add without unsaved changes)
   haptic('light');
-  if(_viewHistory.length){
-    var prev=_viewHistory.pop();
-    if(prev.view==='detail'){
-      selId=prev.selId;dTab=prev.dTab||'info';VIEW='detail';rnd();
-    } else if(prev.view==='add'&&prev.editId){
-      var g=guns.find(function(x){return x.id===prev.editId;});
-      if(g){FORM=Object.assign({},g);if(!FORM.photos||!FORM.photos.length)FORM.photos=FORM.photo?[FORM.photo]:[];editId=prev.editId;}
-      VIEW='add';rnd();
-    } else {
-      VIEW=prev.view||'dashboard';
-      if(VIEW==='reports'&&prev.reportTab) reportTab=prev.reportTab;
-      if(VIEW==='dashboard') _viewHistory=[];
-      rnd();
-    }
-  } else {
-    if(VIEW!=='dashboard'){VIEW='dashboard';_viewHistory=[];rnd();}
-    else{showExitConfirm();}
-  }
+  go('dashboard');
 }
 
 function _hasUnsavedChanges(){
