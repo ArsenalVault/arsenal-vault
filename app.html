@@ -2829,30 +2829,50 @@ function _dbg(msg){
     o.textContent=(t+' '+msg+'\n'+o.textContent).slice(0,600);
   }catch(e){}
 }
-window.addEventListener('load',function(){
-  _dbg('LOAD hashes='+(location.hash?'Y':'N')+' arsenal='+(window._arsenal&&window._arsenal.ready?'Y':'N'));
-});
 
 function _hashBackHandler(){
   _dbg('HASH exit='+_exiting+' lock='+_backLock+' view='+VIEW);
   if(_exiting) return;
-  // Always replenish buffer — must maintain history depth even when debouncing.
-  // If we skip pushState when locked, the browser consumes an entry with nothing
-  // pushed back, draining the buffer and eventually escaping to pre-app history.
   history.pushState(null,'',location.pathname+location.search+'#app-'+Date.now());
   if(_backLock) return;
   handleBack();
 }
 
+// Navigation API handler — Chrome 102+. Fires on all navigation (back/forward
+// too). Intercepts at a lower level than hashchange and is immune to Chrome's
+// anti-history-trap behavior that was blocking the old approach.
+function _navBackHandler(e){
+  if(_exiting) return;
+  if(!e.canIntercept) return;          // external nav — let it happen
+  if(e.hashChange) return;              // ignore our own hash nudges
+  if(e.downloadRequest!==null) return;
+  if(e.navigationType!=='traverse') return;  // only handle back/forward
+  _dbg('NAV traverse lock='+_backLock+' view='+VIEW);
+  e.intercept({handler:function(){
+    if(_backLock) return;
+    handleBack();
+  }});
+}
+
 function initNavigation(){
-  // Push 5 unique buffer entries — absorbs fast consecutive back presses
-  // before handler has time to refill. Handler pushes 1 back per press,
-  // so buffer never runs out.
-  for(var i=0;i<5;i++){
-    history.pushState(null,'',location.pathname+location.search+'#app-'+(Date.now()+i));
+  var used='';
+  if('navigation' in window && typeof navigation.addEventListener==='function'){
+    try{
+      navigation.removeEventListener('navigate',_navBackHandler);
+      navigation.addEventListener('navigate',_navBackHandler);
+      used='nav-api';
+    }catch(e){}
   }
-  window.removeEventListener('hashchange',_hashBackHandler);
-  window.addEventListener('hashchange',_hashBackHandler);
+  if(used!=='nav-api'){
+    // Fallback for browsers without Navigation API
+    for(var i=0;i<5;i++){
+      history.pushState(null,'',location.pathname+location.search+'#app-'+(Date.now()+i));
+    }
+    window.removeEventListener('hashchange',_hashBackHandler);
+    window.addEventListener('hashchange',_hashBackHandler);
+    used='hashchange';
+  }
+  _dbg('INIT nav='+used);
 }
 
 var _backLock=false;
@@ -2860,7 +2880,7 @@ function handleBack(){
   _dbg('BACK view='+VIEW+' rtab='+(typeof reportTab!=='undefined'?reportTab:'n/a')+' lock='+_backLock);
   if(_backLock) return;
   _backLock=true;
-  setTimeout(function(){_backLock=false;},350);
+  setTimeout(function(){_backLock=false;},250);
   var modals=['qr_modal','label_modal','settings_modal','print_menu',
     'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal','exit_modal'];
   for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){_dbg(' -> close '+modals[i]);m.remove();return;}}
@@ -2872,7 +2892,6 @@ function handleBack(){
   if(VIEW==='list'){_dbg(' -> list->dash');haptic('light');go('dashboard');return;}
   if(VIEW==='reports'){_dbg(' -> reports->dash');haptic('light');go('dashboard');return;}
   if(VIEW==='dashboard'){_dbg(' -> exit confirm');showExitConfirm();return;}
-  // Fallback (pic, add without unsaved changes)
   _dbg(' -> fallback dash');
   haptic('light');
   go('dashboard');
