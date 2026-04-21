@@ -1328,7 +1328,7 @@ function go(v){
   if(v!==VIEW) _pushViewState();
   if(v==='dashboard') _viewHistory=[];
   if(v==='pic'&&!picGunId&&guns.length){picGunId=guns[0].id;}
-  history.pushState({page:v,ts:Date.now()},"",window.location.href);VIEW=v;rnd();
+  VIEW=v;rnd();
 }
 
 function stats(){
