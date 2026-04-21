@@ -2926,9 +2926,7 @@ function doExitApp(){
   var m=document.getElementById('exit_modal');
   if(m) m.remove();
   window.removeEventListener('hashchange',_hashBackHandler);
-  // Replace current entry with landing page — actual page navigation, not pushState.
-  // history.back() stays on app.html (same document, no reload) so app never closes.
-  window.location.replace(location.href.split('#')[0].replace(/app\.html$/,''));
+  window.close();
 }
 
 
