@@ -1311,6 +1311,7 @@ function _pushViewState(){
   var st={view:VIEW};
   if(VIEW==='detail'){st.selId=selId;st.dTab=dTab;}
   if(VIEW==='add'){st.editId=editId;}
+  if(VIEW==='reports'){st.reportTab=reportTab;}
   _viewHistory.push(st);
 }
 function go(v){
@@ -1967,12 +1968,11 @@ function deleteGun(id){
 // ── REPORTS VIEW ──────────────────────────────────────────────────────
 function rReports(){
   var tabs='<div class="tab-sub">'
-    +'<button class="tab'+(reportTab==='worth'?' on':'')+'" onclick="reportTab=\'worth\';rnd()">&#128176; Worth</button>'
-
-    +'<button class="tab'+(reportTab==='maint'?' on':'')+'" onclick="reportTab=\'maint\';rnd()">&#129529; Cleaning</button>'
-    +'<button class="tab'+(reportTab==='ins'?' on':'')+'" onclick="reportTab=\'ins\';rnd()">&#128196; Insurance</button>'
-    +'<button class="tab'+(reportTab==='theft'?' on':'')+'" onclick="reportTab=\'theft\';rnd()">&#128272; Theft Report</button>'+'<button class="tab'+(reportTab==='milestones'?' on':'')+'" onclick="reportTab=\'milestones\';rnd()">&#127942; Milestones</button>'
-    +'<button class="tab'+(reportTab==='custody'?' on':'')+'" onclick="reportTab=\'custody\';rnd()">&#128275; Custody</button>'
+    +'<button class="tab'+(reportTab==='worth'?' on':'')+'" onclick="if(reportTab!==\'worth\'){_pushViewState();reportTab=\'worth\';rnd()}">&#128176; Worth</button>'
+    +'<button class="tab'+(reportTab==='maint'?' on':'')+'" onclick="if(reportTab!==\'maint\'){_pushViewState();reportTab=\'maint\';rnd()}">&#129529; Cleaning</button>'
+    +'<button class="tab'+(reportTab==='ins'?' on':'')+'" onclick="if(reportTab!==\'ins\'){_pushViewState();reportTab=\'ins\';rnd()}">&#128196; Insurance</button>'
+    +'<button class="tab'+(reportTab==='theft'?' on':'')+'" onclick="if(reportTab!==\'theft\'){_pushViewState();reportTab=\'theft\';rnd()}">&#128272; Theft Report</button>'+'<button class="tab'+(reportTab==='milestones'?' on':'')+'" onclick="if(reportTab!==\'milestones\'){_pushViewState();reportTab=\'milestones\';rnd()}">&#127942; Milestones</button>'
+    +'<button class="tab'+(reportTab==='custody'?' on':'')+'" onclick="if(reportTab!==\'custody\'){_pushViewState();reportTab=\'custody\';rnd()}">&#128275; Custody</button>'
     +'</div>';
 
   var body='';
@@ -2817,15 +2817,12 @@ var _swipeStartY=0;
 
 function _hashBackHandler(){
   if(_exiting) return;
-  // Restore hash via pushState — does NOT re-trigger hashchange.
-  // (Using location.hash= here would fire a second hashchange and call handleBack twice.)
-  history.pushState(null,'',location.pathname+location.search+'#app');
+  history.pushState(null,'',location.pathname+location.search+'#app-'+Date.now());
   handleBack();
 }
 
 function initNavigation(){
-  // Set initial hash silently via pushState — no hashchange event fired.
-  history.pushState(null,'',location.pathname+location.search+'#app');
+  history.pushState(null,'',location.pathname+location.search+'#app-0');
   window.removeEventListener('hashchange',_hashBackHandler);
   window.addEventListener('hashchange',_hashBackHandler);
 }
@@ -2852,6 +2849,7 @@ function handleBack(){
       VIEW='add';rnd();
     } else {
       VIEW=prev.view||'dashboard';
+      if(VIEW==='reports'&&prev.reportTab) reportTab=prev.reportTab;
       if(VIEW==='dashboard') _viewHistory=[];
       rnd();
     }
@@ -2919,7 +2917,7 @@ function doExitApp(){
   var m=document.getElementById('exit_modal');
   if(m) m.remove();
   window.removeEventListener('hashchange',_hashBackHandler);
-  history.go(-history.length);
+  history.back();
 }
 
 
