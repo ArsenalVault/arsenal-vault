@@ -2817,12 +2817,18 @@ var _swipeStartY=0;
 
 function _hashBackHandler(){
   if(_exiting) return;
+  if(_backLock) return; // Check BEFORE pushState — prevents orphaned history entries on double-fires
   history.pushState(null,'',location.pathname+location.search+'#app-'+Date.now());
   handleBack();
 }
 
 function initNavigation(){
-  history.pushState(null,'',location.pathname+location.search+'#app-0');
+  // Push 5 unique buffer entries — absorbs fast consecutive back presses
+  // before handler has time to refill. Handler pushes 1 back per press,
+  // so buffer never runs out.
+  for(var i=0;i<5;i++){
+    history.pushState(null,'',location.pathname+location.search+'#app-'+(Date.now()+i));
+  }
   window.removeEventListener('hashchange',_hashBackHandler);
   window.addEventListener('hashchange',_hashBackHandler);
 }
@@ -2917,7 +2923,9 @@ function doExitApp(){
   var m=document.getElementById('exit_modal');
   if(m) m.remove();
   window.removeEventListener('hashchange',_hashBackHandler);
-  history.back();
+  // Replace current entry with landing page — actual page navigation, not pushState.
+  // history.back() stays on app.html (same document, no reload) so app never closes.
+  window.location.replace(location.href.split('#')[0].replace(/app\.html$/,''));
 }
 
 
