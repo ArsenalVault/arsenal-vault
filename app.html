@@ -2817,8 +2817,11 @@ var _swipeStartY=0;
 
 function _hashBackHandler(){
   if(_exiting) return;
-  if(_backLock) return; // Check BEFORE pushState — prevents orphaned history entries on double-fires
+  // Always replenish buffer — must maintain history depth even when debouncing.
+  // If we skip pushState when locked, the browser consumes an entry with nothing
+  // pushed back, draining the buffer and eventually escaping to pre-app history.
   history.pushState(null,'',location.pathname+location.search+'#app-'+Date.now());
+  if(_backLock) return;
   handleBack();
 }
 
