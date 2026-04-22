@@ -2369,6 +2369,11 @@ var appSettings = {
   pinEnabled: false,
   tier: 'free',
   devMode: false,
+  licenseKey: null,           // LS license key (UUID)
+  licenseInstanceId: null,    // LS activation instance ID (UUID)
+  licenseStatus: null,        // 'active' | 'inactive' | 'expired' | 'disabled'
+  licenseLastCheck: null,     // ISO timestamp of last /v1/licenses/validate call
+  licenseEmail: null,         // from meta.customer_email for support lookup
   ownerProfile: {
     name:'', address:'', city:'', state:'', zip:'',
     phone:'', email:'', dlState:'', dlType:'', dlNumber:''
