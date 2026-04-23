@@ -922,7 +922,7 @@ td{padding:13px 14px;font-size:15px;border-bottom:1px solid #252c38;vertical-ali
   <div class="footer">ArsenalDB · PERSONAL USE ONLY · DATA STORED IN YOUR BROWSER</div>
 </div>
 <div id="toast" class="toast"></div>
-<input type="file" id="photoIn" accept="image/*" multiple style="display:none"/>
+<input type="file" id="photoIn" accept="image/*" capture="environment" multiple style="display:none"/>
 <input type="file" id="schIn" accept="image/*,.pdf" style="display:none"/>
 <input type="file" id="importIn" accept=".json" style="display:none"/>
 <script>
@@ -1357,7 +1357,26 @@ function gid(){return Date.now().toString(36)+Math.random().toString(36).substr(
 function fm(v){return v?'$'+parseFloat(v).toLocaleString('en-US',{minimumFractionDigits:0}):'—';}
 function bj(l,c){return '<span class="badge" style="background:'+c+'25;color:'+c+';border:1px solid '+c+'60">'+l+'</span>';}
 function eh(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// T1.8: Inline QR SVG icon. Matches the QR button in firearm detail toolbar.
+// `size` in px (default 18). Uses currentColor so inherits text color.
+function _qrSvg(size){
+  var s = size || 18;
+  return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 20 20" style="display:inline-block;vertical-align:middle"><rect x="1" y="1" width="6" height="6" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="3" y="3" width="2" height="2" fill="currentColor"/><rect x="13" y="1" width="6" height="6" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="15" y="3" width="2" height="2" fill="currentColor"/><rect x="1" y="13" width="6" height="6" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="3" y="15" width="2" height="2" fill="currentColor"/><rect x="9" y="9" width="2" height="2" fill="currentColor"/><rect x="13" y="11" width="2" height="2" fill="currentColor"/><rect x="11" y="13" width="2" height="2" fill="currentColor"/><rect x="15" y="15" width="2" height="2" fill="currentColor"/></svg>';
+}
 function toast(m,t){var el=document.getElementById('toast');el.textContent=m;el.className='toast '+(t||'ok');el.style.display='block';setTimeout(function(){el.style.display='none';},3000);}
+
+// T1.8 Fix C: photo-picker wrapper. Shows a landscape tip once per session,
+// then opens the native file/camera picker. Avoids nagging on every shot.
+var _photoTipShown = false;
+function _openPhotoPicker(){
+  if(!_photoTipShown){
+    _photoTipShown = true;
+    toast('📱 Tip: rotate to landscape for rifles & shotguns');
+    setTimeout(function(){ document.getElementById('photoIn').click(); }, 400);
+  } else {
+    document.getElementById('photoIn').click();
+  }
+}
 
 var _viewHistory=[];
 function _pushViewState(){
@@ -2078,7 +2097,7 @@ function rAdd(){
     return '<div class="photo-wrap-rel"><img src="'+src+'" class="photo-thumb'+(i===0?' main':'')+'" onclick="openLb(FORM.photos&&FORM.photos.length?FORM.photos:(FORM.photo?[FORM.photo]:[]),'+i+')"/>'
       +'<button class="photo-del" onclick="removePhoto('+i+')" title="Remove">&#10005;</button></div>';
   }).join('')+'</div>':'<div class="ph-none" style="width:100%;text-align:center;padding:20px">No Photos</div>';
-  var phbtn='<button class="btn-g" onclick="document.getElementById(\'photoIn\').click()" style="background:#141920;border:1px solid #A88433;color:#D5B15C">&#128247; '+(photos.length>0?'Add Photo':'Add Photo')+'</button>';
+  var phbtn='<button class="btn-g" onclick="_openPhotoPicker()" style="background:#141920;border:1px solid #A88433;color:#D5B15C">&#128247; '+(photos.length>0?'Add Photo':'Add Photo')+'</button>';
   if(photos.length>0) phbtn+=' <span style="color:#8a95a8;font-size:12px">'+photos.length+'/10</span>';
 
   var header='<div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;justify-content:space-between">'
@@ -2112,7 +2131,14 @@ function rAdd(){
   }
 
   // ── FULL FORM MODE ────────────────────────────────────────────────
-  var photoHtml='<div style="padding-bottom:14px">'+phGrid+'<div style="display:flex;align-items:center;gap:10px;margin-top:8px">'+phbtn+'<span style="font-size:11px;color:#4a5568">JPG, PNG · First photo is main</span></div></div>';
+  // T1.8 Fix D: banner appears when newly-loaded photos are portrait-shaped
+  // and the app is in portrait. User taps "Rotate All" to fix, or ignores it.
+  var rotateBanner = FORM._hasPortraitPhotos ?
+    '<div style="background:#2a2410;border:1px solid #e8c46a60;border-radius:8px;padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+      +'<span style="font-size:13px;color:#e8c46a;flex:1;min-width:180px">📐 Portrait photos detected. Rotate to landscape?</span>'
+      +'<button onclick="_rotateAllPortrait()" style="background:#e8c46a;color:#1a1d24;border:none;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">Rotate All</button>'
+    +'</div>' : '';
+  var photoHtml='<div style="padding-bottom:14px">'+rotateBanner+phGrid+'<div style="display:flex;align-items:center;gap:10px;margin-top:8px">'+phbtn+'<span style="font-size:11px;color:#4a5568">JPG, PNG · First photo is main</span></div></div>';
 
   var basicHtml='<div class="form-grid">'
     +'<div class="form-group"><label class="lbl">Make *</label><div class="ac-wrap"><input type="text" id="f_make" value="'+eh(f.make)+'" placeholder="e.g. Smith &amp; Wesson" autocomplete="off" oninput="acInput(this.value)" onkeydown="acKey(event)" onblur="acBlur()"/><div id="ac_list" class="ac-list"></div></div></div>'
@@ -2617,7 +2643,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-D';   // bump on every revision
+var BUILD_TAG   = '2026-04-23-E';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -5274,7 +5300,7 @@ function buildHamMenu(){
           +'<span class="ham-item-icon">&#9113;</span><span>Print Sheet</span>'
         +'</div>'
         +'<div class="ham-item" onclick="hamAction(function(){openQR(\''+selId+'\')})" style="color:#e8c46a">'
-          +'<span class="ham-item-icon">&#9646;&#9646;</span><span>Generate QR Code</span>'
+          +'<span class="ham-item-icon">'+_qrSvg(18)+'</span><span>Generate QR Code</span>'
         +'</div>'
 ;
     }
@@ -5289,7 +5315,7 @@ function buildHamMenu(){
         +'<span class="ham-item-icon">&#128190;</span><span>Save as PDF</span>'
       +'</div>'
       +'<div class="ham-item" onclick="hamAction(function(){openQR(\''+editId+'\')})" style="color:#e8c46a">'
-        +'<span class="ham-item-icon">&#9646;&#9646;</span><span>Generate QR Code</span>'
+        +'<span class="ham-item-icon">'+_qrSvg(18)+'</span><span>Generate QR Code</span>'
       +'</div>'
       +(checkNFCSupport()?
         '<div class="ham-item" onclick="hamAction(function(){writeNFCTag(\''+editId+'\')})" style="color:#60e880">'
@@ -5388,7 +5414,7 @@ function toggleEditMenu(id){
       +'<span>&#128190;</span><span>Save as PDF</span>'
     +'</div>'
     +'<div onclick="document.getElementById(\'edit_action_menu\').remove();setTimeout(function(){openQR(\''+id+'\');},50)" style="display:flex;align-items:center;gap:10px;padding:13px 16px;color:#e8c46a;font-size:14px;cursor:pointer;border-bottom:1px solid #1e2535" onmouseover="this.style.background=\'#2a3040\'" onmouseout="this.style.background=\'\'">'
-      +'<span>&#9646;&#9646;</span><span>Generate QR Code</span>'
+      +'<span>'+_qrSvg(18)+'</span><span>Generate QR Code</span>'
     +'</div>'
     +(checkNFCSupport()?'<div onclick="document.getElementById(\'edit_action_menu\').remove();writeNFCTag(\''+id+'\')" style="display:flex;align-items:center;gap:10px;padding:13px 16px;color:#60e880;font-size:14px;cursor:pointer;border-bottom:1px solid #1e2535" onmouseover="this.style.background=\'#2a3040\'" onmouseout="this.style.background=\'\'">'
       +'<span>&#128225;</span><span>Write NFC Tag</span>'
@@ -7730,11 +7756,100 @@ function onPhoto(){
       FORM.photos.push(e.target.result);
       if(FORM.photos.length>0)FORM.photo=FORM.photos[0];
       loaded++;
-      if(loaded===files.length)rnd();
+      if(loaded===files.length){
+        // T1.8 Fix D: after all photos loaded, check if any are portrait
+        // and app is in portrait orientation. If so, flag so the banner shows.
+        _checkPortraitPhotos(function(){ rnd(); });
+      }
     };
     r.readAsDataURL(file);
   });
   this.value='';
+}
+
+// T1.8 Fix D: check FORM.photos for portrait-oriented images. Sets
+// FORM._hasPortraitPhotos when found. App-portrait check prevents the
+// banner from appearing if the user is holding the phone landscape
+// (they likely took the photo intentionally).
+function _checkPortraitPhotos(cb){
+  FORM._hasPortraitPhotos = false;
+  if(!FORM.photos || !FORM.photos.length){ cb && cb(); return; }
+  // Only show banner if app itself is in portrait — signals user likely
+  // shot portrait by accident rather than intentionally.
+  var appIsPortrait = window.innerHeight > window.innerWidth;
+  if(!appIsPortrait){ cb && cb(); return; }
+  var checked = 0;
+  var hasPortrait = false;
+  FORM.photos.forEach(function(src){
+    var img = new Image();
+    img.onload = function(){
+      // 1.2× threshold — clearly portrait, not nearly-square
+      if(img.height > img.width * 1.2) hasPortrait = true;
+      checked++;
+      if(checked === FORM.photos.length){
+        FORM._hasPortraitPhotos = hasPortrait;
+        cb && cb();
+      }
+    };
+    img.onerror = function(){
+      checked++;
+      if(checked === FORM.photos.length){
+        FORM._hasPortraitPhotos = hasPortrait;
+        cb && cb();
+      }
+    };
+    img.src = src;
+  });
+}
+
+// T1.8 Fix D: rotate a single dataURL 90° clockwise via canvas.
+// Returns a promise that resolves to the rotated dataURL (JPEG).
+function _rotatePhoto90(dataUrl){
+  return new Promise(function(resolve, reject){
+    var img = new Image();
+    img.onload = function(){
+      var canvas = document.createElement('canvas');
+      canvas.width = img.height;
+      canvas.height = img.width;
+      var ctx = canvas.getContext('2d');
+      ctx.translate(canvas.width, 0);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(img, 0, 0);
+      try{
+        resolve(canvas.toDataURL('image/jpeg', 0.92));
+      }catch(e){ reject(e); }
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+// T1.8 Fix D: rotate all portrait photos in FORM.photos 90° clockwise.
+// Invoked by the "Rotate All" banner button. Preserves ordering.
+function _rotateAllPortrait(){
+  if(!FORM.photos || !FORM.photos.length) return;
+  toast('Rotating photos...');
+  var promises = FORM.photos.map(function(src){
+    return new Promise(function(resolve){
+      var img = new Image();
+      img.onload = function(){
+        if(img.height > img.width * 1.2){
+          _rotatePhoto90(src).then(resolve).catch(function(){ resolve(src); });
+        } else {
+          resolve(src);
+        }
+      };
+      img.onerror = function(){ resolve(src); };
+      img.src = src;
+    });
+  });
+  Promise.all(promises).then(function(rotated){
+    FORM.photos = rotated;
+    if(FORM.photos.length > 0) FORM.photo = FORM.photos[0];
+    FORM._hasPortraitPhotos = false;
+    toast('Photos rotated');
+    rnd();
+  });
 }
 
 function removePhoto(idx){
