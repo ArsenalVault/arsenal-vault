@@ -1398,6 +1398,227 @@ function filtered(){
 
 
 
+// ── WORK ORDER FOUNDATION ───────────────────────────────────────────
+// T1 (2026-04-23-A): foundation layer for upgraded work orders.
+// This section defines the canonical v1 WO schema, the status engine,
+// permanent numbering, and legacy-record migration. No UI changes here.
+//
+// ArsenalDB Packet Format (v1) — single source of truth
+// ------------------------------------------------------
+// A work order (WO) is a JSON object with this shape. Stored as a JSON
+// string inside gun.maintenanceLog (array of WO objects, newest first).
+//
+//   {
+//     schema_v:          1,                      // version marker (required)
+//     id:                "<timestamp-b36-rand>", // legacy gid()
+//     wo_number:         "WO-K7F3-2026-001",     // permanent, set at create
+//     type:              "Cleaning & Lubrication",
+//     date:              "2026-04-23",           // work date (user-entered)
+//     created_at:        "2026-04-23T14:30:00Z", // creation timestamp
+//     tech:              "Self",
+//     status:            "Completed",            // see WO_STATUSES
+//     notes:             "...",
+//     snapshot: {                                // frozen firearm identity
+//       make:"", model:"", serialNumber:"", type:"", caliber:""
+//     },
+//     safety_concern:          false,            // guard flag
+//     safety_concern_resolved: false,            // cleared manually to allow Completed
+//
+//     // Added by T2 (Free UI):
+//     parts_freeform:    "",                     // single text field
+//     checklist:         null,                   // null = not shown; array when shown
+//
+//     // Added by T3+ (Pro):
+//     parts_structured:  [],                     // [{name, qty, cost}]
+//     torque_notes:      "",
+//     threadlocker:      "",
+//     lubricants:        "",
+//     round_count:       null,                   // integer or null
+//     test_fire:         null,                   // object or null
+//
+//     // Added by T9 (Pro+):
+//     template_id:       null,
+//
+//     // Reserved for v1.2 (Web Crypto tamper-evidence):
+//     signature:         null
+//   }
+//
+// Upgrade policy (additive-only):
+//   - New fields may be added at any time. Never rename or remove in place.
+//   - Reads tolerate missing fields (treated as defaults).
+//   - Writes always produce the full current shape.
+//   - Legacy records (pre-schema_v) are upgraded transparently on read.
+//
+// Packet export (T2+): a single .html file with the WO(s) rendered as a
+// styled readable document, plus a <script type="application/json"> block
+// containing the full v1 record(s) for machine import by ArsenalDB.
+// ----------------------------------------------------------------------
+
+// Current schema version. Bump only when adding fields; never for removals/renames.
+var WO_SCHEMA_V = 1;
+
+// Canonical status list. Order matters for UI display in later tranches.
+var WO_STATUSES = ['Scheduled','In Progress','On Hold','Completed','Canceled'];
+
+// Work types that trigger the function-check checklist in T2.
+// All other types skip the checklist entirely (minor work path).
+var WO_MAJOR_WORK_TYPES = ['Part Replacement','Repair','Modification','Professional Service'];
+
+// Generate a 4-char uppercase alphanumeric device prefix.
+// Excludes confusing chars (0,O,1,I,L) for human readability.
+// NOT cryptographic — uses Math.random. Collision space is 31^4 = ~924k,
+// sufficient for the "different devices shouldn't collide in WO numbers" use case.
+function _woGenerateDevicePrefix(){
+  var chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 31 chars, unambiguous
+  var out = '';
+  for(var i=0;i<4;i++) out += chars.charAt(Math.floor(Math.random()*chars.length));
+  return out;
+}
+
+// Generate the next permanent WO number for a given firearm.
+// Format: WO-{devicePrefix}-{year}-{seq} where seq is per-firearm per-year.
+// Example: WO-K7F3-2026-001
+// Reads existing maintenanceLog on the firearm to compute next seq.
+function _woGenerateNumber(gun){
+  var prefix = (appSettings && appSettings.devicePrefix) || 'XXXX';
+  var year   = new Date().getFullYear();
+  var existing = [];
+  try{
+    if(gun && gun.maintenanceLog){
+      var parsed = JSON.parse(gun.maintenanceLog);
+      if(Array.isArray(parsed)) existing = parsed;
+    }
+  }catch(e){ existing = []; }
+  // Count existing WOs on this firearm that were created in the same year.
+  // Use wo_number prefix match (not created_at) so that imported records
+  // with valid v1 wo_numbers don't inflate the counter incorrectly.
+  var yearTag = '-'+year+'-';
+  var seq = 1;
+  existing.forEach(function(wo){
+    if(wo && wo.wo_number && wo.wo_number.indexOf(yearTag)>-1){
+      // Parse trailing 3-digit sequence
+      var m = wo.wo_number.match(/-(\d{3})$/);
+      if(m){
+        var n = parseInt(m[1],10);
+        if(n >= seq) seq = n+1;
+      }
+    }
+  });
+  return 'WO-'+prefix+'-'+year+'-'+String(seq).padStart(3,'0');
+}
+
+// Migrate a legacy WO record to v1 shape.
+// Idempotent — a v1 record passed in is returned essentially unchanged
+// (with any missing reserved fields filled from defaults).
+// Non-mutating — returns a new object.
+function _woUpgradeRecord(rec){
+  if(!rec || typeof rec !== 'object') rec = {};
+  var isV1 = rec.schema_v === WO_SCHEMA_V;
+  // Build v1 shape with defaults, then layer in whatever the record has.
+  var upgraded = {
+    schema_v:          WO_SCHEMA_V,
+    id:                rec.id || (Date.now().toString(36)+Math.random().toString(36).substr(2)),
+    wo_number:         rec.wo_number || '',
+    type:              rec.type || 'Other',
+    date:              rec.date || '',
+    created_at:        rec.created_at || (rec.date ? new Date(rec.date+'T00:00:00').toISOString() : new Date().toISOString()),
+    tech:              rec.tech || '',
+    status:            rec.status || 'Completed',
+    notes:             rec.notes || '',
+    snapshot:          rec.snapshot || {make:'',model:'',serialNumber:'',type:'',caliber:''},
+    safety_concern:          rec.safety_concern === true,
+    safety_concern_resolved: rec.safety_concern_resolved === true,
+    parts_freeform:    (typeof rec.parts_freeform === 'string') ? rec.parts_freeform : '',
+    checklist:         (rec.checklist === undefined) ? null : rec.checklist,
+    parts_structured:  Array.isArray(rec.parts_structured) ? rec.parts_structured : [],
+    torque_notes:      rec.torque_notes || '',
+    threadlocker:      rec.threadlocker || '',
+    lubricants:        rec.lubricants || '',
+    round_count:       (typeof rec.round_count === 'number') ? rec.round_count : null,
+    test_fire:         rec.test_fire || null,
+    template_id:       rec.template_id || null,
+    signature:         rec.signature || null
+  };
+  // Normalize status: coerce to canonical list if possible, else default.
+  if(WO_STATUSES.indexOf(upgraded.status) === -1){
+    // Legacy "Scheduled"/"In Progress"/"Completed" all already in canonical list;
+    // anything truly unknown falls through to 'Completed' as safest default.
+    upgraded.status = 'Completed';
+  }
+  // If legacy record had no wo_number, we cannot generate one here (we don't
+  // have the parent gun context). Leave blank — renderer will fall back to
+  // array-index display for that record, and the next save of a NEW WO on
+  // the same gun will correctly compute its own wo_number regardless.
+  return upgraded;
+}
+
+// Upgrade a firearm's full maintenanceLog JSON string. Non-mutating.
+// Handles three cases:
+//   1. Valid JSON array of WOs → upgrade each entry
+//   2. Legacy plain text → wrap as single v1 record with type='Other', text in notes
+//   3. Empty / null → return empty array string
+// Returns a JSON string ready to store back in gun.maintenanceLog.
+// NOTE: this does not auto-persist. Callers that want persistence should
+// write the result back and call sv(). Read paths just use the upgraded
+// in-memory shape for rendering.
+function _woUpgradeLog(logJson){
+  if(!logJson) return '[]';
+  var parsed;
+  try{
+    parsed = JSON.parse(logJson);
+  }catch(e){
+    // Legacy plain text — wrap as one WO.
+    return JSON.stringify([_woUpgradeRecord({
+      type: 'Other',
+      status: 'Completed',
+      notes: String(logJson),
+      date: ''
+    })]);
+  }
+  if(!Array.isArray(parsed)) return '[]';
+  return JSON.stringify(parsed.map(_woUpgradeRecord));
+}
+
+// Status engine. Defines allowed transitions and guards.
+var _woStatusEngine = {
+  // Check if a record can move from fromStatus to toStatus.
+  // fromStatus may be null (new record).
+  // Returns {ok: bool, error: string|null}.
+  canTransition: function(fromStatus, toStatus, record){
+    // toStatus must be canonical
+    if(WO_STATUSES.indexOf(toStatus) === -1){
+      return {ok:false, error:'Unknown status: '+toStatus};
+    }
+    // Canceled is terminal
+    if(fromStatus === 'Canceled' && toStatus !== 'Canceled'){
+      return {ok:false, error:'Canceled work orders cannot be reactivated. Create a new one.'};
+    }
+    // Guards on transition to Completed
+    if(toStatus === 'Completed'){
+      if(!record || !record.notes || !record.notes.trim()){
+        return {ok:false, error:'Add notes before marking Completed.'};
+      }
+      if(record.safety_concern === true && record.safety_concern_resolved !== true){
+        return {ok:false, error:'Unresolved safety concern — cannot mark Completed.'};
+      }
+    }
+    return {ok:true, error:null};
+  },
+  // Schema-level validation of a full record.
+  validateRecord: function(rec){
+    var errors = [];
+    if(!rec || typeof rec !== 'object'){ errors.push('Record is not an object'); return {ok:false, errors:errors}; }
+    if(rec.schema_v !== WO_SCHEMA_V) errors.push('Missing or wrong schema_v');
+    if(!rec.id)          errors.push('Missing id');
+    if(!rec.type)        errors.push('Missing type');
+    if(!rec.status)      errors.push('Missing status');
+    if(WO_STATUSES.indexOf(rec.status) === -1) errors.push('Invalid status: '+rec.status);
+    return {ok: errors.length===0, errors: errors};
+  }
+};
+// ── END WORK ORDER FOUNDATION ──────────────────────────────────────
+
+
 // ── WORK ORDER SYSTEM ────────────────────────────────────────────────
 function renderWorkOrders(log){
   var orders = [];
@@ -1406,18 +1627,22 @@ function renderWorkOrders(log){
     return '<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:12px;font-size:13px;color:#c0c8d8;white-space:pre-wrap">'+eh(log)+'</div>';
   }
   if(!orders.length) return '<div style="text-align:center;padding:20px;color:#4a5568;font-size:13px">No maintenance records yet.</div>';
+  // T1: upgrade every record to v1 shape transparently on read.
+  // Legacy records without wo_number fall back to array-index display below.
+  orders = orders.map(_woUpgradeRecord);
   return orders.map(function(o,i){
-    var statusColor = o.status==='Completed'?'#60e880':o.status==='In Progress'?'#ffd060':'#8a95a8';
+    var statusColor = o.status==='Completed'?'#60e880':o.status==='In Progress'?'#ffd060':o.status==='Canceled'?'#ff707080':'#8a95a8';
+    var woLabel = o.wo_number || ('WO-'+(String(i+1).padStart(3,'0')));
     return '<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:8px">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-        +'<div style="font-size:12px;font-weight:700;color:#e8c46a">WO-'+(String(i+1).padStart(3,'0'))+'</div>'
+        +'<div style="font-size:12px;font-weight:700;color:#e8c46a">'+eh(woLabel)+'</div>'
         +'<div style="display:flex;gap:6px;align-items:center">'
-          +'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+statusColor+'20;color:'+statusColor+';border:1px solid '+statusColor+'50">'+o.status+'</span>'
+          +'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+statusColor+'20;color:'+statusColor+';border:1px solid '+statusColor+'50">'+eh(o.status)+'</span>'
           +'<button onclick="removeWorkOrder('+i+')" style="background:none;border:none;color:#ff707070;cursor:pointer;font-size:14px;padding:0 4px">&#10005;</button>'
         +'</div>'
       +'</div>'
       +'<div style="font-size:13px;font-weight:600;color:#f0f2f5;margin-bottom:4px">'+eh(o.type)+'</div>'
-      +(o.date?'<div style="font-size:11px;color:#8a95a8;margin-bottom:4px">'+o.date+(o.tech?' &middot; '+eh(o.tech):'')+'</div>':'')
+      +(o.date?'<div style="font-size:11px;color:#8a95a8;margin-bottom:4px">'+eh(o.date)+(o.tech?' &middot; '+eh(o.tech):'')+'</div>':'')
       +(o.notes?'<div style="font-size:13px;color:#c0c8d8;line-height:1.5">'+eh(o.notes)+'</div>':'')
       +'</div>';
   }).join('');
@@ -1463,14 +1688,31 @@ function addWorkOrder(){
 function saveWorkOrder(){
   var type = document.getElementById('wo_type').value;
   if(!type){ toast('Please select a work type','err'); return; }
-  var order = {
-    type: type,
-    date: document.getElementById('wo_date').value,
-    tech: document.getElementById('wo_tech').value,
-    status: document.getElementById('wo_status').value,
-    notes: document.getElementById('wo_notes').value,
-    id: Date.now()
-  };
+  // T1: build full v1 record with snapshot, permanent wo_number, and status guard.
+  // Snapshot reads from FORM (the in-flight edit buffer for the active firearm) —
+  // captures whatever the firearm is right now at the moment the WO is created.
+  var rawStatus = document.getElementById('wo_status').value;
+  var order = _woUpgradeRecord({
+    type:       type,
+    date:       document.getElementById('wo_date').value,
+    tech:       document.getElementById('wo_tech').value,
+    status:     rawStatus,
+    notes:      document.getElementById('wo_notes').value,
+    id:         Date.now().toString(36)+Math.random().toString(36).substr(2),
+    created_at: new Date().toISOString(),
+    snapshot: {
+      make:         FORM.make         || '',
+      model:        FORM.model        || '',
+      serialNumber: FORM.serialNumber || '',
+      type:         FORM.type         || '',
+      caliber:      FORM.caliber      || ''
+    }
+  });
+  // Assign permanent WO number (device-prefixed, per-firearm per-year).
+  order.wo_number = _woGenerateNumber(FORM);
+  // Status engine guard: reject invalid transitions (e.g. Completed w/o notes).
+  var guard = _woStatusEngine.canTransition(null, order.status, order);
+  if(!guard.ok){ toast(guard.error, 'err'); return; }
   var orders = [];
   try{ orders = FORM.maintenanceLog ? JSON.parse(FORM.maintenanceLog) : []; }catch(e){ orders = []; }
   orders.unshift(order);
@@ -2363,13 +2605,14 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-22-B';   // bump on every revision
+var BUILD_TAG   = '2026-04-23-A';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
   pinEnabled: false,
   tier: 'free',
   devMode: false,
+  devicePrefix: '',           // 4-char device identifier, generated once on first load
   licenseKey: null,           // LS license key (UUID)
   licenseInstanceId: null,    // LS activation instance ID (UUID)
   licenseStatus: null,        // 'active' | 'inactive' | 'expired' | 'disabled'
@@ -2594,6 +2837,12 @@ function loadSettings(){
     var s=localStorage.getItem('av_settings');
     if(s) appSettings=Object.assign(appSettings,JSON.parse(s));
   }catch(e){}
+  // First-load generation of devicePrefix (4-char ID for packet uniqueness).
+  // Generated once, persisted, used in WO numbering: WO-{prefix}-YYYY-NNN
+  if(!appSettings.devicePrefix){
+    appSettings.devicePrefix = _woGenerateDevicePrefix();
+    try{ saveSettings(); }catch(e){}
+  }
 }
 
 function saveSettings(){
@@ -5378,7 +5627,15 @@ function rPicturePage(){
       +(g.maintenanceLog?
         '<div class="pic-panel">'
           +'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#e8c46a;font-weight:700;margin-bottom:10px">Maintenance Log</div>'
-          +'<div style="font-size:13px;color:#d0d8e8;line-height:1.7;white-space:pre-wrap">'+eh(g.maintenanceLog)+'</div>'
+          // T1 stopgap: if maintenanceLog is JSON (v1 records), route through renderWorkOrders
+          // for proper formatting. Legacy plain text still renders as whitespace-preserved.
+          +((function(){
+              try{
+                var parsed = JSON.parse(g.maintenanceLog);
+                if(Array.isArray(parsed)) return renderWorkOrders(g.maintenanceLog);
+              }catch(e){}
+              return '<div style="font-size:13px;color:#d0d8e8;line-height:1.7;white-space:pre-wrap">'+eh(g.maintenanceLog)+'</div>';
+            })())
         +'</div>':'')
 
     +'</div>'
@@ -7603,7 +7860,33 @@ function pOneOpts(id, includePhotos){
   }
 
   if(g.repairNotes) W.document.write('<h3>Repair Notes</h3><p style="font-size:13px;line-height:1.6">'+g.repairNotes+'</p>');
-  if(g.maintenanceLog) W.document.write('<h3>Maintenance Log</h3><p style="font-size:13px;line-height:1.6;white-space:pre-wrap">'+g.maintenanceLog+'</p>');
+  if(g.maintenanceLog){
+    // T1 stopgap: if maintenanceLog is v1 JSON records, don't print raw JSON.
+    // Show a simple table of the records (WO#, date, type, status). T6 will
+    // replace this with full formatted per-WO printing.
+    var _isJson = false, _rows = [];
+    try{
+      var _parsed = JSON.parse(g.maintenanceLog);
+      if(Array.isArray(_parsed)){
+        _isJson = true;
+        _rows = _parsed.map(_woUpgradeRecord);
+      }
+    }catch(e){}
+    if(_isJson){
+      W.document.write('<h3>Maintenance Log</h3>');
+      if(_rows.length){
+        W.document.write('<table><thead><tr><th>WO #</th><th>Date</th><th>Type</th><th>Performed By</th><th>Status</th></tr></thead><tbody>');
+        _rows.forEach(function(r){
+          W.document.write('<tr><td>'+(r.wo_number||'—')+'</td><td>'+(r.date||'—')+'</td><td>'+(r.type||'—')+'</td><td>'+(r.tech||'—')+'</td><td>'+(r.status||'—')+'</td></tr>');
+        });
+        W.document.write('</tbody></table>');
+      } else {
+        W.document.write('<p style="font-size:13px;color:#666">No work orders.</p>');
+      }
+    } else {
+      W.document.write('<h3>Maintenance Log</h3><p style="font-size:13px;line-height:1.6;white-space:pre-wrap">'+g.maintenanceLog+'</p>');
+    }
+  }
 
   W.document.write('<footer>ArsenalDB &middot; '+g.make+' '+g.model+' &middot; Printed '+new Date().toLocaleDateString()+'</footer>');
   W.document.write('</body></html>');
