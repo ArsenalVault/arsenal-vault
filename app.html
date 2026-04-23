@@ -1698,6 +1698,7 @@ function renderWorkOrders(log){
         +'<div style="font-size:12px;font-weight:700;color:#e8c46a">'+eh(woLabel)+'</div>'
         +'<div style="display:flex;gap:6px;align-items:center">'
           +'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+statusColor+'20;color:'+statusColor+';border:1px solid '+statusColor+'50">'+eh(o.status)+'</span>'
+          +'<button onclick="shareWO('+i+')" title="Share" style="background:#1a1d24;border:1px solid #e8c46a60;color:#e8c46a;border-radius:4px;cursor:pointer;font-size:12px;padding:3px 7px;font-family:inherit;line-height:1">↗</button>'
           +'<button onclick="removeWorkOrder('+i+')" style="background:none;border:none;color:#ff707070;cursor:pointer;font-size:14px;padding:0 4px">&#10005;</button>'
         +'</div>'
       +'</div>'
@@ -1708,14 +1709,98 @@ function renderWorkOrders(log){
   }).join('');
 }
 
+// T2: Advisory function-check checklist items shown when status=Completed
+// AND type is a major work type. User saves with any subset checked.
+// Unchecked items stored as false, visible on the printed/shared packet.
+var _woChecklistItems = [
+  'Function check passes',
+  'Safety engages and disengages',
+  'Trigger resets properly',
+  'Magazine seats',
+  'Magazine drops free',
+  'Cycling / extraction / ejection',
+  'Final wipe-down / cleaning'
+];
+
+// T2: re-render just the checklist section in the add-WO modal.
+// Called when status or type changes (via onchange hooks). Preserves
+// previously-checked state across toggles via modal.dataset.checklist.
+function _renderWOChecklistSection(){
+  var container = document.getElementById('wo_checklist_section');
+  if(!container) return;
+  var typeEl = document.getElementById('wo_type');
+  var statusEl = document.getElementById('wo_status');
+  var modal = document.getElementById('wo_modal');
+  if(!typeEl || !statusEl || !modal){ container.innerHTML=''; return; }
+  var type = typeEl.value;
+  var status = statusEl.value;
+  var isMajor = WO_MAJOR_WORK_TYPES.indexOf(type) >= 0;
+  var isCompleted = status === 'Completed';
+  if(!(isMajor && isCompleted)){
+    container.innerHTML = '';
+    return;
+  }
+  // Load prior state if present
+  var prior = [];
+  try{ prior = modal.dataset.checklist ? JSON.parse(modal.dataset.checklist) : []; }catch(e){ prior = []; }
+  var html = '<div style="background:#1a1d24;border:1px solid #e8c46a40;border-radius:8px;padding:14px;margin-bottom:16px">'
+    +'<div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#e8c46a;font-weight:700;margin-bottom:4px">✓ Function Check</div>'
+    +'<div style="font-size:11px;color:#8a95a8;margin-bottom:12px;line-height:1.5">Check what you verified. All optional — save with any subset.</div>';
+  _woChecklistItems.forEach(function(label, i){
+    var isChecked = prior[i] && prior[i].checked === true;
+    html += '<label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;cursor:pointer;font-size:13px;color:#d0d8e8;line-height:1.4">'
+      +'<input type="checkbox" data-cl-idx="'+i+'" '+(isChecked?'checked':'')+' onchange="_onChecklistToggle(this)" style="accent-color:#e8c46a;width:16px;height:16px;margin-top:2px;flex-shrink:0"/>'
+      +'<span>'+label+'</span>'
+    +'</label>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// T2: on checkbox toggle, update modal.dataset.checklist so state persists
+// across status/type toggles that trigger re-render.
+function _onChecklistToggle(el){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  var state = [];
+  _woChecklistItems.forEach(function(label){
+    state.push({label: label, checked: false});
+  });
+  // Read current DOM state of all checkboxes
+  var boxes = modal.querySelectorAll('input[data-cl-idx]');
+  for(var i=0; i<boxes.length; i++){
+    var idx = parseInt(boxes[i].getAttribute('data-cl-idx'), 10);
+    if(idx >= 0 && idx < _woChecklistItems.length){
+      state[idx].checked = boxes[i].checked;
+    }
+  }
+  modal.dataset.checklist = JSON.stringify(state);
+}
+
 function addWorkOrder(){
+  // T2: preview WO number (computed now, assigned permanently on save)
+  var woNumberPreview = _woGenerateNumber(FORM);
+  // T2: snapshot display — which firearm is this WO for
+  var snapshotLine = [FORM.make, FORM.model].filter(function(s){return s;}).join(' ');
+  if(FORM.serialNumber) snapshotLine += ' · SN: ' + FORM.serialNumber;
+  if(!snapshotLine) snapshotLine = '(unnamed firearm)';
+  // T2: status options from canonical WO_STATUSES constant
+  var statusOpts = WO_STATUSES.map(function(s){
+    var selected = (s === 'Scheduled') ? ' selected' : ''; // default to Scheduled for new WOs
+    return '<option'+selected+'>'+s+'</option>';
+  }).join('');
+
   var modal = document.createElement('div');
   modal.id = 'wo_modal';
   modal.style.cssText = 'position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   modal.innerHTML = '<div style="background:#222835;border-top:2px solid #3a4455;border-radius:12px 12px 0 0;padding:20px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto">'
-    +'<div style="font-size:15px;font-weight:700;color:#e8c46a;margin-bottom:16px">+ New Work Order</div>'
+    // T2: header with WO number preview + snapshot
+    +'<div style="font-size:15px;font-weight:700;color:#e8c46a;margin-bottom:6px">+ New Work Order</div>'
+    +'<div style="font-size:11px;color:#e8c46a;font-weight:700;letter-spacing:.04em;margin-bottom:3px">'+eh(woNumberPreview)+' <span style="color:#8a95a8;font-weight:400;letter-spacing:0">(assigned on save)</span></div>'
+    +'<div style="font-size:12px;color:#8a95a8;margin-bottom:16px">For: '+eh(snapshotLine)+'</div>'
+    // Type of Work
     +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Type of Work</label>'
-    +'<select id="wo_type" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit">'
+    +'<select id="wo_type" onchange="_renderWOChecklistSection()" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit">'
     +'<option value="">Select work type...</option>'
     +'<option>Cleaning &amp; Lubrication</option>'
     +'<option>Part Replacement</option>'
@@ -1726,16 +1811,33 @@ function addWorkOrder(){
     +'<option>Professional Service</option>'
     +'<option>Other</option>'
     +'</select></div>'
+    // Date
     +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Date</label>'
     +'<input type="date" id="wo_date" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;color-scheme:dark" value="'+new Date().toISOString().split("T")[0]+'"/></div>'
+    // Performed By
     +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Performed By</label>'
     +'<input type="text" id="wo_tech" placeholder="e.g. Self, Joe&#39;s Gun Shop" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;box-sizing:border-box"/></div>'
+    // Status — T2: all 5 canonical options from WO_STATUSES
     +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Status</label>'
-    +'<select id="wo_status" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit">'
-    +'<option>Completed</option><option>In Progress</option><option>Scheduled</option>'
+    +'<select id="wo_status" onchange="_renderWOChecklistSection()" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit">'
+    +statusOpts
     +'</select></div>'
-    +'<div style="margin-bottom:16px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Notes</label>'
-    +'<textarea id="wo_notes" placeholder="Parts replaced, observations, cost, etc." rows="3" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea></div>'
+    // Notes
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Notes</label>'
+    +'<textarea id="wo_notes" placeholder="Observations, cost, context, etc." rows="3" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea></div>'
+    // T2: Parts used (freeform)
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Parts Used (optional)</label>'
+    +'<input type="text" id="wo_parts_freeform" placeholder="e.g. Extractor spring, Wolff 15lb" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;box-sizing:border-box"/></div>'
+    // T2: Safety concern flag
+    +'<div style="margin-bottom:16px">'
+    +'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:#2a1a1a;border:1px solid #ff707040;border-radius:6px;padding:10px;font-size:13px;color:#f0c8c8">'
+    +'<input type="checkbox" id="wo_safety_concern" style="accent-color:#ff7070;width:16px;height:16px"/>'
+    +'<span>⚠ Safety concern needs attention</span>'
+    +'</label>'
+    +'</div>'
+    // T2: Checklist section (conditionally rendered)
+    +'<div id="wo_checklist_section"></div>'
+    // Actions
     +'<div style="display:flex;gap:10px">'
     +'<button onclick="document.getElementById(\'wo_modal\').remove()" style="flex:1;background:#1a1d24;border:1px solid #3a4455;color:#8a95a8;padding:13px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit">Cancel</button>'
     +'<button onclick="saveWorkOrder()" style="flex:1;background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Save Work Order</button>'
@@ -1743,15 +1845,37 @@ function addWorkOrder(){
     +'</div>';
   modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
   document.body.appendChild(modal);
+  // Render checklist based on initial dropdown values (Scheduled default → hidden)
+  _renderWOChecklistSection();
 }
 
 function saveWorkOrder(){
   var type = document.getElementById('wo_type').value;
   if(!type){ toast('Please select a work type','err'); return; }
-  // T1: build full v1 record with snapshot, permanent wo_number, and status guard.
-  // Snapshot reads from FORM (the in-flight edit buffer for the active firearm) —
-  // captures whatever the firearm is right now at the moment the WO is created.
+  // T2: gather new fields
+  var partsFreeform = (document.getElementById('wo_parts_freeform')||{}).value || '';
+  var safetyConcernEl = document.getElementById('wo_safety_concern');
+  var safetyConcern = !!(safetyConcernEl && safetyConcernEl.checked);
+  // T2: gather checklist state (only if visible — status=Completed AND major type)
+  var modal = document.getElementById('wo_modal');
   var rawStatus = document.getElementById('wo_status').value;
+  var isMajor = WO_MAJOR_WORK_TYPES.indexOf(type) >= 0;
+  var isCompleted = rawStatus === 'Completed';
+  var checklistForRecord = null;
+  if(isMajor && isCompleted){
+    // Build checklist from current DOM state; default unchecked
+    checklistForRecord = _woChecklistItems.map(function(label){
+      return {label: label, checked: false};
+    });
+    var boxes = modal ? modal.querySelectorAll('input[data-cl-idx]') : [];
+    for(var i=0; i<boxes.length; i++){
+      var idx = parseInt(boxes[i].getAttribute('data-cl-idx'), 10);
+      if(idx >= 0 && idx < _woChecklistItems.length){
+        checklistForRecord[idx].checked = boxes[i].checked;
+      }
+    }
+  }
+  // T1: build full v1 record with snapshot, permanent wo_number, and status guard.
   var order = _woUpgradeRecord({
     type:       type,
     date:       document.getElementById('wo_date').value,
@@ -1766,11 +1890,14 @@ function saveWorkOrder(){
       serialNumber: FORM.serialNumber || '',
       type:         FORM.type         || '',
       caliber:      FORM.caliber      || ''
-    }
+    },
+    // T2: new fields
+    parts_freeform:   partsFreeform,
+    safety_concern:   safetyConcern,
+    checklist:        checklistForRecord
   });
-  // Assign permanent WO number (device-prefixed, per-firearm per-year).
   order.wo_number = _woGenerateNumber(FORM);
-  // Status engine guard: reject invalid transitions (e.g. Completed w/o notes).
+  // Status engine guard: reject invalid transitions (e.g. Completed w/o notes, or safety concern unresolved).
   var guard = _woStatusEngine.canTransition(null, order.status, order);
   if(!guard.ok){ toast(guard.error, 'err'); return; }
   var orders = [];
@@ -1792,6 +1919,217 @@ function removeWorkOrder(idx){
   haptic('light');
   rnd();
 }
+
+// ── T2: WORK ORDER SHARE (single WO packet export) ───────────────────
+// Entry point from the ↗ button on each WO card. Reads the WO by index
+// from the active firearm, builds a self-contained .html packet, and
+// invokes the native share sheet. Falls back to download if unsupported.
+function shareWO(idx){
+  // Resolve which firearm this WO belongs to.
+  // VIEW==='add' means we're editing a firearm (FORM is the live buffer).
+  // Otherwise we're viewing a firearm in detail (selId tells us which gun).
+  var gun;
+  if(VIEW === 'add' && FORM){
+    gun = FORM;
+  } else if(selId){
+    gun = guns.find(function(x){return x.id===selId;});
+  }
+  if(!gun){ toast('Cannot identify firearm','err'); return; }
+  var orders = [];
+  try{ orders = JSON.parse(gun.maintenanceLog || '[]'); }catch(e){ orders = []; }
+  if(!orders[idx]){ toast('Work order not found','err'); return; }
+  var wo = _woUpgradeRecord(orders[idx]);
+  var html = _buildWOPacketHtml(wo, gun);
+  var dateStr = (wo.created_at || new Date().toISOString()).split('T')[0];
+  var numPart = wo.wo_number ? wo.wo_number.replace(/^WO-/,'') : (dateStr+'_'+idx);
+  var filename = 'ArsenalDB_WO_' + numPart + '_' + dateStr + '.html';
+  var blob = new Blob([html], {type: 'text/html'});
+  var file;
+  try{ file = new File([blob], filename, {type: 'text/html'}); }catch(e){ file = null; }
+  // Native share path (mobile primary); fallback to download
+  if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+    toast('Sharing...');
+    navigator.share({
+      files: [file],
+      title: 'Work Order ' + (wo.wo_number || ''),
+      text:  'Work order packet from ArsenalDB'
+    }).then(function(){
+      toast('Shared');
+    }).catch(function(err){
+      // User-cancel is expected; other errors get a toast
+      if(err && err.name === 'AbortError'){ toast('Share canceled'); }
+      else { toast('Share failed — downloading instead','err'); _downloadPacket(blob, filename); }
+    });
+  } else {
+    _downloadPacket(blob, filename);
+    toast('Download started');
+  }
+}
+
+function _downloadPacket(blob, filename){
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+// T2: escape JSON for safe embedding inside a <script> tag.
+// Default JSON.stringify does not escape < or >, so user-controlled text
+// containing "</script>" could break out. Escape both as unicode.
+function _jsonForScriptTag(obj){
+  return JSON.stringify(obj)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+// T2: build a self-contained HTML packet for one work order.
+// Renders a human-readable document and embeds a machine-readable JSON
+// block for ArsenalDB users who receive the file to import.
+function _buildWOPacketHtml(wo, gun){
+  var ownerProfile = (appSettings && appSettings.ownerProfile) || {};
+  var firstPhoto = null;
+  if(gun){
+    if(gun.photos && gun.photos.length) firstPhoto = gun.photos[0];
+    else if(gun.photo) firstPhoto = gun.photo;
+  }
+  // Build the machine-readable payload (v1 packet format)
+  var payload = {
+    format: 'arsenaldb_packet_v1',
+    schema_v: 1,
+    kind: 'work_order_single',
+    generated_at: new Date().toISOString(),
+    generated_by_device: (appSettings && appSettings.devicePrefix) || '',
+    wo: wo,
+    firearm_snapshot: wo.snapshot || {},
+    owner: {
+      name:  ownerProfile.name  || '',
+      phone: ownerProfile.phone || '',
+      email: ownerProfile.email || ''
+    },
+    photo: firstPhoto
+  };
+  var payloadJson = _jsonForScriptTag(payload);
+
+  // Visible rendering helpers
+  var esc = eh;
+  var statusColor = wo.status === 'Completed' ? '#2d7a3e'
+                  : wo.status === 'In Progress' ? '#8a6e1c'
+                  : wo.status === 'Canceled' ? '#8a4a4a'
+                  : '#4a5568';
+  var snap = wo.snapshot || {};
+  var fmLine = [snap.make, snap.model].filter(function(s){return s;}).join(' ');
+  var snDetails = [snap.serialNumber ? 'Serial: '+snap.serialNumber : '', snap.caliber ? 'Caliber: '+snap.caliber : '', snap.type ? 'Type: '+snap.type : '']
+    .filter(function(s){return s;}).join(' · ');
+
+  // Checklist rendering (only if present)
+  var checklistHtml = '';
+  if(wo.checklist && wo.checklist.length){
+    checklistHtml = '<div class="section"><h2>Function Check</h2><ul class="checklist">';
+    wo.checklist.forEach(function(item){
+      var mark = item.checked ? '✓' : '☐';
+      var cls = item.checked ? 'chk' : 'unchk';
+      checklistHtml += '<li class="'+cls+'"><span class="mark">'+mark+'</span>'+esc(item.label)+'</li>';
+    });
+    checklistHtml += '</ul></div>';
+  }
+  // Safety concern callout
+  var safetyHtml = '';
+  if(wo.safety_concern === true){
+    safetyHtml = '<div class="safety"><strong>⚠ Safety Concern</strong><br/>This work order is flagged as having a safety concern needing attention.</div>';
+  }
+  // Owner contact (only if at least one field present)
+  var ownerHtml = '';
+  var hasOwner = (ownerProfile.name || ownerProfile.phone || ownerProfile.email);
+  if(hasOwner){
+    ownerHtml = '<div class="section"><h2>Owner Contact</h2>';
+    if(ownerProfile.name)  ownerHtml += '<div>'+esc(ownerProfile.name)+'</div>';
+    if(ownerProfile.phone) ownerHtml += '<div>'+esc(ownerProfile.phone)+'</div>';
+    if(ownerProfile.email) ownerHtml += '<div>'+esc(ownerProfile.email)+'</div>';
+    ownerHtml += '</div>';
+  }
+  // Photo
+  var photoHtml = '';
+  if(firstPhoto){
+    photoHtml = '<div class="section"><h2>Firearm Photo</h2>'
+      +'<img src="'+firstPhoto+'" style="max-width:400px;width:100%;height:auto;border:1px solid #ccc;border-radius:6px"/>'
+      +'</div>';
+  }
+  // Parts freeform
+  var partsHtml = '';
+  if(wo.parts_freeform){
+    partsHtml = '<div class="section"><h2>Parts Used</h2><p>'+esc(wo.parts_freeform)+'</p></div>';
+  }
+
+  var html = '<!DOCTYPE html>'
+    +'<html lang="en"><head><meta charset="UTF-8">'
+    +'<meta name="viewport" content="width=device-width,initial-scale=1">'
+    +'<title>Work Order '+esc(wo.wo_number||'')+'</title>'
+    +'<style>'
+      +'*{box-sizing:border-box}'
+      +'body{margin:0;padding:28px 20px;background:#f6f5f2;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+      +'.wrap{max-width:720px;margin:0 auto;background:#fff;padding:32px;border:1px solid #d8d4ca;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.04)}'
+      +'.brand{font-size:11px;letter-spacing:.2em;color:#8a7440;text-transform:uppercase;font-weight:700;margin-bottom:2px}'
+      +'.brand-sub{font-size:12px;color:#888;margin-bottom:20px}'
+      +'.wo-banner{background:#1a1d24;color:#e8c46a;padding:16px 20px;border-radius:8px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}'
+      +'.wo-num{font-size:18px;font-weight:800;letter-spacing:.04em}'
+      +'.wo-status{background:'+statusColor+';color:#fff;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}'
+      +'.firearm{background:#f6f5f2;border-left:3px solid #8a7440;padding:12px 16px;margin-bottom:20px}'
+      +'.firearm .name{font-size:18px;font-weight:700;color:#1a1a1a;margin-bottom:4px}'
+      +'.firearm .details{font-size:12px;color:#666}'
+      +'.section{margin-bottom:20px}'
+      +'.section h2{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#8a7440;font-weight:800;margin:0 0 8px;border-bottom:1px solid #e0ddd4;padding-bottom:4px}'
+      +'.section p{margin:0;white-space:pre-wrap;word-wrap:break-word}'
+      +'.kv{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;font-size:14px}'
+      +'.kv dt{color:#888;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em}'
+      +'.kv dd{margin:0;color:#1a1a1a}'
+      +'.checklist{list-style:none;padding:0;margin:0}'
+      +'.checklist li{padding:6px 0;border-bottom:1px solid #f0ede6;font-size:14px}'
+      +'.checklist li:last-child{border-bottom:none}'
+      +'.checklist .mark{display:inline-block;width:22px;font-weight:800;font-size:15px}'
+      +'.checklist .chk{color:#1a1a1a}'
+      +'.checklist .chk .mark{color:#2d7a3e}'
+      +'.checklist .unchk{color:#888}'
+      +'.safety{background:#fff3f0;border:1px solid #e89080;border-radius:6px;padding:12px 16px;margin-bottom:20px;color:#8a4a4a;font-size:14px}'
+      +'.footer{margin-top:28px;padding-top:12px;border-top:1px solid #e0ddd4;font-size:11px;color:#8a7440;text-align:center;letter-spacing:.04em}'
+      +'@media print{body{background:#fff;padding:0} .wrap{border:none;box-shadow:none;padding:0}}'
+    +'</style>'
+    +'</head><body><div class="wrap">'
+      +'<div class="brand">ArsenalDB</div>'
+      +'<div class="brand-sub">Private Armory Management</div>'
+      +'<div class="wo-banner">'
+        +'<div class="wo-num">Work Order &middot; '+esc(wo.wo_number||'')+'</div>'
+        +'<div class="wo-status">'+esc(wo.status||'')+'</div>'
+      +'</div>'
+      +'<div class="firearm">'
+        +'<div class="name">'+esc(fmLine||'(unnamed firearm)')+'</div>'
+        +(snDetails ? '<div class="details">'+esc(snDetails)+'</div>' : '')
+      +'</div>'
+      +safetyHtml
+      +'<div class="section"><h2>Work Details</h2><dl class="kv">'
+        +'<dt>Type</dt><dd>'+esc(wo.type||'')+'</dd>'
+        +(wo.date ? '<dt>Date</dt><dd>'+esc(wo.date)+'</dd>' : '')
+        +(wo.tech ? '<dt>Performed By</dt><dd>'+esc(wo.tech)+'</dd>' : '')
+      +'</dl></div>'
+      +(wo.notes ? '<div class="section"><h2>Notes</h2><p>'+esc(wo.notes)+'</p></div>' : '')
+      +partsHtml
+      +checklistHtml
+      +photoHtml
+      +ownerHtml
+      +'<div class="footer">Generated by ArsenalDB · '+esc((appSettings&&appSettings.devicePrefix)||'')+' · '+esc(new Date().toLocaleDateString())+'</div>'
+    +'</div>'
+    // Machine-readable payload for ArsenalDB imports
+    +'<script type="application/json" id="arsenaldb_packet">'+payloadJson+'<\/script>'
+  +'</body></html>';
+  return html;
+}
+// ── END T2 WORK ORDER SHARE ──────────────────────────────────────────
+
 
 function onCalChange(sel){
   FORM.caliber = sel.value;
@@ -2666,7 +3004,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-G';   // bump on every revision
+var BUILD_TAG   = '2026-04-23-H';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
