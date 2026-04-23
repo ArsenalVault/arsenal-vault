@@ -1979,7 +1979,7 @@ function _downloadPacket(blob, filename){
 
 // T2: escape JSON for safe embedding inside a <script> tag.
 // Default JSON.stringify does not escape < or >, so user-controlled text
-// containing "</script>" could break out. Escape both as unicode.
+// containing a closing script tag could break out. Escape both as unicode.
 function _jsonForScriptTag(obj){
   return JSON.stringify(obj)
     .replace(/</g, '\\u003c')
@@ -3004,7 +3004,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-H';   // bump on every revision
+var BUILD_TAG   = '2026-04-23-H2';  // bump on every revision (H2 = T2 hotfix: comment contained literal script-close tag)
 var appSettings = {
   haptic: true,
   sounds: true,
