@@ -1385,6 +1385,7 @@ function _openPhotoPicker(){
     +'<button id="_photo_gal_btn" style="width:100%;padding:16px;background:#1a1d24;border:1px solid #2e3545;border-radius:10px;color:#c8d4e8;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:inset 0 1px 0 #ffffff08,0 1px 2px #00000040">'
       +'<span style="font-size:22px">🖼</span><span>Choose from Gallery</span>'
     +'</button>'
+    +'<div style="font-size:11px;color:#6a7488;text-align:center;margin-bottom:10px">Photos can be rotated after capture</div>'
     +'<button onclick="document.getElementById(\'photo_chooser_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
   +'</div>';
   modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
@@ -2665,7 +2666,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-F';   // bump on every revision
+var BUILD_TAG   = '2026-04-23-G';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -2673,6 +2674,7 @@ var appSettings = {
   tier: 'free',
   devMode: false,
   devicePrefix: '',           // 4-char device identifier, generated once on first load
+  importEducationSeen: false, // T1.10: flag for one-time Import Collection education banner
   licenseKey: null,           // LS license key (UUID)
   licenseInstanceId: null,    // LS activation instance ID (UUID)
   licenseStatus: null,        // 'active' | 'inactive' | 'expired' | 'disabled'
@@ -5286,6 +5288,40 @@ function closeHam(){
   if(overlay) overlay.classList.remove('open');
 }
 
+// T1.10: "Show me" action — marks education seen (permanent), highlights the
+// Import Collection menu item with a brief pulse so the user sees where it is.
+function _importBannerShowMe(){
+  appSettings.importEducationSeen = true;
+  try{ saveSettings(); }catch(e){}
+  var banner = document.getElementById('ham_import_banner');
+  if(banner) banner.remove();
+  var target = document.getElementById('ham_import_collection');
+  if(target){
+    target.style.transition = 'box-shadow .3s ease, background .3s ease';
+    var pulses = 0;
+    var pulse = function(){
+      target.style.boxShadow = '0 0 12px #e8c46a';
+      target.style.background = '#2a2410';
+      setTimeout(function(){
+        target.style.boxShadow = '';
+        target.style.background = '';
+        pulses++;
+        if(pulses < 2) setTimeout(pulse, 300);
+      }, 400);
+    };
+    pulse();
+    // Scroll menu to bring it into view
+    try{ target.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
+  }
+}
+
+// T1.10: "Later" action — session-scope dismissal only. Banner reappears next load.
+function _importBannerLater(){
+  window._importEducationDismissed = true;
+  var banner = document.getElementById('ham_import_banner');
+  if(banner) banner.remove();
+}
+
 function hamAction(fn){
   closeHam();
   setTimeout(fn, 200);
@@ -5355,11 +5391,32 @@ function buildHamMenu(){
       +'</div>';
   }
 
+  // T1.10: Education banner for Import Collection merge feature.
+  // Shows when: user has saved at least 1 firearm (not brand-new), hasn't
+  // permanently acknowledged via "Show me", and hasn't dismissed this session.
+  var showImportBanner = (
+    !appSettings.importEducationSeen
+    && !window._importEducationDismissed
+    && guns && guns.length > 0
+  );
+  var importBanner = showImportBanner
+    ? '<div id="ham_import_banner" style="margin:10px 14px 6px;background:linear-gradient(135deg,#1a2a3a,#1e2535);border:1px solid #60a8ff60;border-radius:10px;padding:12px">'
+        +'<div style="font-size:12px;color:#a0c8ff;font-weight:700;margin-bottom:6px;letter-spacing:.04em">✨ NEW FEATURE</div>'
+        +'<div style="font-size:13px;color:#d0d8e8;line-height:1.5;margin-bottom:10px">Combine collections across devices with <span style="color:#e8c46a;font-weight:700">Import Collection</span>. Built for dealers, estate sales, and multi-person collections.</div>'
+        +'<div style="display:flex;gap:6px">'
+          +'<button onclick="_importBannerShowMe()" style="flex:1;background:#60a8ff;color:#1a1d24;border:none;padding:8px;border-radius:6px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">Show me</button>'
+          +'<button onclick="_importBannerLater()" style="flex:1;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Later</button>'
+        +'</div>'
+      +'</div>'
+    : '';
+
   menu.innerHTML=
     '<div class="ham-header">'
       +'<span style="font-size:13px;font-weight:800;color:#e8c46a;letter-spacing:.1em">ArsenalDB</span>'
       +'<button onclick="closeHam()" style="background:none;border:none;color:#8a95a8;font-size:20px;cursor:pointer;padding:4px">&#10005;</button>'
     +'</div>'
+
+    +importBanner
 
     +editSection
 
@@ -5377,8 +5434,8 @@ function buildHamMenu(){
     +'<div class="ham-item" onclick="hamAction(function(){shareCollection()})" style="color:#60e8c0">'
       +'<span class="ham-item-icon">&#128228;</span><span>Share Collection</span>'
     +'</div>'
-    +'<div class="ham-item" onclick="hamAction(function(){document.getElementById(\'importIn\').click()})">'
-      +'<span class="ham-item-icon">&#128194;</span><span>Restore from Backup</span>'
+    +'<div class="ham-item" id="ham_import_collection" onclick="hamAction(function(){document.getElementById(\'importIn\').click()})">'
+      +'<span class="ham-item-icon">&#128194;</span><span>Import Collection</span>'
     +'</div>'
 
     +'<div class="ham-item" onclick="hamAction(function(){go(\'pic\')})">'
@@ -8881,30 +8938,32 @@ function restoreData(e){
       var modal=document.createElement('div');
       modal.id='import_modal';
       modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-      modal.innerHTML='<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:24px;max-width:340px;width:100%">'
-        +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:6px">&#128194; Import Backup</div>'
-        +'<div style="font-size:13px;color:#8a95a8;margin-bottom:18px">Found '+count+' firearm'+(count!==1?'s':'')+' in this backup file.</div>'
+      modal.innerHTML='<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:24px;max-width:360px;width:100%">'
+        +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:6px">&#128194; Import Collection</div>'
+        +'<div style="font-size:13px;color:#8a95a8;margin-bottom:18px">Found '+count+' firearm'+(count!==1?'s':'')+' in this file.</div>'
         +'<div style="margin-bottom:14px">'
           +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;margin-bottom:6px">Collection Name</div>'
           +'<input id="import_name" type="text" placeholder="e.g. John\'s Collection" value="'+(data.collectionName||'Imported Collection')+'" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:11px 12px;font-size:14px;outline:none;font-family:inherit"/>'
         +'</div>'
-        +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:16px">'
-          +'<div style="font-size:12px;color:#8a95a8;margin-bottom:8px">Import as:</div>'
-          +'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:8px">'
-            +'<input type="radio" name="import_mode" value="new" checked style="accent-color:#e8c46a;width:16px;height:16px"/>'
-            +'<div><div style="font-size:13px;font-weight:600;color:#f0f2f5">New Collection</div><div style="font-size:11px;color:#4a5568">Creates a separate collection — your data is safe</div></div>'
-          +'</label>'
-          +'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:8px">'
-            +'<input type="radio" name="import_mode" value="replace" style="accent-color:#ff7070;width:16px;height:16px"/>'
-            +'<div><div style="font-size:13px;font-weight:600;color:#ff7070">Replace Current Collection</div><div style="font-size:11px;color:#4a5568">Overwrites "'+( collections[activeCollection]?collections[activeCollection].name:'current')+'" — cannot be undone</div></div>'
-          +'</label>'
-          +'<label style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="_handleMergeRadioTap(event)">'
-            +'<input type="radio" name="import_mode" value="merge" style="accent-color:#e8c46a;width:16px;height:16px"/>'
-            +'<div><div style="font-size:13px;font-weight:600;color:#e8c46a">Merge Into Current <span style="background:#e8c46a;color:#1a1d24;font-size:9px;font-weight:800;padding:2px 5px;border-radius:3px;margin-left:4px;letter-spacing:.05em">PRO+</span></div><div style="font-size:11px;color:#4a5568">Combine with "'+( collections[activeCollection]?collections[activeCollection].name:'current')+'" — handles duplicate serials</div></div>'
-          +'</label>'
+        +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;margin-bottom:8px">Import As</div>'
+        // T1.10: three tappable cards, nothing pre-selected. Pick a card to enable Import button.
+        +'<div id="import_card_new" role="button" tabindex="0" onclick="_selectImportMode(\'new\')" style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .15s ease">'
+          +'<div style="font-size:14px;font-weight:700;color:#f0f2f5;margin-bottom:4px">📂 New Collection</div>'
+          +'<div style="font-size:11px;color:#8a95a8;line-height:1.5">Creates a separate collection — your data is safe</div>'
+        +'</div>'
+        +'<div id="import_card_replace" role="button" tabindex="0" onclick="_selectImportMode(\'replace\')" style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .15s ease">'
+          +'<div style="font-size:14px;font-weight:700;color:#ff7070;margin-bottom:4px">↻ Replace Current Collection</div>'
+          +'<div style="font-size:11px;color:#8a95a8;line-height:1.5">Overwrites "'+eh(collections[activeCollection]?collections[activeCollection].name:'current')+'" — cannot be undone</div>'
+        +'</div>'
+        +'<div id="import_card_merge" role="button" tabindex="0" onclick="_selectImportMode(\'merge\')" style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:16px;cursor:pointer;transition:all .15s ease">'
+          +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">'
+            +'<span style="font-size:14px;font-weight:700;color:#e8c46a">👥 Merge Into Current Collection</span>'
+            +'<span style="background:#e8c46a;color:#1a1d24;font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px;letter-spacing:.05em">PRO+ · 2 DEVICES</span>'
+          +'</div>'
+          +'<div style="font-size:11px;color:#8a95a8;line-height:1.5">Combine entries from another device or contributor. Designed for dealers, estate sales, and multi-person collections. Flags duplicate serials for review.</div>'
         +'</div>'
         +'<div style="display:flex;flex-direction:column;gap:8px">'
-          +'<button onclick="doImport()" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Import</button>'
+          +'<button id="import_do_btn" onclick="doImport()" disabled style="background:#3a4455;color:#6a7488;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:not-allowed;font-family:inherit">Import</button>'
           +'<button onclick="document.getElementById(\'import_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
         +'</div>'
         +'</div>';
@@ -8917,14 +8976,58 @@ function restoreData(e){
   e.target.value='';
 }
 
+// T1.10: card-based import mode selector. Replaces the previous radio-button UI.
+// Visual state lives on border colors; logical state on modal.dataset.importMode.
+function _selectImportMode(mode){
+  var modal = document.getElementById('import_modal');
+  if(!modal) return;
+  // Pre-flight Pro+ gate on merge (UX sugar — doImport also gates)
+  if(mode === 'merge' && _tierLevel(appSettings.tier) < _tierLevel('proplus')){
+    requireProPlus('Merge Collections');
+    return; // don't select the card
+  }
+  // Reset all cards to idle state
+  var cards = [
+    {id:'import_card_new',     color:'#e8c46a'},
+    {id:'import_card_replace', color:'#ff7070'},
+    {id:'import_card_merge',   color:'#e8c46a'}
+  ];
+  cards.forEach(function(c){
+    var el = document.getElementById(c.id);
+    if(el){
+      el.style.border = '1px solid #2e3545';
+      el.style.background = '#1a1d24';
+    }
+  });
+  // Highlight selected card
+  var targetId = 'import_card_' + mode;
+  var target = document.getElementById(targetId);
+  if(target){
+    var selectedColor = mode === 'replace' ? '#ff7070' : '#e8c46a';
+    target.style.border = '2px solid ' + selectedColor;
+    target.style.background = '#1a1d24';
+  }
+  // Store logical state
+  modal.dataset.importMode = mode;
+  // Enable Import button
+  var btn = document.getElementById('import_do_btn');
+  if(btn){
+    btn.disabled = false;
+    btn.style.background = '#e8c46a';
+    btn.style.color = '#1a1d24';
+    btn.style.cursor = 'pointer';
+  }
+}
+
 function doImport(data){
   // Support legacy calls that pass data directly; otherwise read from staging
   if(!data) data=_pendingImportData;
   if(!data||!data.guns){ toast('Import data missing','err'); return; }
   var nameEl=document.getElementById('import_name');
-  var modeEl=document.querySelector('input[name="import_mode"]:checked');
+  var modalEl=document.getElementById('import_modal');
   var name=nameEl?nameEl.value.trim():'Imported Collection';
-  var mode=modeEl?modeEl.value:'new';
+  // T1.10: mode now stored on modal dataset (set by _selectImportMode), not radio buttons
+  var mode = (modalEl && modalEl.dataset.importMode) || 'new';
 
   if(!name) name='Imported Collection';
 
@@ -8971,21 +9074,6 @@ function doImport(data){
 
 // ── MERGE IMPORT ─────────────────────────────────────────────────────
 function _normSerial(s){ return (s||'').toString().trim().toLowerCase(); }
-
-function _handleMergeRadioTap(ev){
-  // Pre-flight gate: if Free/Pro user taps the merge option, show upgrade immediately.
-  // The actual merge path also gates in doImport(), so this is UX sugar not security.
-  if(_tierLevel(appSettings.tier)<_tierLevel('proplus')){
-    var radio=ev.currentTarget.querySelector('input[type="radio"]');
-    if(radio){ radio.checked=false; }
-    // Keep the "New Collection" radio selected as fallback
-    var newRadio=document.querySelector('input[name="import_mode"][value="new"]');
-    if(newRadio) newRadio.checked=true;
-    requireProPlus('Merge Collections');
-    ev.preventDefault();
-    ev.stopPropagation();
-  }
-}
 
 function _startMerge(data){
   var incoming=(data.guns||[]).slice();
