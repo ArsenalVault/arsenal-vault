@@ -2363,7 +2363,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-22-A';   // bump on every revision
+var BUILD_TAG   = '2026-04-22-B';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -2380,6 +2380,147 @@ var appSettings = {
     phone:'', email:'', dlState:'', dlType:'', dlNumber:''
   }
 };
+
+// ── LICENSE (LemonSqueezy) ────────────────────────────────────────────
+// Client-side license validation. No backend — periodic revalidation is
+// the security model. Fill in the IDs below after LS activates your store
+// and you create the Pro / Pro+ products in the dashboard.
+var LS_API_BASE           = 'https://api.lemonsqueezy.com';
+var LS_API_PROXY          = 'https://api-cors-anywhere.lemonsqueezy.com';
+var LS_STORE_ID           = null;   // e.g. 123456 — fill in after LS activation
+var LS_PRO_PRODUCT_ID     = null;   // e.g. 789012 — fill in after Pro product created
+var LS_PROPLUS_PRODUCT_ID = null;   // e.g. 789013 — fill in after Pro+ product created
+var LS_REVALIDATE_HOURS   = 24;     // re-check cached license every N hours
+
+// Map LS product_id → tier. Returns null if product doesn't match ours.
+// With all IDs null (pre-launch), this always returns null, which means
+// activation always fails safely until the constants are filled in.
+function _lsProductTier(productId){
+  if(LS_PRO_PRODUCT_ID     && productId===LS_PRO_PRODUCT_ID)     return 'pro';
+  if(LS_PROPLUS_PRODUCT_ID && productId===LS_PROPLUS_PRODUCT_ID) return 'proplus';
+  return null;
+}
+
+// Low-level fetch: try direct URL, fall back to LS's own CORS proxy on
+// network error. Returns parsed JSON or throws.
+function _lsFetch(path, body){
+  var opts = {
+    method:  'POST',
+    headers: {
+      'Accept':       'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: body
+  };
+  return fetch(LS_API_BASE + path, opts)
+    .then(function(r){ return r.json(); })
+    .catch(function(){
+      return fetch(LS_API_PROXY + path, opts).then(function(r){ return r.json(); });
+    });
+}
+
+// Activate a license key. Called by Settings UI when user pastes a key.
+// Returns Promise<{ok, tier, error}>.
+function _lsActivate(licenseKey){
+  if(!licenseKey || typeof licenseKey !== 'string'){
+    return Promise.resolve({ok:false, tier:null, error:'No license key provided'});
+  }
+  licenseKey = licenseKey.trim();
+  var instanceName = 'ArsenalDB-' + licenseKey.slice(0,8);
+  var body = 'license_key=' + encodeURIComponent(licenseKey)
+           + '&instance_name=' + encodeURIComponent(instanceName);
+
+  return _lsFetch('/v1/licenses/activate', body).then(function(data){
+    if(!data || data.activated !== true){
+      return {ok:false, tier:null, error: (data && data.error) || 'Activation failed'};
+    }
+    // B1: verify store_id matches ours (prevents keys from other LS sellers)
+    if(LS_STORE_ID && data.meta && data.meta.store_id !== LS_STORE_ID){
+      return {ok:false, tier:null, error:'License key is not for ArsenalDB'};
+    }
+    // B1/B2: verify product_id maps to one of our tiers
+    var tier = _lsProductTier(data.meta && data.meta.product_id);
+    if(!tier){
+      return {ok:false, tier:null, error:'License key is not for ArsenalDB'};
+    }
+    // All checks passed — persist license state
+    appSettings.licenseKey        = licenseKey;
+    appSettings.licenseInstanceId = (data.instance && data.instance.id) || null;
+    appSettings.licenseStatus     = (data.license_key && data.license_key.status) || 'active';
+    appSettings.licenseEmail      = (data.meta && data.meta.customer_email) || null;
+    appSettings.licenseLastCheck  = new Date().toISOString();
+    appSettings.tier              = tier;
+    saveSettings();
+    return {ok:true, tier:tier, error:null};
+  }).catch(function(){
+    return {ok:false, tier:null, error:'Network error — check your connection'};
+  });
+}
+
+// Validate the currently-saved license. Updates tier based on server response.
+// Returns Promise<{ok, status, error, offline}>.
+function _lsValidate(){
+  var key = appSettings.licenseKey;
+  var instanceId = appSettings.licenseInstanceId;
+  if(!key || !instanceId){
+    return Promise.resolve({ok:false, status:null, error:'No license to validate', offline:false});
+  }
+  var body = 'license_key=' + encodeURIComponent(key)
+           + '&instance_id=' + encodeURIComponent(instanceId);
+
+  return _lsFetch('/v1/licenses/validate', body).then(function(data){
+    if(!data){
+      return {ok:false, status:null, error:'Empty response', offline:false};
+    }
+    // B1: verify store/product still match (defense against dashboard changes)
+    if(LS_STORE_ID && data.meta && data.meta.store_id !== LS_STORE_ID){
+      appSettings.tier = 'free';
+      appSettings.licenseLastCheck = new Date().toISOString();
+      saveSettings();
+      return {ok:false, status:'invalid', error:'License no longer valid', offline:false};
+    }
+    var serverStatus = (data.license_key && data.license_key.status) || null;
+    var tier = _lsProductTier(data.meta && data.meta.product_id);
+
+    // Active + matches our product → confirm tier, cache check time
+    if(data.valid === true && serverStatus === 'active' && tier){
+      appSettings.licenseStatus    = 'active';
+      appSettings.tier             = tier;
+      appSettings.licenseLastCheck = new Date().toISOString();
+      saveSettings();
+      return {ok:true, status:'active', error:null, offline:false};
+    }
+    // B7: silent downgrade — server says disabled/expired/invalid
+    appSettings.licenseStatus    = serverStatus || 'inactive';
+    appSettings.tier             = 'free';
+    appSettings.licenseLastCheck = new Date().toISOString();
+    saveSettings();
+    return {ok:false, status:serverStatus, error: data.error || 'License not active', offline:false};
+  }).catch(function(){
+    // B5: network error — keep cached state, don't downgrade
+    return {ok:false, status:null, error:'Offline', offline:true};
+  });
+}
+
+// Called on app boot (wired in Tranche E). Silently revalidates if we have
+// a key and last check was >LS_REVALIDATE_HOURS ago. Non-blocking.
+function _revalidateLicense(){
+  if(!appSettings.licenseKey || !appSettings.licenseInstanceId){
+    return Promise.resolve({ok:false, skipped:true, reason:'no-license'});
+  }
+  // B6: skip only if last check was recent AND status was active.
+  // Non-active statuses re-check every boot so recovery is fast.
+  if(appSettings.licenseLastCheck && appSettings.licenseStatus === 'active'){
+    var last  = new Date(appSettings.licenseLastCheck).getTime();
+    var ageMs = Date.now() - last;
+    var maxMs = LS_REVALIDATE_HOURS * 3600 * 1000;
+    if(!isNaN(last) && ageMs < maxMs){
+      return Promise.resolve({ok:true, skipped:true, reason:'cached'});
+    }
+  }
+  return _lsValidate();
+}
+// ── END LICENSE ───────────────────────────────────────────────────────
 
 // ── PRO GATING ──────────────────────────────────────────────────────
 function _tierLevel(t){ return t==='proplus'?3:t==='pro'?2:1; }
