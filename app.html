@@ -3956,7 +3956,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-D';   // bump on every revision
+var BUILD_TAG   = '2026-04-24-E';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -4223,8 +4223,8 @@ function openSettings(){
 
   var modal=document.createElement('div');
   modal.id='settings_modal';
-  modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-  modal.innerHTML='<div style="background:#222835;border:2px solid #3a4455;border-radius:12px;padding:24px;max-width:340px;width:100%">'
+  modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  modal.innerHTML='<div style="background:#222835;border:2px solid #3a4455;border-radius:12px;padding:24px;max-width:340px;width:100%;max-height:calc(100vh - 40px);overflow-y:auto;margin:auto">'
     +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:4px">&#9881; Settings</div>'
     +'<div style="font-size:12px;color:#8a95a8;margin-bottom:20px">ArsenalDB preferences</div>'
     +mkToggle('haptic','Haptic Feedback','Vibration on save, delete, and errors','haptic')
