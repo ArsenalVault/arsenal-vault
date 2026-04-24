@@ -1755,6 +1755,64 @@ function _computeFirearmCosts(gun){
 
 
 // ── WORK ORDER SYSTEM ────────────────────────────────────────────────
+
+// T6: compute the set of info chips to display on a WO card. Returns an
+// array of {icon, label, color, title} objects. Empty if the WO has no
+// structured data beyond notes. Caller renders to DOM; helper is pure so
+// it's unit-testable.
+function _computeWOChips(o){
+  if(!o) return [];
+  var chips = [];
+  // Parts (structured)
+  if(Array.isArray(o.parts_structured) && o.parts_structured.length){
+    var pcount = 0;
+    for(var i=0; i<o.parts_structured.length; i++){
+      var p = o.parts_structured[i];
+      if(p && (p.name || p.qty || p.cost)) pcount++;
+    }
+    if(pcount > 0){
+      chips.push({icon:'🔧', label:String(pcount), color:'#e8c46a', title:pcount+' part'+(pcount!==1?'s':'')+' listed'});
+    }
+  }
+  // Tech (torque / threadlocker / lubricants)
+  if(o.torque_notes || o.threadlocker || o.lubricants){
+    var techParts = [];
+    if(o.torque_notes) techParts.push('torque');
+    if(o.threadlocker) techParts.push('threadlocker');
+    if(o.lubricants)   techParts.push('lubricants');
+    chips.push({icon:'⚙', label:'', color:'#e8c46a', title:'Technical notes: '+techParts.join(', ')});
+  }
+  // Round count
+  if(o.round_count != null && o.round_count !== ''){
+    var rc = Number(o.round_count);
+    if(isFinite(rc)){
+      chips.push({icon:'●', label:rc.toLocaleString(), color:'#c0c8d8', title:'Round count logged: '+rc.toLocaleString()});
+    }
+  }
+  // Checklist
+  if(Array.isArray(o.checklist) && o.checklist.length){
+    var checked = 0;
+    for(var j=0; j<o.checklist.length; j++){
+      if(o.checklist[j] && o.checklist[j].checked === true) checked++;
+    }
+    chips.push({icon:'✓', label:checked+'/'+o.checklist.length, color:'#60e880', title:'Function check: '+checked+' of '+o.checklist.length+' verified'});
+  }
+  // Test-fire
+  if(o.test_fire){
+    var tf = o.test_fire;
+    var hasTF = tf.date || tf.ammo || (tf.rounds_fired != null)
+             || (tf.groups && tf.groups.length) || tf.failures || tf.outcome;
+    if(hasTF){
+      var tfColor = '#8a95a8', tfTitle = 'Test-fire data logged';
+      if(tf.outcome === 'Accept'){ tfColor = '#60e880'; tfTitle = 'Test-fire: Accept'; }
+      else if(tf.outcome === 'Retest'){ tfColor = '#ffd060'; tfTitle = 'Test-fire: Retest'; }
+      else if(tf.outcome === 'Reject'){ tfColor = '#ff7070'; tfTitle = 'Test-fire: Reject'; }
+      chips.push({icon:'🎯', label:'', color:tfColor, title:tfTitle});
+    }
+  }
+  return chips;
+}
+
 function renderWorkOrders(log){
   var orders = [];
   try{ orders = typeof log==='string' ? JSON.parse(log) : (Array.isArray(log)?log:[]); }catch(e){ 
@@ -1784,6 +1842,16 @@ function renderWorkOrders(log){
       +'</div>'
       +'<div style="font-size:13px;font-weight:600;color:#f0f2f5;margin-bottom:4px">'+eh(o.type)+'</div>'
       +(o.date?'<div style="font-size:11px;color:#8a95a8;margin-bottom:4px">'+eh(o.date)+(o.tech?' &middot; '+eh(o.tech):'')+'</div>':'')
+      // T6: info chips — render only if the WO has structured data beyond notes
+      +(function(){
+        var chips = _computeWOChips(o);
+        if(!chips.length) return '';
+        var chipHtml = chips.map(function(c){
+          var labelHtml = c.label ? '<span style="margin-left:4px">'+eh(c.label)+'</span>' : '';
+          return '<span title="'+eh(c.title)+'" style="display:inline-flex;align-items:center;font-size:10px;background:#13161d;border:1px solid '+c.color+'50;color:'+c.color+';padding:3px 7px;border-radius:3px;font-weight:600;line-height:1">'+c.icon+labelHtml+'</span>';
+        }).join('');
+        return '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">'+chipHtml+'</div>';
+      })()
       +(o.notes?'<div style="font-size:13px;color:#c0c8d8;line-height:1.5">'+eh(o.notes)+'</div>':'')
       +'</div>';
   }).join('');
@@ -2195,6 +2263,20 @@ function editWorkOrder(idx){
   addWorkOrder(idx);
 }
 
+// T6: shortcut — open the WO modal directly from the detail view without
+// routing through the full Edit Firearm page. Hydrates FORM from the gun
+// (shallow copy, same pattern editGun uses) and sets a flag so saveWorkOrder
+// knows to write the result back to the guns array, persist, and re-render
+// in place instead of mutating FORM and bouncing through the edit-view flow.
+function newWorkOrderForGun(gunId){
+  var g = guns.find(function(x){return x.id === gunId;});
+  if(!g){ toast('Firearm not found','err'); return; }
+  FORM = Object.assign({}, g);
+  if(!FORM.photos || !FORM.photos.length) FORM.photos = FORM.photo ? [FORM.photo] : [];
+  window._woStandaloneGunId = gunId;
+  addWorkOrder();
+}
+
 function addWorkOrder(editIdx){
   // T3.5: edit-mode detection — if editIdx is a valid number, load the
   // existing record and pre-populate the form. Preserve wo_number/created_at/id
@@ -2587,10 +2669,23 @@ function saveWorkOrder(){
   // T3.5: edit mode replaces at index; new mode unshifts to front
   if(isEdit && editIdx >= 0 && editIdx < priorOrders.length){
     priorOrders[editIdx] = order;
-    FORM.maintenanceLog = JSON.stringify(priorOrders);
   } else {
     priorOrders.unshift(order);
-    FORM.maintenanceLog = JSON.stringify(priorOrders);
+  }
+  var updatedLog = JSON.stringify(priorOrders);
+  // T6: standalone branch — opened from detail view via newWorkOrderForGun.
+  // Write back to the real guns array, persist, clear flag, re-render in place.
+  // FORM was hydrated as a shallow copy and should NOT be treated as source of truth.
+  if(window._woStandaloneGunId){
+    var g = guns.find(function(x){return x.id === window._woStandaloneGunId;});
+    if(g){
+      g.maintenanceLog = updatedLog;
+      sv();
+    }
+    window._woStandaloneGunId = null;
+  } else {
+    // Normal edit-page flow — mutate FORM, let the surrounding edit flow persist on Save.
+    FORM.maintenanceLog = updatedLog;
   }
   document.getElementById('wo_modal').remove();
   haptic('save');
@@ -3861,7 +3956,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-M';   // bump on every revision
+var BUILD_TAG   = '2026-04-23-N';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -7788,11 +7883,11 @@ function rDet(){
     }
     var maintBody=orders.length
       ? renderWorkOrders(g.maintenanceLog)
-      : '<div style="text-align:center;padding:20px;color:#4a5568;font-size:13px">No maintenance records yet.<br/>Edit this firearm to add a work order.</div>';
+      : '<div style="text-align:center;padding:20px;color:#4a5568;font-size:13px">No maintenance records yet.<br/>Tap + New Work Order below to add one.</div>';
     tc='<div class="panel"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">⚙ Maintenance History'
       +(g.totalRounds?'<span style="font-size:12px;color:#8a95a8;font-weight:400">'+Number(g.totalRounds||0).toLocaleString()+' rounds logged</span>':'')
       +'</div>'+partsSummaryCard+maintBody
-      +'<button class="btn-g" style="margin-top:16px" onclick="editGun(\''+g.id+'\')">+ New Work Order</button></div>';
+      +'<button class="btn-g" style="margin-top:16px" onclick="newWorkOrderForGun(\''+g.id+'\')">+ New Work Order</button></div>';
   }
 
   return '<div style="margin-bottom:16px">'
