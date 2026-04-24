@@ -3004,7 +3004,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-H2';  // bump on every revision (H2 = T2 hotfix: comment contained literal script-close tag)
+var BUILD_TAG   = '2026-04-23-I';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -9235,21 +9235,229 @@ function backupData(){
   toast('Backup saved to Downloads');
 }
 
-function shareCollection(){
-  var collName=collections[activeCollection]?collections[activeCollection].name:'My Collection';
-  var data={guns:guns,customPrices:customPrices,version:SK,exported:new Date().toISOString(),collectionName:collName};
-  var filename='arsenal_vault_'+collName.replace(/[^a-z0-9]/gi,'_')+'_'+new Date().toISOString().split('T')[0]+'.json';
-  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  if(navigator.share&&navigator.canShare){
-    var file=new File([blob],filename,{type:'application/json'});
-    if(navigator.canShare({files:[file]})){
-      navigator.share({files:[file],title:'ArsenalDB Collection',text:'My ArsenalDB collection — import via ArsenalDB'})
-        .catch(function(e){if(e.name!=='AbortError') _shareDownloadFallback(blob,filename);});
+// ── T2.1: COLLECTION SHARE (full-fidelity HTML-wrapped packet) ───────
+// Shares the complete collection (including photos and all data) through
+// the native share sheet. JSON payload is gzip-compressed and base64-encoded
+// inside an HTML wrapper, so Android's share sheet works reliably and
+// recipient browsers can view a readable summary without ArsenalDB.
+//
+// Packet structure (kind='collection'):
+//   {
+//     format:'arsenaldb_packet_v1', kind:'collection', schema_v:1,
+//     generated_at:ISO, generated_by_device:'K7F3',
+//     collection: { name, guns:[...full records including photos], customPrices, version }
+//   }
+
+// Base64 helpers (Uint8Array <-> base64 string, chunked for memory safety on large data)
+function _u8ToB64(u8){
+  var CHUNK = 0x8000;
+  var parts = [];
+  for(var i=0; i<u8.length; i+=CHUNK){
+    parts.push(String.fromCharCode.apply(null, u8.subarray(i, i+CHUNK)));
+  }
+  return btoa(parts.join(''));
+}
+function _b64ToU8(b64){
+  var bin = atob(b64);
+  var len = bin.length;
+  var u8 = new Uint8Array(len);
+  for(var i=0;i<len;i++) u8[i] = bin.charCodeAt(i);
+  return u8;
+}
+
+// Gzip-compress a string, return base64. Returns null if unsupported.
+function _gzipBase64(str){
+  return new Promise(function(resolve){
+    if(typeof CompressionStream === 'undefined'){ resolve(null); return; }
+    try{
+      var encoded = new TextEncoder().encode(str);
+      var stream = new Response(
+        new Blob([encoded]).stream().pipeThrough(new CompressionStream('gzip'))
+      );
+      stream.arrayBuffer().then(function(buf){
+        resolve(_u8ToB64(new Uint8Array(buf)));
+      }).catch(function(){ resolve(null); });
+    }catch(e){ resolve(null); }
+  });
+}
+
+// Decompress base64-encoded gzip back to a string. Throws if unsupported/invalid.
+function _gunzipBase64(b64){
+  return new Promise(function(resolve, reject){
+    if(typeof DecompressionStream === 'undefined'){
+      reject(new Error('DecompressionStream not supported'));
       return;
     }
-  }
-  _shareDownloadFallback(blob,filename);
+    try{
+      var u8 = _b64ToU8(b64);
+      var stream = new Response(
+        new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'))
+      );
+      stream.arrayBuffer().then(function(buf){
+        resolve(new TextDecoder().decode(new Uint8Array(buf)));
+      }).catch(reject);
+    }catch(e){ reject(e); }
+  });
 }
+
+// Build the HTML wrapper for a collection packet.
+// `payloadB64` is the compressed base64 payload (from _gzipBase64).
+// `uncompressedJson` is the fallback — used if payloadB64 is null.
+function _buildCollectionPacketHtml(collName, gunsArr, payloadB64, uncompressedJson){
+  var esc = eh;
+  var totalValue = 0, totalCost = 0;
+  gunsArr.forEach(function(g){
+    totalValue += parseFloat(g.currentValue)||0;
+    totalCost  += parseFloat(g.purchasePrice)||0;
+  });
+  var fmUsd = function(v){ return '$' + (v||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); };
+
+  // Compact firearm list (no photos in visible rendering — readability)
+  var rows = gunsArr.map(function(g){
+    var line1 = [g.make, g.model].filter(function(s){return s;}).join(' ') || '(unnamed)';
+    var bits = [];
+    if(g.serialNumber) bits.push('SN: '+g.serialNumber);
+    if(g.caliber)      bits.push(g.caliber);
+    if(g.condition)    bits.push(g.condition);
+    var line2 = bits.join(' · ');
+    var val = g.currentValue ? fmUsd(parseFloat(g.currentValue)) : '';
+    return '<tr>'
+      +'<td><div class="nm">'+esc(line1)+'</div>'+(line2?'<div class="sb">'+esc(line2)+'</div>':'')+'</td>'
+      +'<td class="v">'+esc(val)+'</td>'
+    +'</tr>';
+  }).join('');
+
+  // Choose payload marker — compressed vs uncompressed
+  var payloadTag;
+  if(payloadB64){
+    payloadTag = '<script type="application/json+gzip" id="arsenaldb_packet">'+payloadB64+'<\/script>';
+  } else {
+    // Escape < and > for JSON-in-script safety
+    var safeJson = uncompressedJson
+      .replace(/</g,'\\u003c').replace(/>/g,'\\u003e')
+      .replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
+    payloadTag = '<script type="application/json" id="arsenaldb_packet">'+safeJson+'<\/script>';
+  }
+
+  return '<!DOCTYPE html>'
+    +'<html lang="en"><head><meta charset="UTF-8">'
+    +'<meta name="viewport" content="width=device-width,initial-scale=1">'
+    +'<title>ArsenalDB Collection · '+esc(collName)+'</title>'
+    +'<style>'
+      +'*{box-sizing:border-box}'
+      +'body{margin:0;padding:28px 20px;background:#f6f5f2;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.5;-webkit-print-color-adjust:exact}'
+      +'.wrap{max-width:820px;margin:0 auto;background:#fff;padding:32px;border:1px solid #d8d4ca;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.04)}'
+      +'.brand{font-size:11px;letter-spacing:.2em;color:#8a7440;text-transform:uppercase;font-weight:700;margin-bottom:2px}'
+      +'.brand-sub{font-size:12px;color:#888;margin-bottom:20px}'
+      +'.coll-banner{background:#1a1d24;color:#e8c46a;padding:18px 22px;border-radius:8px;margin-bottom:20px}'
+      +'.coll-name{font-size:20px;font-weight:800;letter-spacing:.04em;margin-bottom:4px}'
+      +'.coll-count{font-size:13px;color:#c0c8d8}'
+      +'.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}'
+      +'.stat{background:#f6f5f2;border-left:3px solid #8a7440;padding:10px 14px}'
+      +'.stat .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#888;margin-bottom:4px}'
+      +'.stat .val{font-size:18px;font-weight:700;color:#1a1a1a}'
+      +'h2{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#8a7440;font-weight:800;margin:0 0 8px;border-bottom:1px solid #e0ddd4;padding-bottom:4px}'
+      +'table{width:100%;border-collapse:collapse;font-size:14px}'
+      +'td{padding:10px 8px;border-bottom:1px solid #f0ede6;vertical-align:top}'
+      +'td.v{text-align:right;color:#8a7440;font-weight:700;white-space:nowrap}'
+      +'.nm{font-weight:600;color:#1a1a1a}'
+      +'.sb{font-size:12px;color:#666;margin-top:2px}'
+      +'.import-note{background:#f0f6fa;border:1px solid #a8c8e0;border-radius:6px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#2a4a68}'
+      +'.footer{margin-top:28px;padding-top:12px;border-top:1px solid #e0ddd4;font-size:11px;color:#8a7440;text-align:center;letter-spacing:.04em}'
+      +'@media print{body{background:#fff;padding:0} .wrap{border:none;box-shadow:none;padding:0}}'
+    +'</style>'
+    +'</head><body><div class="wrap">'
+      +'<div class="brand">ArsenalDB</div>'
+      +'<div class="brand-sub">Private Armory Management</div>'
+      +'<div class="coll-banner">'
+        +'<div class="coll-name">'+esc(collName)+'</div>'
+        +'<div class="coll-count">'+gunsArr.length+' firearm'+(gunsArr.length!==1?'s':'')+'</div>'
+      +'</div>'
+      +'<div class="import-note"><strong>ArsenalDB users:</strong> this file contains the complete collection including photos and history. Open ArsenalDB and use Import Collection to merge into your own collection.</div>'
+      +'<div class="stats">'
+        +'<div class="stat"><div class="lbl">Firearms</div><div class="val">'+gunsArr.length+'</div></div>'
+        +'<div class="stat"><div class="lbl">Total Value</div><div class="val">'+fmUsd(totalValue)+'</div></div>'
+        +'<div class="stat"><div class="lbl">Cost Basis</div><div class="val">'+fmUsd(totalCost)+'</div></div>'
+      +'</div>'
+      +'<h2>Firearms in this Collection</h2>'
+      +'<table><tbody>'+rows+'</tbody></table>'
+      +'<div class="footer">Generated by ArsenalDB · '+esc((appSettings&&appSettings.devicePrefix)||'')+' · '+esc(new Date().toLocaleDateString())+'</div>'
+    +'</div>'
+    +payloadTag
+  +'</body></html>';
+}
+
+// Loading-modal helpers for the compression step.
+function _showCollectionShareLoader(){
+  var existing = document.getElementById('coll_share_loader');
+  if(existing) existing.remove();
+  var el = document.createElement('div');
+  el.id = 'coll_share_loader';
+  el.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px';
+  el.innerHTML = '<div style="font-size:38px;color:#e8c46a" class="spinning">&#8635;</div>'
+    +'<div style="font-size:14px;color:#c0c8d8;font-weight:600">Preparing collection packet...</div>'
+    +'<div style="font-size:12px;color:#8a95a8">This may take a few seconds for large collections.</div>';
+  document.body.appendChild(el);
+}
+function _hideCollectionShareLoader(){
+  var el = document.getElementById('coll_share_loader');
+  if(el) el.remove();
+}
+
+function shareCollection(){
+  var collName = collections[activeCollection] ? collections[activeCollection].name : 'My Collection';
+  var data = {
+    format: 'arsenaldb_packet_v1',
+    kind: 'collection',
+    schema_v: 1,
+    generated_at: new Date().toISOString(),
+    generated_by_device: (appSettings && appSettings.devicePrefix) || '',
+    collection: {
+      name: collName,
+      guns: guns,
+      customPrices: customPrices,
+      version: SK
+    }
+  };
+  var jsonStr;
+  try{ jsonStr = JSON.stringify(data); }
+  catch(e){ toast('Could not serialize collection','err'); return; }
+
+  _showCollectionShareLoader();
+
+  // Gzip-compress if supported, else fall back to uncompressed JSON in the packet.
+  _gzipBase64(jsonStr).then(function(b64){
+    _hideCollectionShareLoader();
+    var html = _buildCollectionPacketHtml(collName, guns, b64, b64 ? null : jsonStr);
+    var safeName = collName.replace(/[^a-z0-9]/gi,'_');
+    var filename = 'ArsenalDB_Collection_' + safeName + '_' + new Date().toISOString().split('T')[0] + '.html';
+    var blob = new Blob([html], {type: 'text/html'});
+    // File size warning for anything above Gmail's 25 MB inline attachment cap.
+    var sizeMB = blob.size / (1024*1024);
+    if(sizeMB > 25){
+      toast('Packet is '+sizeMB.toFixed(1)+' MB — use Drive or Quick Share for best results.');
+    }
+    var file;
+    try{ file = new File([blob], filename, {type: 'text/html'}); }catch(e){ file = null; }
+    if(file && navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({
+        files:[file],
+        title:'ArsenalDB Collection',
+        text:'My ArsenalDB collection — import via ArsenalDB'
+      }).catch(function(err){
+        if(err && err.name === 'AbortError'){ toast('Share canceled'); }
+        else { _shareDownloadFallback(blob, filename); }
+      });
+    } else {
+      _shareDownloadFallback(blob, filename);
+    }
+  }).catch(function(err){
+    _hideCollectionShareLoader();
+    toast('Could not prepare packet — try again','err');
+  });
+}
+// ── END T2.1 COLLECTION SHARE ────────────────────────────────────────
+
 function _shareDownloadFallback(blob,filename){
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
@@ -9258,57 +9466,127 @@ function _shareDownloadFallback(blob,filename){
   toast('Saved to Downloads — share from your Files app');
 }
 
+// T2.1: common continuation after file contents have been parsed into a
+// backup-shaped object ({guns, customPrices, collectionName, version, exported}).
+// Extracted so both JSON and HTML-packet import paths share one UI.
+function _continueImportWithData(data){
+  if(!data.guns || !Array.isArray(data.guns)){
+    toast('Invalid backup file','err');
+    return;
+  }
+  var count = data.guns.length;
+  _pendingImportData = data;
+
+  var modal=document.createElement('div');
+  modal.id='import_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML='<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:24px;max-width:360px;width:100%">'
+    +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:6px">&#128194; Import Collection</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:18px">Found '+count+' firearm'+(count!==1?'s':'')+' in this file.</div>'
+    +'<div style="margin-bottom:14px">'
+      +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;margin-bottom:6px">Collection Name</div>'
+      +'<input id="import_name" type="text" placeholder="e.g. John\'s Collection" value="'+eh(data.collectionName||'Imported Collection')+'" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:11px 12px;font-size:14px;outline:none;font-family:inherit"/>'
+    +'</div>'
+    +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;margin-bottom:8px">Import As</div>'
+    +'<div id="import_card_new" role="button" tabindex="0" onclick="_selectImportMode(\'new\')" style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .15s ease">'
+      +'<div style="font-size:14px;font-weight:700;color:#f0f2f5;margin-bottom:4px">📂 New Collection</div>'
+      +'<div style="font-size:11px;color:#8a95a8;line-height:1.5">Creates a separate collection — your data is safe</div>'
+    +'</div>'
+    +'<div id="import_card_replace" role="button" tabindex="0" onclick="_selectImportMode(\'replace\')" style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .15s ease">'
+      +'<div style="font-size:14px;font-weight:700;color:#ff7070;margin-bottom:4px">↻ Replace Current Collection</div>'
+      +'<div style="font-size:11px;color:#8a95a8;line-height:1.5">Overwrites "'+eh(collections[activeCollection]?collections[activeCollection].name:'current')+'" — cannot be undone</div>'
+    +'</div>'
+    +'<div id="import_card_merge" role="button" tabindex="0" onclick="_selectImportMode(\'merge\')" style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:16px;cursor:pointer;transition:all .15s ease">'
+      +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">'
+        +'<span style="font-size:14px;font-weight:700;color:#e8c46a">👥 Merge Into Current Collection</span>'
+        +'<span style="background:#e8c46a;color:#1a1d24;font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px;letter-spacing:.05em">PRO+ · 2 DEVICES</span>'
+      +'</div>'
+      +'<div style="font-size:11px;color:#8a95a8;line-height:1.5">Combine entries from another device or contributor. Designed for dealers, estate sales, and multi-person collections. Flags duplicate serials for review.</div>'
+    +'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+      +'<button id="import_do_btn" onclick="doImport()" disabled style="background:#3a4455;color:#6a7488;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:not-allowed;font-family:inherit">Import</button>'
+      +'<button onclick="document.getElementById(\'import_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
+    +'</div>'
+    +'</div>';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  document.body.appendChild(modal);
+}
+
+// T2.1: extract ArsenalDB packet JSON from an HTML file's embedded script block.
+// Handles both gzip-compressed (application/json+gzip) and uncompressed (application/json)
+// payload variants. Returns a Promise resolving to the parsed packet object.
+function _extractPacketFromHtml(htmlText){
+  return new Promise(function(resolve, reject){
+    // Look for compressed payload first
+    var gzipMatch = htmlText.match(/<script\s+type="application\/json\+gzip"\s+id="arsenaldb_packet">([^<]+)<\/script>/);
+    if(gzipMatch){
+      _gunzipBase64(gzipMatch[1]).then(function(jsonStr){
+        try{ resolve(JSON.parse(jsonStr)); }
+        catch(e){ reject(new Error('Could not parse decompressed packet')); }
+      }).catch(function(){
+        reject(new Error('Could not decompress packet — your browser may be too old'));
+      });
+      return;
+    }
+    // Fall back to uncompressed payload
+    var jsonMatch = htmlText.match(/<script\s+type="application\/json"\s+id="arsenaldb_packet">([\s\S]+?)<\/script>/);
+    if(jsonMatch){
+      try{
+        // Undo the <,>,2028,2029 unicode escapes we applied on write
+        var raw = jsonMatch[1]
+          .replace(/\\u003c/g,'<').replace(/\\u003e/g,'>')
+          .replace(/\\u2028/g,'\u2028').replace(/\\u2029/g,'\u2029');
+        resolve(JSON.parse(raw));
+      }catch(e){
+        reject(new Error('Could not parse packet'));
+      }
+      return;
+    }
+    reject(new Error('No ArsenalDB packet found in this HTML file'));
+  });
+}
+
 function restoreData(e){
   var file=e.target.files[0];if(!file)return;
   var reader=new FileReader();
   reader.onload=function(ev){
+    var text = ev.target.result;
+    var trimmed = (text || '').replace(/^\uFEFF/,'').trimStart();
+
+    // T2.1: HTML packet path — detect by prefix
+    if(trimmed.indexOf('<!DOCTYPE') === 0 || trimmed.indexOf('<html') === 0){
+      _extractPacketFromHtml(text).then(function(packet){
+        if(packet && packet.format === 'arsenaldb_packet_v1'){
+          if(packet.kind === 'collection' && packet.collection){
+            var coll = packet.collection;
+            _continueImportWithData({
+              guns:           coll.guns || [],
+              customPrices:   coll.customPrices || {},
+              collectionName: coll.name || 'Imported Collection',
+              version:        coll.version,
+              exported:       packet.generated_at
+            });
+            return;
+          }
+          if(packet.kind === 'work_order_single'){
+            toast('This is a single Work Order packet, not a collection.','err');
+            return;
+          }
+        }
+        toast('Unrecognized packet format','err');
+      }).catch(function(err){
+        toast((err && err.message) || 'Could not read file','err');
+      });
+      return;
+    }
+
+    // JSON path (today's behavior — backward compat for existing .json backups)
     try{
-      var data=JSON.parse(ev.target.result);
-      if(!data.guns||!Array.isArray(data.guns)){
-        toast('Invalid backup file','err');
-        return;
-      }
-
-      var count=data.guns.length;
-      _pendingImportData=data;
-
-      // Ask how to import
-      var modal=document.createElement('div');
-      modal.id='import_modal';
-      modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-      modal.innerHTML='<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:24px;max-width:360px;width:100%">'
-        +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:6px">&#128194; Import Collection</div>'
-        +'<div style="font-size:13px;color:#8a95a8;margin-bottom:18px">Found '+count+' firearm'+(count!==1?'s':'')+' in this file.</div>'
-        +'<div style="margin-bottom:14px">'
-          +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;margin-bottom:6px">Collection Name</div>'
-          +'<input id="import_name" type="text" placeholder="e.g. John\'s Collection" value="'+(data.collectionName||'Imported Collection')+'" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:11px 12px;font-size:14px;outline:none;font-family:inherit"/>'
-        +'</div>'
-        +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;margin-bottom:8px">Import As</div>'
-        // T1.10: three tappable cards, nothing pre-selected. Pick a card to enable Import button.
-        +'<div id="import_card_new" role="button" tabindex="0" onclick="_selectImportMode(\'new\')" style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .15s ease">'
-          +'<div style="font-size:14px;font-weight:700;color:#f0f2f5;margin-bottom:4px">📂 New Collection</div>'
-          +'<div style="font-size:11px;color:#8a95a8;line-height:1.5">Creates a separate collection — your data is safe</div>'
-        +'</div>'
-        +'<div id="import_card_replace" role="button" tabindex="0" onclick="_selectImportMode(\'replace\')" style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .15s ease">'
-          +'<div style="font-size:14px;font-weight:700;color:#ff7070;margin-bottom:4px">↻ Replace Current Collection</div>'
-          +'<div style="font-size:11px;color:#8a95a8;line-height:1.5">Overwrites "'+eh(collections[activeCollection]?collections[activeCollection].name:'current')+'" — cannot be undone</div>'
-        +'</div>'
-        +'<div id="import_card_merge" role="button" tabindex="0" onclick="_selectImportMode(\'merge\')" style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:16px;cursor:pointer;transition:all .15s ease">'
-          +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">'
-            +'<span style="font-size:14px;font-weight:700;color:#e8c46a">👥 Merge Into Current Collection</span>'
-            +'<span style="background:#e8c46a;color:#1a1d24;font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px;letter-spacing:.05em">PRO+ · 2 DEVICES</span>'
-          +'</div>'
-          +'<div style="font-size:11px;color:#8a95a8;line-height:1.5">Combine entries from another device or contributor. Designed for dealers, estate sales, and multi-person collections. Flags duplicate serials for review.</div>'
-        +'</div>'
-        +'<div style="display:flex;flex-direction:column;gap:8px">'
-          +'<button id="import_do_btn" onclick="doImport()" disabled style="background:#3a4455;color:#6a7488;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:not-allowed;font-family:inherit">Import</button>'
-          +'<button onclick="document.getElementById(\'import_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
-        +'</div>'
-        +'</div>';
-      modal.onclick=function(e){if(e.target===modal)modal.remove();};
-      document.body.appendChild(modal);
-
-    }catch(ex){toast('Could not read backup file','err');}
+      var data = JSON.parse(text);
+      _continueImportWithData(data);
+    }catch(ex){
+      toast('Could not read backup file','err');
+    }
   };
   reader.readAsText(file);
   e.target.value='';
