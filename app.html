@@ -2421,6 +2421,18 @@ function _flagSuppressWOEdit(){
 function editWorkOrder(idx){
   // Ghost-tap guard — bail silently if we just interacted with Delete or Share
   if(_suppressWOEdit) return;
+  // HOTFIX (post-T11): detail view doesn't populate FORM. Sync from current
+  // gun and flag standalone mode so saveWorkOrder writes back to g directly.
+  // Without this, tapping a WO card from detail view fires 'Work order no
+  // longer exists' because FORM.maintenanceLog is stale/empty.
+  if(VIEW === 'detail' && selId){
+    var gDV = guns.find(function(x){return x.id === selId;});
+    if(gDV){
+      FORM = Object.assign({}, gDV);
+      if(!FORM.photos || !FORM.photos.length) FORM.photos = FORM.photo ? [FORM.photo] : [];
+      window._woStandaloneGunId = selId;
+    }
+  }
   // Defensive: verify the record still exists. If the user deleted a WO and a
   // stale tap event bubbled through anyway (or the index is otherwise bad),
   // refuse to open a blank form that would silently create a new record.
@@ -2867,10 +2879,24 @@ function saveWorkOrder(){
 
 function removeWorkOrder(idx){
   if(!confirm('Remove this work order?')) return;
+  // HOTFIX (post-T11): in detail view, write back to gun directly and persist.
+  // In edit view, mutate FORM and let firearm-save flow persist.
+  var targetGun = null;
+  if(VIEW === 'detail' && selId){
+    targetGun = guns.find(function(x){return x.id === selId;});
+  }
+  var logSource = targetGun ? (targetGun.maintenanceLog || '[]') : (FORM.maintenanceLog || '[]');
   var orders = [];
-  try{ orders = JSON.parse(FORM.maintenanceLog); }catch(e){ return; }
-  orders.splice(idx,1);
-  FORM.maintenanceLog = JSON.stringify(orders);
+  try{ orders = JSON.parse(logSource); }catch(e){ return; }
+  if(!Array.isArray(orders) || idx < 0 || idx >= orders.length) return;
+  orders.splice(idx, 1);
+  var updated = JSON.stringify(orders);
+  if(targetGun){
+    targetGun.maintenanceLog = updated;
+    sv();
+  } else {
+    FORM.maintenanceLog = updated;
+  }
   haptic('light');
   rnd();
 }
@@ -4128,7 +4154,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-G';   // bump on every revision
+var BUILD_TAG   = '2026-04-24-H';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
