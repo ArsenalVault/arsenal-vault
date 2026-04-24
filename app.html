@@ -3956,7 +3956,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-N';   // bump on every revision
+var BUILD_TAG   = '2026-04-23-O';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -6066,6 +6066,113 @@ function printAllCustody(){
 
 
 // ── COLLECTIONS ───────────────────────────────────────────────────────
+
+// T7: resolve a proposed collection name to one that doesn't collide
+// (case-insensitive) with any existing collection's name. Appends " (2)",
+// " (3)", etc. until a free name is found. Caller is responsible for
+// empty-string handling — this helper returns the trimmed input unchanged
+// when input is empty/whitespace, so callers must check first.
+// Returns {name: string, suffixed: bool}.
+function _resolveCollectionName(proposedName){
+  var trimmed = (proposedName || '').toString().trim();
+  if(!trimmed) return {name: trimmed, suffixed: false};
+  // Build a lowercase set of existing names
+  var existing = {};
+  for(var id in collections){
+    if(collections.hasOwnProperty(id) && collections[id] && collections[id].name){
+      existing[collections[id].name.toLowerCase()] = true;
+    }
+  }
+  if(!existing[trimmed.toLowerCase()]) return {name: trimmed, suffixed: false};
+  // Collision — find the next free " (N)" suffix, starting at 2
+  var n = 2;
+  while(n < 1000){
+    var candidate = trimmed + ' (' + n + ')';
+    if(!existing[candidate.toLowerCase()]){
+      return {name: candidate, suffixed: true};
+    }
+    n++;
+  }
+  // Pathological case — fall back to a timestamped suffix
+  return {name: trimmed + ' (' + Date.now().toString(36) + ')', suffixed: true};
+}
+
+// T7: one-time cleanup of existing duplicate collection names. Runs inside
+// loadCollections() after parsing storage. Idempotent — running twice is a
+// no-op because the first run eliminated all duplicates.
+//
+// Algorithm:
+//   1. Group collections by lowercased trimmed name.
+//   2. For each group with >=2 members, sort by created ASC (oldest first).
+//   3. The 'default' collection, if present in a group, is always pinned
+//      first regardless of created date (load-bearing — name is cosmetic
+//      but identity matters and other code references collections['default']).
+//   4. First member keeps its original name. Subsequent members get " (2)",
+//      " (3)", etc., skipping any suffix that collides with another existing
+//      collection name.
+//   5. Persist only if any rename happened.
+function _dedupeCollectionNames(){
+  var ids = Object.keys(collections || {});
+  if(ids.length < 2) return;
+  // Build a case-insensitive set of all current names up front — used so
+  // suffixes we pick don't collide with an unrelated, unrenamed collection.
+  var takenNames = {};
+  for(var a=0; a<ids.length; a++){
+    var col = collections[ids[a]];
+    if(col && col.name) takenNames[col.name.toLowerCase()] = true;
+  }
+  // Group by lowercased trimmed name
+  var groups = {};
+  for(var b=0; b<ids.length; b++){
+    var id = ids[b];
+    var c = collections[id];
+    if(!c || !c.name) continue;
+    var key = c.name.trim().toLowerCase();
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(id);
+  }
+  var anyRenamed = false;
+  for(var key2 in groups){
+    var memberIds = groups[key2];
+    if(memberIds.length < 2) continue;
+    // Sort: 'default' first, then by created ASC
+    memberIds.sort(function(x, y){
+      if(x === 'default') return -1;
+      if(y === 'default') return 1;
+      var cx = (collections[x] && collections[x].created) || '';
+      var cy = (collections[y] && collections[y].created) || '';
+      if(cx < cy) return -1;
+      if(cx > cy) return 1;
+      // Stable tiebreak by id
+      return x < y ? -1 : (x > y ? 1 : 0);
+    });
+    // First keeps its name; remove it from takenNames temporarily so we
+    // don't count its own slot as taken when computing suffixes.
+    var baseName = collections[memberIds[0]].name.trim();
+    // Rename the rest
+    for(var i=1; i<memberIds.length; i++){
+      var mid = memberIds[i];
+      var n = 2;
+      var newName = null;
+      while(n < 1000){
+        var candidate = baseName + ' (' + n + ')';
+        if(!takenNames[candidate.toLowerCase()]){
+          newName = candidate;
+          break;
+        }
+        n++;
+      }
+      if(!newName) newName = baseName + ' (' + Date.now().toString(36) + i + ')';
+      collections[mid].name = newName;
+      takenNames[newName.toLowerCase()] = true;
+      anyRenamed = true;
+    }
+  }
+  if(anyRenamed){
+    try{saveCollections();}catch(e){}
+  }
+}
+
 function loadCollections(){
   try{
     var s=localStorage.getItem('av_collections');
@@ -6082,6 +6189,11 @@ function loadCollections(){
     };
     saveCollections();
   }
+
+  // T7: clean up any pre-existing duplicate collection names. One-time pass
+  // that renames " (2)", " (3)" etc. Protects users who created duplicates
+  // on older builds; idempotent for users who had none.
+  _dedupeCollectionNames();
 
   // Migrate existing guns into default collection if not already done
   var migrated=localStorage.getItem('av_coll_migrated');
@@ -6191,8 +6303,11 @@ function createCollection(){
   var name=prompt('Collection name:');
   if(!name||!name.trim()) return;
   name=name.trim();
+  // T7: silently disambiguate name collisions (case-insensitive)
+  var resolved=_resolveCollectionName(name);
+  var finalName=resolved.name;
   var id='coll_'+Date.now().toString(36);
-  collections[id]={name:name,created:new Date().toISOString()};
+  collections[id]={name:finalName,created:new Date().toISOString()};
   saveCollections();
   collMenuOpen=false;
   // Save current and switch
@@ -6204,18 +6319,34 @@ function createCollection(){
   VIEW='dashboard';
   FORM=ef();
   rnd();
-  toast('Collection "'+name+'" created!');
+  if(resolved.suffixed){
+    toast('Collection "'+finalName+'" created — "'+name+'" already existed');
+  } else {
+    toast('Collection "'+finalName+'" created!');
+  }
 }
 
 function renameCollection(collId){
   var old=collections[collId]?collections[collId].name:'';
   var name=prompt('Rename collection:',old);
   if(!name||!name.trim()) return;
-  collections[collId].name=name.trim();
+  name=name.trim();
+  // T7: temporarily drop this collection's own name from the "taken" set so
+  // the user can rename to the same name (case change, whitespace cleanup)
+  // without triggering false collision. We do this by clearing its name
+  // before resolving, then writing the resolved name back.
+  var prev=collections[collId].name;
+  collections[collId].name='';
+  var resolved=_resolveCollectionName(name);
+  collections[collId].name=resolved.name || prev;
   saveCollections();
   collMenuOpen=false;
   rnd();
-  toast('Renamed to "'+name.trim()+'"');
+  if(resolved.suffixed){
+    toast('Renamed to "'+collections[collId].name+'" — "'+name+'" already existed');
+  } else {
+    toast('Renamed to "'+collections[collId].name+'"');
+  }
 }
 
 function deleteCollection(collId){
@@ -10631,6 +10762,9 @@ function doImport(data){
 
   if(mode==='new'){
     // Create new collection
+    // T7: silently disambiguate if this name collides with existing collection
+    var _resolved=_resolveCollectionName(name);
+    name=_resolved.name;
     var id='coll_'+Date.now().toString(36);
     collections[id]={name:name,created:new Date().toISOString()};
     saveCollections();
@@ -10647,7 +10781,7 @@ function doImport(data){
     milestones={};totalCleanings=0;transferredGuns=[];
     loadMilestones();loadTransferred();
     haptic('save');
-    toast('Imported '+guns.length+' firearms into "'+name+'"');
+    toast('Imported '+guns.length+' firearms into "'+name+'"'+(_resolved.suffixed?' (renamed to avoid collision)':''));
     VIEW='dashboard';
     rnd();
   } else if(mode==='merge'){
