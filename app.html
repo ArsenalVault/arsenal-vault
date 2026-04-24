@@ -1739,8 +1739,8 @@ function renderWorkOrders(log){
         +'<div style="font-size:12px;font-weight:700;color:#e8c46a">'+eh(woLabel)+'</div>'
         +'<div style="display:flex;gap:6px;align-items:center">'
           +'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+statusColor+'20;color:'+statusColor+';border:1px solid '+statusColor+'50">'+eh(o.status)+'</span>'
-          +'<button onclick="event.stopPropagation();shareWO('+i+')" title="Share" style="background:#1a1d24;border:1px solid #e8c46a60;color:#e8c46a;border-radius:4px;cursor:pointer;font-size:12px;padding:3px 7px;font-family:inherit;line-height:1">↗</button>'
-          +'<button onclick="event.stopPropagation();removeWorkOrder('+i+')" style="background:none;border:none;color:#ff707070;cursor:pointer;font-size:14px;padding:0 4px">&#10005;</button>'
+          +'<button onclick="event.stopPropagation();_flagSuppressWOEdit();shareWO('+i+')" title="Share" style="background:#1a1d24;border:1px solid #e8c46a60;color:#e8c46a;border-radius:4px;cursor:pointer;font-size:12px;padding:3px 7px;font-family:inherit;line-height:1">↗</button>'
+          +'<button onclick="event.stopPropagation();_flagSuppressWOEdit();removeWorkOrder('+i+')" style="background:none;border:none;color:#ff707070;cursor:pointer;font-size:14px;padding:0 4px">&#10005;</button>'
         +'</div>'
       +'</div>'
       +'<div style="font-size:13px;font-weight:600;color:#f0f2f5;margin-bottom:4px">'+eh(o.type)+'</div>'
@@ -1944,7 +1944,28 @@ function _toggleWODetailsDrawer(){
 // ── END T3 PRO DETAILS DRAWER ────────────────────────────────────────
 
 // T3.5: tap-to-edit entry point. Wraps addWorkOrder with the index to edit.
+// T3.5.1: ghost-tap defense. When Delete or Share is tapped on a WO card,
+// the card's onclick can still fire after the dialog/share sheet closes on
+// some mobile browsers — event.stopPropagation() alone is unreliable during
+// the async gap. This flag blocks any edit attempt within a 300ms window
+// after Delete or Share was invoked.
+var _suppressWOEdit = false;
+function _flagSuppressWOEdit(){
+  _suppressWOEdit = true;
+  setTimeout(function(){ _suppressWOEdit = false; }, 300);
+}
 function editWorkOrder(idx){
+  // Ghost-tap guard — bail silently if we just interacted with Delete or Share
+  if(_suppressWOEdit) return;
+  // Defensive: verify the record still exists. If the user deleted a WO and a
+  // stale tap event bubbled through anyway (or the index is otherwise bad),
+  // refuse to open a blank form that would silently create a new record.
+  var existingOrders = [];
+  try{ existingOrders = FORM.maintenanceLog ? JSON.parse(FORM.maintenanceLog) : []; }catch(e){ existingOrders = []; }
+  if(typeof idx !== 'number' || idx < 0 || idx >= existingOrders.length || !existingOrders[idx]){
+    toast('Work order no longer exists','err');
+    return;
+  }
   addWorkOrder(idx);
 }
 
@@ -3411,7 +3432,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-K';   // bump on every revision
+var BUILD_TAG   = '2026-04-23-K2';  // bump on every revision (K2 = T3.5.1 hotfix: ghost-tap after delete/share)
 var appSettings = {
   haptic: true,
   sounds: true,
