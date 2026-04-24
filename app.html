@@ -3484,7 +3484,7 @@ function rAdd(){
 
   var valueHtml='<div class="form-grid">'
     +'<div class="form-group"><label class="lbl">Purchase Price ($)</label><input type="number" id="f_pp" value="'+eh(f.purchasePrice)+'" placeholder="0.00"/></div>'
-    +'<div class="form-group"><label class="lbl">Current Value ($)</label><div style="display:flex;gap:8px"><input type="number" id="f_cv" value="'+eh(f.currentValue)+'" placeholder="0.00" style="flex:1"/><button id="val_btn" class="btn-ai" onclick="doVal()">&#10022; AI Est.</button></div></div>'
+    +'<div class="form-group"><label class="lbl">Current Value ($)</label><div style="display:flex;gap:8px"><input type="number" id="f_cv" value="'+eh(f.currentValue)+'" placeholder="0.00" style="flex:1"/><button id="val_btn" class="btn-ai" onclick="doVal()">&#10022; '+(((appSettings.tier||'free')==='proplus' && _BYO_hasKey())?'AI Est.':'Est. Value')+'</button></div></div>'
     +'<div class="form-group"><label class="lbl">Insurance Value ($)</label><input type="number" id="f_ins" value="'+eh(f.insuranceValue)+'" placeholder="For coverage records"/></div>'
     +'</div>'+avb;
 
@@ -3956,7 +3956,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-C';   // bump on every revision
+var BUILD_TAG   = '2026-04-24-D';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -4253,6 +4253,7 @@ function openSettings(){
         +'</button>'
       +'</div>'
     +'</div>'
+    + _BYO_renderSettingsSection()
     +(appSettings.devMode?('<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
         +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">Developer</div>'
         +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px">Simulates subscription tier for gate testing.</div>'
@@ -6948,6 +6949,7 @@ function toggleEditMenu(id){
 // ── AI GUN IDENTIFIER ────────────────────────────────────────────────
 function openGunIdentifier(){
   if(!requireProPlus('AI Gun Identifier')) return;
+  if(!_BYO_requireKey('AI Gun Identifier')) return;
   var modal=document.createElement('div');
   modal.id='identifier_modal';
   modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -6982,27 +6984,17 @@ function runGunIdentifier(input){
     var base64=e.target.result.split(',')[1];
     var mediaType=file.type||'image/jpeg';
 
-    // Call Claude AI
-    fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:500,
-        messages:[{
-          role:'user',
-          content:[
-            {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-            {type:'text',text:'Identify this firearm. Respond ONLY with a JSON object with these exact fields: {"make":"","model":"","type":"","caliber":"","year":"","confidence":"high/medium/low","notes":""}. Type must be one of: Pistol, Revolver, Rifle, Shotgun, AR-15/Semi-Auto Rifle, Bolt-Action Rifle, Lever-Action Rifle, Pump Shotgun, Semi-Auto Shotgun, Other. If you cannot identify it, use your best guess and set confidence to low. Return ONLY the JSON, no other text.'}
-          ]
-        }]
-      })
-    })
-    .then(function(r){return r.json();})
-    .then(function(data){
-      var text='';
-      if(data.content&&data.content[0]) text=data.content[0].text||'';
-      // Parse JSON response
+    // Call Claude AI via BYO wrapper
+    var messages = [{
+      role:'user',
+      content:[
+        {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+        {type:'text',text:'Identify this firearm. Respond ONLY with a JSON object with these exact fields: {"make":"","model":"","type":"","caliber":"","year":"","confidence":"high/medium/low","notes":""}. Type must be one of: Pistol, Revolver, Rifle, Shotgun, AR-15/Semi-Auto Rifle, Bolt-Action Rifle, Lever-Action Rifle, Pump Shotgun, Semi-Auto Shotgun, Other. If you cannot identify it, use your best guess and set confidence to low. Return ONLY the JSON, no other text.'}
+      ]
+    }];
+    _BYO_claudeCall(messages, {model:_BYO_VISION_MODEL, max_tokens:500})
+    .then(function(res){
+      var text = res.text || '';
       try{
         var clean=text.replace(/```json|```/g,'').trim();
         var result=JSON.parse(clean);
@@ -7012,7 +7004,8 @@ function runGunIdentifier(input){
       }
     })
     .catch(function(err){
-      showIdentifierError('AI request failed: '+err.message);
+      _BYO_showError(err);
+      showIdentifierError(err.errorType === 'no_key' ? 'AI key needed — set up in Settings' : 'AI request failed: '+(err.message||''));
     });
   };
   reader.readAsDataURL(file);
@@ -8559,39 +8552,365 @@ function rRangeTab(gunId){
     +'<button onclick="openNewRangeForm()" style="width:100%;margin-top:12px;background:#1e2535;border:1px solid #3a4455;color:#60e880;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🎯 Log New Session</button>';
 }
 
+// ── BEGIN BYO-T1 BRING YOUR OWN API KEY ──────────────────────────────
+// BYO-T1: Users provide their own Anthropic API key.
+// Key stored in localStorage (same trust model as rest of app data).
+// Unified wrapper for all AI calls + unified gate for all AI features.
+// ─────────────────────────────────────────────────────────────────────
+
+var _BYO_STORAGE_KEY = 'arsenal_byo_api_key';
+var _BYO_API_URL = 'https://api.anthropic.com/v1/messages';
+var _BYO_ANTHROPIC_VERSION = '2023-06-01';
+var _BYO_MODEL = 'claude-sonnet-4-5';  // Current Sonnet model
+var _BYO_VISION_MODEL = 'claude-sonnet-4-5'; // Same model — Sonnet supports vision
+
+// Key format validation. Anthropic keys start with sk-ant- and are ~100+ chars.
+function _BYO_validateKeyFormat(key){
+  if(!key || typeof key !== 'string') return false;
+  var trimmed = key.trim();
+  if(trimmed.length < 20) return false;
+  return /^sk-ant-/.test(trimmed);
+}
+
+function _BYO_loadKey(){
+  try {
+    if(typeof localStorage === 'undefined') return '';
+    var k = localStorage.getItem(_BYO_STORAGE_KEY);
+    return k ? k.trim() : '';
+  } catch(e) { return ''; }
+}
+
+function _BYO_saveKey(key){
+  try {
+    if(typeof localStorage === 'undefined') return false;
+    var trimmed = (key || '').trim();
+    if(!_BYO_validateKeyFormat(trimmed)) return false;
+    localStorage.setItem(_BYO_STORAGE_KEY, trimmed);
+    return true;
+  } catch(e) { return false; }
+}
+
+function _BYO_clearKey(){
+  try {
+    if(typeof localStorage === 'undefined') return false;
+    localStorage.removeItem(_BYO_STORAGE_KEY);
+    return true;
+  } catch(e) { return false; }
+}
+
+function _BYO_hasKey(){
+  return !!_BYO_loadKey();
+}
+
+// Mask a key for display. Shows sk-ant- prefix + last 4 chars.
+function _BYO_maskKey(key){
+  if(!key) return '';
+  if(key.length < 12) return '••••••••';
+  return key.substring(0, 7) + '…' + key.substring(key.length - 4);
+}
+
+// Classify API errors into user-friendly types.
+function _BYO_classifyError(status, data){
+  var msg = (data && data.error && data.error.message) || '';
+  var type = (data && data.error && data.error.type) || '';
+
+  if(status === 401 || type === 'authentication_error'){
+    return { errorType:'auth', message:'Invalid API key. Check your key in Settings.' };
+  }
+  if(status === 402 || type === 'billing_error' || /credit/i.test(msg) || /billing/i.test(msg) || /insufficient/i.test(msg)){
+    return { errorType:'billing', message:'Your Anthropic account needs credits. Visit console.anthropic.com/billing.' };
+  }
+  if(status === 429 || type === 'rate_limit_error'){
+    return { errorType:'rate_limit', message:'Rate limit hit. Wait a moment and try again.' };
+  }
+  if(type === 'overloaded_error'){
+    return { errorType:'overloaded', message:'Claude is busy right now. Try again in a minute.' };
+  }
+  if(status === 400 && /model/i.test(msg)){
+    return { errorType:'model', message:'Model unavailable. The app may need an update.' };
+  }
+  if(status >= 500 && status < 600){
+    return { errorType:'server', message:'Anthropic service issue. Try again shortly.' };
+  }
+  return { errorType:'other', message: msg || 'AI request failed.' };
+}
+
+// Unified API wrapper. All AI calls go through this.
+// messages: array in Anthropic API shape
+// options: { model, max_tokens, system }
+// Returns: Promise resolving to { text, raw } or rejecting with { errorType, message }.
+function _BYO_claudeCall(messages, options){
+  var key = _BYO_loadKey();
+  if(!key){
+    return Promise.reject({ errorType:'no_key', message:'No API key configured.' });
+  }
+  if(!_BYO_validateKeyFormat(key)){
+    return Promise.reject({ errorType:'bad_key_format', message:'API key format invalid.' });
+  }
+  options = options || {};
+  var body = {
+    model: options.model || _BYO_MODEL,
+    max_tokens: options.max_tokens || 1024,
+    messages: messages
+  };
+  if(options.system) body.system = options.system;
+
+  return fetch(_BYO_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': _BYO_ANTHROPIC_VERSION,
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify(body)
+  }).then(function(r){
+    return r.json().then(function(data){
+      if(!r.ok || (data && data.error)){
+        return Promise.reject(_BYO_classifyError(r.status, data));
+      }
+      if(!data.content || !data.content.length){
+        return Promise.reject({ errorType:'empty', message:'Empty response from AI.' });
+      }
+      var text = data.content.map(function(c){ return c.text || ''; }).join('');
+      return { text: text, raw: data };
+    }).catch(function(err){
+      if(err && err.errorType) return Promise.reject(err);
+      return Promise.reject({ errorType:'parse', message:'Could not parse AI response.' });
+    });
+  }).catch(function(err){
+    if(err && err.errorType) return Promise.reject(err);
+    return Promise.reject({ errorType:'network', message:(err && err.message) || 'Network error.' });
+  });
+}
+
+// Key gate — call after the tier gate. Shows setup modal if no key configured.
+// Returns true if a key is configured; false otherwise (and shows the modal).
+function _BYO_requireKey(featureName){
+  if(_BYO_hasKey()) return true;
+  _BYO_showSetupModal(featureName || 'AI features');
+  return false;
+}
+
+// "Set up AI" modal shown when Pro+ user taps an AI feature with no key.
+function _BYO_showSetupModal(featureName){
+  var existing = document.getElementById('byo_setup_modal');
+  if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'byo_setup_modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10004;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1d24,#222835);border:2px solid #a0c0ff60;border-radius:16px;padding:22px 20px;max-width:340px;width:100%">'
+    +'<div style="font-size:36px;text-align:center;margin-bottom:8px">&#129302;</div>'
+    +'<div style="font-size:18px;font-weight:800;color:#a0c0ff;text-align:center;margin-bottom:6px">Set up AI</div>'
+    +'<div style="font-size:13px;color:#c0c8d8;text-align:center;margin-bottom:16px;line-height:1.5">ArsenalDB uses your own Anthropic API key for AI features. Takes about 2 minutes.</div>'
+    +'<div style="background:#0f1218;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:16px;font-size:11px;color:#8a95a8;line-height:1.7">'
+      +'<div style="color:#e8c46a;font-weight:700;margin-bottom:4px">Why BYO?</div>'
+      +'We don&rsquo;t mark up your AI. You pay Anthropic directly (~$0.01 per firearm ID) and your data never touches our servers.'
+    +'</div>'
+    +'<button id="byo_setup_go" style="width:100%;background:linear-gradient(135deg,#a0c0ff,#7090dd);color:#1a1d24;border:none;padding:13px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Set up now &rsaquo;</button>'
+    +'<button id="byo_setup_cancel" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Not now</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+
+  document.getElementById('byo_setup_go').onclick = function(){
+    modal.remove();
+    // Open settings and scroll to BYO section
+    openSettings();
+    setTimeout(function(){
+      var s = document.getElementById('byo_settings_section');
+      if(s) s.scrollIntoView({behavior:'smooth', block:'center'});
+    }, 100);
+  };
+  document.getElementById('byo_setup_cancel').onclick = function(){ modal.remove(); };
+}
+
+// Show error from _BYO_claudeCall in a user-friendly way.
+function _BYO_showError(err){
+  if(!err) return;
+  if(err.errorType === 'no_key' || err.errorType === 'bad_key_format'){
+    _BYO_showSetupModal('AI features');
+    return;
+  }
+  var title = 'AI request failed';
+  if(err.errorType === 'auth') title = 'Invalid API key';
+  else if(err.errorType === 'billing') title = 'Account needs credits';
+  else if(err.errorType === 'rate_limit') title = 'Rate limit';
+  else if(err.errorType === 'overloaded') title = 'AI busy';
+  else if(err.errorType === 'server') title = 'Service issue';
+  toast(title + ': ' + (err.message || 'unknown'), 'err');
+}
+
+// Render the AI settings section HTML — embedded inside openSettings() modal.
+function _BYO_renderSettingsSection(){
+  var hasKey = _BYO_hasKey();
+  var masked = hasKey ? _BYO_maskKey(_BYO_loadKey()) : '';
+  var statusColor = hasKey ? '#60e880' : '#8a95a8';
+  var statusText = hasKey ? '&#10003; Connected' : 'Not configured';
+
+  return '<div id="byo_settings_section" style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:16px;margin-bottom:12px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+      +'<div>'
+        +'<div style="font-size:14px;font-weight:600;color:#f0f2f5">AI (Bring Your Own Key)</div>'
+        +'<div style="font-size:12px;color:#4a5568;margin-top:2px">Use your Anthropic API key for AI features</div>'
+      +'</div>'
+      +'<div style="font-size:11px;color:'+statusColor+';font-weight:700;white-space:nowrap">'+statusText+'</div>'
+    +'</div>'
+    +(hasKey
+      ? '<div style="background:#0f1218;border:1px solid #2e3545;border-radius:6px;padding:10px 12px;margin-bottom:10px;font-family:monospace;font-size:12px;color:#c0c8d8">'+eh(masked)+'</div>'
+      +'<button onclick="_BYO_uiTestConnection()" style="width:100%;background:transparent;border:1px solid #60e88060;color:#60e880;padding:9px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">Test Connection</button>'
+      +'<button onclick="_BYO_uiClearKey()" style="width:100%;background:transparent;border:1px solid #ff904060;color:#ff9040;padding:9px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Remove Key</button>'
+      : '<input type="password" id="byo_key_input" placeholder="sk-ant-..." autocomplete="off" style="width:100%;background:#0f1218;border:1px solid #3a4455;color:#f0f2f5;padding:10px 12px;border-radius:6px;font-size:13px;font-family:monospace;margin-bottom:10px;box-sizing:border-box"/>'
+      +'<button onclick="_BYO_uiSaveKey()" style="width:100%;background:linear-gradient(135deg,#a0c0ff,#7090dd);color:#1a1d24;border:none;padding:10px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Save Key</button>'
+      +'<div style="font-size:11px;color:#6a7488;line-height:1.6;margin-top:4px"><strong style="color:#a0c0ff">Need a key?</strong> <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:#a0c0ff;text-decoration:underline">Get one from Anthropic</a> (requires a credit card and ~$5 prepay). <a onclick="_BYO_uiShowWalkthrough()" style="color:#a0c0ff;text-decoration:underline;cursor:pointer">Walkthrough &rsaquo;</a></div>'
+    )
+    +'<div style="font-size:11px;color:#4a5568;margin-top:10px;line-height:1.5">Your key is stored on this device only. Treat it like a password.</div>'
+    +'</div>';
+}
+
+function _BYO_uiSaveKey(){
+  var input = document.getElementById('byo_key_input');
+  var key = input ? input.value : '';
+  if(!_BYO_validateKeyFormat(key)){
+    toast('Invalid key format. Anthropic keys start with sk-ant-', 'err');
+    return;
+  }
+  if(_BYO_saveKey(key)){
+    toast('API key saved');
+    haptic('ok');
+    // Re-render settings modal to show Connected state
+    var m = document.getElementById('settings_modal');
+    if(m){ m.remove(); openSettings(); }
+  } else {
+    toast('Could not save key', 'err');
+  }
+}
+
+function _BYO_uiClearKey(){
+  if(_BYO_clearKey()){
+    toast('API key removed');
+    haptic('tap');
+    var m = document.getElementById('settings_modal');
+    if(m){ m.remove(); openSettings(); }
+  }
+}
+
+function _BYO_uiTestConnection(){
+  toast('Testing...');
+  _BYO_claudeCall([{role:'user', content:'Respond with just the word OK.'}], {max_tokens:10})
+    .then(function(res){
+      if(res && res.text && /ok/i.test(res.text)){
+        toast('&#10003; Connection works', 'ok');
+        haptic('ok');
+      } else {
+        toast('Unexpected response', 'err');
+      }
+    })
+    .catch(function(err){
+      _BYO_showError(err);
+    });
+}
+
+function _BYO_uiShowWalkthrough(){
+  var existing = document.getElementById('byo_walkthrough');
+  if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'byo_walkthrough';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10005;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+  modal.innerHTML = '<div style="background:#222835;border:2px solid #a0c0ff40;border-radius:14px;padding:22px 20px;max-width:360px;width:100%;max-height:90vh;overflow-y:auto">'
+    +'<div style="font-size:16px;font-weight:800;color:#a0c0ff;margin-bottom:14px">Getting your Anthropic API key</div>'
+    +'<ol style="color:#c0c8d8;font-size:13px;line-height:1.7;padding-left:20px;margin:0 0 14px 0">'
+      +'<li>Go to <a href="https://console.anthropic.com" target="_blank" rel="noopener" style="color:#a0c0ff">console.anthropic.com</a></li>'
+      +'<li>Sign up for an account (email verification)</li>'
+      +'<li>Add a payment method (credit card required)</li>'
+      +'<li>Buy credits &mdash; a $5 prepay covers hundreds of firearm IDs</li>'
+      +'<li>Open <strong>Settings &rarr; API Keys</strong></li>'
+      +'<li>Click <strong>Create Key</strong>, give it a name like &ldquo;ArsenalDB&rdquo;</li>'
+      +'<li>Copy the key (starts with <code style="background:#0f1218;padding:2px 4px;border-radius:3px;color:#e8c46a">sk-ant-</code>)</li>'
+      +'<li>Paste it in the settings field above</li>'
+    +'</ol>'
+    +'<div style="font-size:11px;color:#8a95a8;line-height:1.6;margin-bottom:14px">Anthropic bills you directly for API usage. Typical costs: photo ID ~$0.01, valuation ~$0.005, field strip ~$0.03. A $5 prepay lasts a long time.</div>'
+    +'<button onclick="document.getElementById(\'byo_walkthrough\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#c0c8d8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Close</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+// ── END BYO-T1 ───────────────────────────────────────────────────────
+
 function claude(prompt,mt,cb){
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:mt||600,messages:[{role:'user',content:prompt}]})})
-  .then(function(r){return r.json();})
-  .then(function(d){
-    try{
-      if(d.error){cb(new Error(d.error.message||'API error'),null);return;}
-      if(!d.content||!d.content.length){cb(new Error('Empty response from API'),null);return;}
-      var txt=d.content.map(function(i){return i.text||'';}).join('').replace(/```json|```/g,'').trim();
-      cb(null,txt);
-    }catch(ex){cb(ex,null);}
-  })
-  .catch(function(e){cb(e,null);});
+  _BYO_claudeCall([{role:'user', content:prompt}], {max_tokens: mt||600})
+    .then(function(res){
+      var txt = (res.text || '').replace(/```json|```/g,'').trim();
+      cb(null, txt);
+    })
+    .catch(function(err){
+      _BYO_showError(err);
+      cb(new Error(err.message || 'AI request failed'), null);
+    });
 }
 
 function doVal(){
   collect();
   if(!FORM.make||!FORM.model){toast('Enter make and model first','err');return;}
 
+  // Hybrid: Pro+ with API key → real AI; otherwise → local lookup baseline
+  var tier = appSettings.tier || 'free';
+  var canUseAI = (tier === 'proplus') && _BYO_hasKey();
+
   aiLoad='val';
-  // Update button directly without full re-render
   var valBtn=document.getElementById('val_btn');
   var valBox=document.getElementById('val_box');
   if(valBtn){valBtn.disabled=true;valBtn.innerHTML='<span class="spinning">&#8635;</span> Estimating...';}
   if(valBox){valBox.style.display='none';}
 
-  setTimeout(function(){
-    var result=valLookup(FORM.make,FORM.model,FORM.caliber,FORM.condition,FORM.year);
-    aiLoad=null;
-    aiVal=result;
-    if(result.mid) FORM.currentValue=String(result.mid);
-    if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
-    rnd();
-  },800);
+  if(canUseAI){
+    // Real AI path — build prompt, call Claude, parse JSON shape matching valLookup output
+    var prompt = 'You are a firearms market valuation expert. Estimate current US retail market value for this firearm based on general market knowledge. Your estimate is based on training-time knowledge, not live pricing — the user understands this is an approximation.\n\n'
+      + 'Firearm: ' + FORM.make + ' ' + FORM.model
+      + (FORM.caliber ? ' (' + FORM.caliber + ')' : '')
+      + (FORM.year ? ', year ' + FORM.year : '')
+      + ', condition: ' + (FORM.condition || 'Good')
+      + '.\n\nRespond ONLY with valid JSON in this exact shape, no markdown, no extra text:\n'
+      + '{"low": 450, "mid": 550, "high": 700, "notes": "Brief description and collector context under 80 chars", "caveats": "Optional note on factors that could shift this significantly"}\n\n'
+      + 'Use USD. Round to sensible increments ($5 or $10). Notes must be under 80 chars. If you cannot estimate confidently, return conservative ranges with a clear caveat.';
+
+    _BYO_claudeCall([{role:'user', content: prompt}], {max_tokens:400})
+      .then(function(res){
+        var txt = (res.text || '').replace(/```json|```/g,'').trim();
+        var result;
+        try { result = JSON.parse(txt); }
+        catch(ex){
+          // Fallback to local on parse failure
+          result = valLookup(FORM.make,FORM.model,FORM.caliber,FORM.condition,FORM.year);
+          result.notes = (result.notes||'') + ' (AI parse failed — using local estimate)';
+        }
+        aiLoad=null;
+        aiVal=result;
+        if(result.mid) FORM.currentValue=String(result.mid);
+        if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
+        rnd();
+      })
+      .catch(function(err){
+        _BYO_showError(err);
+        // Graceful fallback to local lookup
+        var result = valLookup(FORM.make,FORM.model,FORM.caliber,FORM.condition,FORM.year);
+        result.notes = (result.notes||'') + ' (AI failed — using local estimate)';
+        aiLoad=null;
+        aiVal=result;
+        if(result.mid) FORM.currentValue=String(result.mid);
+        if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
+        rnd();
+      });
+  } else {
+    // Local path — same as before (800ms delay for perceived work)
+    setTimeout(function(){
+      var result=valLookup(FORM.make,FORM.model,FORM.caliber,FORM.condition,FORM.year);
+      aiLoad=null;
+      aiVal=result;
+      if(result.mid) FORM.currentValue=String(result.mid);
+      // Honest label for non-AI path
+      if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; Est. Value';}
+      rnd();
+    },800);
+  }
 }
 
 function valLookup(make,model,caliber,condition,year){
@@ -9222,6 +9541,7 @@ function snYearLookup(make, sn){
 
 function doDiag(){
   if(!requireProPlus('AI Diagnosis')) return;
+  if(!_BYO_requireKey('AI Diagnosis')) return;
   collect();
   if(!FORM.repairNotes){toast('Describe the issue first','err');return;}
   aiLoad='diag';rnd();
@@ -9242,6 +9562,7 @@ function loadSch(id){
   }
   // Not in database — AI lookup requires Pro+
   if(!requireProPlus('AI Schematics')) return;
+  if(!_BYO_requireKey('AI Schematics')) return;
   // Not in database — try AI if online
   if(!navigator.onLine){
     scLoad=false;
