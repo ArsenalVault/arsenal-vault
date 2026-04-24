@@ -1777,6 +1777,99 @@ function _onChecklistToggle(el){
   modal.dataset.checklist = JSON.stringify(state);
 }
 
+// ── T3: PRO DETAILS DRAWER (Work Order) ──────────────────────────────
+// Parts-table helpers + drawer collapse/expand. Structured fields land
+// in the v1 schema fields already reserved in T1 (parts_structured,
+// torque_notes, threadlocker, lubricants, round_count).
+
+// Sync DOM input state back into modal.dataset.partsStructured. Called
+// before structural changes (add/remove) so rows preserve their content.
+function _syncPartsFromDOM(){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return [];
+  var rows = modal.querySelectorAll('[data-parts-row]');
+  var out = [];
+  for(var i=0;i<rows.length;i++){
+    var nameEl = rows[i].querySelector('[data-part-field="name"]');
+    var qtyEl  = rows[i].querySelector('[data-part-field="qty"]');
+    var costEl = rows[i].querySelector('[data-part-field="cost"]');
+    out.push({
+      name: nameEl ? nameEl.value : '',
+      qty:  qtyEl && qtyEl.value ? parseFloat(qtyEl.value) : 0,
+      cost: costEl && costEl.value ? parseFloat(costEl.value) : 0
+    });
+  }
+  modal.dataset.partsStructured = JSON.stringify(out);
+  return out;
+}
+
+function _renderWOPartsRows(){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  var container = document.getElementById('wo_parts_rows');
+  if(!container) return;
+  var parts = [];
+  try{ parts = modal.dataset.partsStructured ? JSON.parse(modal.dataset.partsStructured) : []; }catch(e){ parts = []; }
+  if(!parts.length){
+    container.innerHTML = '';
+    return;
+  }
+  var html = '';
+  for(var i=0;i<parts.length;i++){
+    var p = parts[i];
+    html += '<div data-parts-row style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
+      +'<input data-part-field="name" type="text" placeholder="Part name" value="'+eh(p.name||'')+'" style="flex:2;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:8px 10px;border-radius:6px;font-size:13px;font-family:inherit;min-width:0;box-sizing:border-box"/>'
+      +'<input data-part-field="qty" type="number" inputmode="numeric" placeholder="Qty" value="'+(p.qty||'')+'" style="width:60px;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:8px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/>'
+      +'<input data-part-field="cost" type="number" inputmode="decimal" placeholder="$" value="'+(p.cost||'')+'" style="width:70px;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:8px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/>'
+      +'<button onclick="_removeWOPartRow('+i+')" style="background:none;border:none;color:#ff707080;font-size:16px;cursor:pointer;padding:4px 6px;line-height:1">&#10005;</button>'
+    +'</div>';
+  }
+  container.innerHTML = html;
+}
+
+function _addWOPartRow(){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  _syncPartsFromDOM();
+  var parts = [];
+  try{ parts = modal.dataset.partsStructured ? JSON.parse(modal.dataset.partsStructured) : []; }catch(e){ parts = []; }
+  parts.push({name:'', qty:1, cost:0});
+  modal.dataset.partsStructured = JSON.stringify(parts);
+  _renderWOPartsRows();
+  // Focus the newly added row's name input
+  var rows = modal.querySelectorAll('[data-parts-row]');
+  if(rows.length){
+    var last = rows[rows.length-1].querySelector('[data-part-field="name"]');
+    if(last) last.focus();
+  }
+}
+
+function _removeWOPartRow(idx){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  _syncPartsFromDOM();
+  var parts = [];
+  try{ parts = modal.dataset.partsStructured ? JSON.parse(modal.dataset.partsStructured) : []; }catch(e){ parts = []; }
+  if(idx < 0 || idx >= parts.length) return;
+  parts.splice(idx, 1);
+  modal.dataset.partsStructured = JSON.stringify(parts);
+  _renderWOPartsRows();
+}
+
+// Toggle the Pro details drawer open/closed.
+function _toggleWODetailsDrawer(){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  var expanded = modal.dataset.detailsExpanded === 'true';
+  expanded = !expanded;
+  modal.dataset.detailsExpanded = expanded ? 'true' : 'false';
+  var body = document.getElementById('wo_details_body');
+  var chev = document.getElementById('wo_details_chev');
+  if(body) body.style.display = expanded ? 'block' : 'none';
+  if(chev) chev.textContent = expanded ? '▾' : '▸';
+}
+// ── END T3 PRO DETAILS DRAWER ────────────────────────────────────────
+
 function addWorkOrder(){
   // T2: preview WO number (computed now, assigned permanently on save)
   var woNumberPreview = _woGenerateNumber(FORM);
@@ -1825,9 +1918,52 @@ function addWorkOrder(){
     // Notes
     +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Notes</label>'
     +'<textarea id="wo_notes" placeholder="Observations, cost, context, etc." rows="3" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea></div>'
-    // T2: Parts used (freeform)
+    // T2: Parts used (freeform) — available to all tiers
     +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Parts Used (optional)</label>'
     +'<input type="text" id="wo_parts_freeform" placeholder="e.g. Extractor spring, Wolff 15lb" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;box-sizing:border-box"/></div>'
+    // T3: Pro details section — either expandable drawer (Pro+) or teaser card (Free)
+    +(function(){
+      var isPro = _tierLevel(appSettings.tier) >= _tierLevel('pro');
+      if(!isPro){
+        // Free teaser — taps trigger Pro upgrade modal
+        return '<div onclick="requirePro(\'Work Order Details\')" style="background:#1a1d24;border:1px dashed #e8c46a50;border-radius:8px;padding:14px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:10px">'
+          +'<span style="font-size:18px">🔒</span>'
+          +'<div style="flex:1">'
+            +'<div style="font-size:13px;font-weight:700;color:#e8c46a;margin-bottom:2px">Details <span style="background:#e8c46a;color:#1a1d24;font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px;margin-left:6px;letter-spacing:.05em">PRO</span></div>'
+            +'<div style="font-size:11px;color:#8a95a8;line-height:1.4">Parts list, torque values, threadlocker, lubricants, round count — tap to upgrade.</div>'
+          +'</div>'
+        +'</div>';
+      }
+      // Pro drawer — collapsed by default
+      return '<div style="background:#1a1d24;border:1px solid #e8c46a30;border-radius:8px;margin-bottom:10px;overflow:hidden">'
+        +'<div onclick="_toggleWODetailsDrawer()" style="padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;background:#1a1d24">'
+          +'<span id="wo_details_chev" style="font-size:14px;color:#e8c46a;width:14px;display:inline-block">▸</span>'
+          +'<span style="font-size:12px;font-weight:700;color:#e8c46a;letter-spacing:.06em;text-transform:uppercase">Details</span>'
+          +'<span style="background:#e8c46a;color:#1a1d24;font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px;letter-spacing:.05em">PRO</span>'
+          +'<span style="font-size:11px;color:#8a95a8;margin-left:auto">parts, torque, round count</span>'
+        +'</div>'
+        +'<div id="wo_details_body" style="display:none;padding:14px;border-top:1px solid #2e3545">'
+          // Structured parts
+          +'<div style="margin-bottom:14px">'
+            +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;margin-bottom:6px">Parts Used (structured)</div>'
+            +'<div id="wo_parts_rows"></div>'
+            +'<button onclick="_addWOPartRow()" style="background:#2a1a10;border:1px solid #e8c46a60;color:#e8c46a;padding:7px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px">+ Add part</button>'
+          +'</div>'
+          // Torque notes
+          +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:4px">Torque Notes</label>'
+          +'<input type="text" id="wo_torque_notes" placeholder="e.g. Optic base screws: 15 in-lb" style="width:100%;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:9px 10px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/></div>'
+          // Threadlocker
+          +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:4px">Threadlocker</label>'
+          +'<input type="text" id="wo_threadlocker" placeholder="e.g. Loctite 242 (blue)" style="width:100%;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:9px 10px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/></div>'
+          // Lubricants
+          +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:4px">Lubricants</label>'
+          +'<input type="text" id="wo_lubricants" placeholder="e.g. Slip 2000 EWL on bolt lugs" style="width:100%;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:9px 10px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/></div>'
+          // Round count
+          +'<div><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:4px">Round Count</label>'
+          +'<input type="number" inputmode="numeric" id="wo_round_count" placeholder="Total rounds through this firearm" style="width:100%;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:9px 10px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/></div>'
+        +'</div>'
+      +'</div>';
+    })()
     // T2: Safety concern flag
     +'<div style="margin-bottom:16px">'
     +'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:#2a1a1a;border:1px solid #ff707040;border-radius:6px;padding:10px;font-size:13px;color:#f0c8c8">'
@@ -1875,6 +2011,26 @@ function saveWorkOrder(){
       }
     }
   }
+  // T3: gather structured Pro fields — only populated if user is Pro or above.
+  // DOM elements exist only for Pro users (Free sees a teaser card, no inputs).
+  var isPro = _tierLevel(appSettings.tier) >= _tierLevel('pro');
+  var partsStructured = [];
+  var torqueNotes     = '';
+  var threadlocker    = '';
+  var lubricants      = '';
+  var roundCount      = null;
+  if(isPro){
+    // Sync DOM state into dataset first, then read.
+    _syncPartsFromDOM();
+    try{ partsStructured = modal && modal.dataset.partsStructured ? JSON.parse(modal.dataset.partsStructured) : []; }catch(e){ partsStructured = []; }
+    // Filter out completely-empty rows (user added a row then left it blank)
+    partsStructured = partsStructured.filter(function(p){ return (p && (p.name || p.qty || p.cost)); });
+    torqueNotes   = (document.getElementById('wo_torque_notes')||{}).value || '';
+    threadlocker  = (document.getElementById('wo_threadlocker')||{}).value || '';
+    lubricants    = (document.getElementById('wo_lubricants')||{}).value || '';
+    var rcEl = document.getElementById('wo_round_count');
+    if(rcEl && rcEl.value !== '') roundCount = parseInt(rcEl.value, 10);
+  }
   // T1: build full v1 record with snapshot, permanent wo_number, and status guard.
   var order = _woUpgradeRecord({
     type:       type,
@@ -1894,7 +2050,13 @@ function saveWorkOrder(){
     // T2: new fields
     parts_freeform:   partsFreeform,
     safety_concern:   safetyConcern,
-    checklist:        checklistForRecord
+    checklist:        checklistForRecord,
+    // T3: Pro structured fields (empty for Free users — defaults handled in _woUpgradeRecord)
+    parts_structured: partsStructured,
+    torque_notes:     torqueNotes,
+    threadlocker:     threadlocker,
+    lubricants:       lubricants,
+    round_count:      roundCount
   });
   order.wo_number = _woGenerateNumber(FORM);
   // Status engine guard: reject invalid transitions (e.g. Completed w/o notes, or safety concern unresolved).
@@ -2065,6 +2227,53 @@ function _buildWOPacketHtml(wo, gun){
   if(wo.parts_freeform){
     partsHtml = '<div class="section"><h2>Parts Used</h2><p>'+esc(wo.parts_freeform)+'</p></div>';
   }
+  // T3: Structured parts table (Pro+). Rendered below freeform if both present.
+  var partsStructHtml = '';
+  if(wo.parts_structured && wo.parts_structured.length){
+    var fmCurrency = function(v){
+      if(!v || isNaN(parseFloat(v))) return '';
+      return '$' + parseFloat(v).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+    };
+    var rowsHtml = '';
+    var grandTotal = 0;
+    wo.parts_structured.forEach(function(p){
+      var qty  = parseFloat(p.qty)  || 0;
+      var cost = parseFloat(p.cost) || 0;
+      var line = qty * cost;
+      if(line) grandTotal += line;
+      rowsHtml += '<tr>'
+        +'<td>'+esc(p.name||'')+'</td>'
+        +'<td style="text-align:center">'+(qty||'')+'</td>'
+        +'<td style="text-align:right">'+(cost?fmCurrency(cost):'')+'</td>'
+        +'<td style="text-align:right">'+(line?fmCurrency(line):'')+'</td>'
+      +'</tr>';
+    });
+    var totalRow = grandTotal ? '<tr style="border-top:2px solid #d8d4ca;font-weight:700"><td colspan="3" style="text-align:right;padding-top:8px">Total</td><td style="text-align:right;padding-top:8px">'+fmCurrency(grandTotal)+'</td></tr>' : '';
+    partsStructHtml = '<div class="section"><h2>Parts Used (itemized)</h2>'
+      +'<table style="width:100%;border-collapse:collapse;font-size:13px">'
+        +'<thead><tr style="text-align:left;border-bottom:1px solid #d8d4ca;color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.08em">'
+          +'<th style="padding:6px 4px">Part</th>'
+          +'<th style="padding:6px 4px;text-align:center">Qty</th>'
+          +'<th style="padding:6px 4px;text-align:right">Unit</th>'
+          +'<th style="padding:6px 4px;text-align:right">Line</th>'
+        +'</tr></thead>'
+        +'<tbody>'+rowsHtml+totalRow+'</tbody>'
+      +'</table>'
+    +'</div>';
+  }
+  // T3: Torque / threadlocker / lubricants / round count
+  var techHtml = '';
+  var techBits = [];
+  if(wo.torque_notes)  techBits.push({label:'Torque', value:wo.torque_notes});
+  if(wo.threadlocker)  techBits.push({label:'Threadlocker', value:wo.threadlocker});
+  if(wo.lubricants)    techBits.push({label:'Lubricants', value:wo.lubricants});
+  if(wo.round_count != null && wo.round_count !== '')  techBits.push({label:'Round Count', value:String(wo.round_count)});
+  if(techBits.length){
+    var dlRows = techBits.map(function(b){
+      return '<dt>'+esc(b.label)+'</dt><dd>'+esc(b.value)+'</dd>';
+    }).join('');
+    techHtml = '<div class="section"><h2>Technical Details</h2><dl class="kv">'+dlRows+'</dl></div>';
+  }
 
   var html = '<!DOCTYPE html>'
     +'<html lang="en"><head><meta charset="UTF-8">'
@@ -2118,6 +2327,8 @@ function _buildWOPacketHtml(wo, gun){
       +'</dl></div>'
       +(wo.notes ? '<div class="section"><h2>Notes</h2><p>'+esc(wo.notes)+'</p></div>' : '')
       +partsHtml
+      +partsStructHtml
+      +techHtml
       +checklistHtml
       +photoHtml
       +ownerHtml
@@ -3004,7 +3215,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-I';   // bump on every revision
+var BUILD_TAG   = '2026-04-23-J';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
