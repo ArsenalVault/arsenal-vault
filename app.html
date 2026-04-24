@@ -3956,7 +3956,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-A';   // bump on every revision
+var BUILD_TAG   = '2026-04-24-B';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -10550,55 +10550,307 @@ function _buildExportMeta(stats, includePhotos){
   };
 }
 
-// Pre-flight options modal: Include Photos toggle + size estimate + big-file tip.
-// Calls opts.onConfirm(includePhotos) or opts.onCancel().
+// ── BEGIN T9 EXPORT FILTER HELPERS ───────────────────────────────────
+// T9: Selective Export by Filter.
+// Lets users export a meaningful subset of their collection by filtering
+// on Type, Caliber, Make, Condition (≥ threshold), Working (tri-state),
+// and Starred. Filtered subset flows through the T8 compression pipeline
+// unchanged — T9 only adds a filter step before it runs.
+// ─────────────────────────────────────────────────────────────────────
+
+// Ordered condition scale (best → worst). Used for threshold filtering.
+var _T9_CONDITION_ORDER = ['Excellent','Good','Fair','Poor','Needs Repair'];
+
+// Returns sorted, deduplicated, non-empty string values for a given field.
+// Used to populate filter dropdowns from actual inventory (not canonical lists).
+function _T9_distinctValues(gs, field){
+  var seen = {};
+  var out = [];
+  for(var i=0; i<gs.length; i++){
+    var v = gs[i] ? gs[i][field] : null;
+    if(v === null || v === undefined) continue;
+    v = String(v).trim();
+    if(!v) continue;
+    if(!seen[v]){ seen[v] = true; out.push(v); }
+  }
+  out.sort(function(a,b){ return a.localeCompare(b); });
+  return out;
+}
+
+// Apply a filter state to a guns[] array. Returns a filtered subset.
+// state shape: { type, caliber, make, condition, working, starred }
+//   - type/caliber/make: empty string = no filter, else exact match
+//   - condition: empty = no filter, else threshold ("X or better")
+//   - working: '' = no filter, 'yes' = only working, 'no' = only non-working
+//   - starred: false = no filter, true = only starred
+// Non-mutating; returns a new array.
+function _T9_filterGuns(gs, state){
+  if(!Array.isArray(gs)) return [];
+  state = state || {};
+  var condIdx = state.condition ? _T9_CONDITION_ORDER.indexOf(state.condition) : -1;
+  var out = [];
+  for(var i=0; i<gs.length; i++){
+    var g = gs[i];
+    if(!g) continue;
+    if(state.type && String(g.type||'').trim() !== state.type) continue;
+    if(state.caliber && String(g.caliber||'').trim() !== state.caliber) continue;
+    if(state.make && String(g.make||'').trim() !== state.make) continue;
+    if(condIdx >= 0){
+      var gIdx = _T9_CONDITION_ORDER.indexOf(String(g.condition||'').trim());
+      // CONDITION_ORDER is best-to-worst, so gIdx <= condIdx means
+      // "at least as good as the threshold". Unknown conditions excluded.
+      if(gIdx < 0 || gIdx > condIdx) continue;
+    }
+    if(state.working === 'yes' && !g.working) continue;
+    if(state.working === 'no' && g.working) continue;
+    if(state.starred && !g.starred) continue;
+    out.push(g);
+  }
+  return out;
+}
+
+// Determine which filter controls to surface based on inventory diversity.
+// A dropdown with only 0 or 1 real value is dead UI — we hide it.
+function _T9_getFilterOptions(gs){
+  gs = Array.isArray(gs) ? gs : [];
+  var conditionsPresent = _T9_distinctValues(gs, 'condition').filter(function(c){
+    return _T9_CONDITION_ORDER.indexOf(c) >= 0;
+  });
+  var hasWorking = false, hasNonWorking = false, hasStarred = false;
+  for(var i=0; i<gs.length; i++){
+    if(gs[i] && gs[i].working) hasWorking = true;
+    else if(gs[i]) hasNonWorking = true;
+    if(gs[i] && gs[i].starred) hasStarred = true;
+  }
+  return {
+    types: _T9_distinctValues(gs, 'type'),
+    calibers: _T9_distinctValues(gs, 'caliber'),
+    makes: _T9_distinctValues(gs, 'make'),
+    conditionsPresent: conditionsPresent,
+    hasWorking: hasWorking,
+    hasNonWorking: hasNonWorking,
+    hasStarred: hasStarred
+  };
+}
+
+// Render the filter block HTML. Returns empty string if nothing worth filtering.
+// DOM ids use the t9_ prefix. Event listeners wired in _T9_wireFilterListeners.
+function _T9_renderFilterBlock(opts){
+  var showType = opts.types.length >= 2;
+  var showCaliber = opts.calibers.length >= 2;
+  var showMake = opts.makes.length >= 2;
+  var showCondition = opts.conditionsPresent.length >= 2;
+  var showWorking = opts.hasWorking && opts.hasNonWorking;
+  var showStarred = opts.hasStarred;
+
+  if(!showType && !showCaliber && !showMake && !showCondition && !showWorking && !showStarred){
+    return '';
+  }
+
+  var selectStyle = 'width:100%;background:#0f1218;border:1px solid #2e3545;color:#f0f2f5;padding:8px 10px;border-radius:6px;font-size:13px;font-family:inherit;margin-bottom:8px;appearance:none;-webkit-appearance:none;cursor:pointer';
+  function renderSelect(id, label, items, allLabel){
+    var h = '<label style="font-size:11px;color:#8a95a8;display:block;margin-bottom:3px">'+label+'</label>';
+    h += '<select id="'+id+'" data-t9-filter="1" style="'+selectStyle+'">';
+    h += '<option value="">'+allLabel+'</option>';
+    for(var i=0; i<items.length; i++){
+      h += '<option value="'+eh(items[i])+'">'+eh(items[i])+'</option>';
+    }
+    h += '</select>';
+    return h;
+  }
+
+  var parts = [];
+  parts.push('<div id="t9_filter_block" style="background:#141820;border:1px solid #2e3545;border-radius:10px;padding:12px;margin-bottom:10px">');
+  parts.push('<div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:#8a95a8;margin-bottom:10px;text-transform:uppercase">Filter (optional)</div>');
+
+  if(showType) parts.push(renderSelect('t9_f_type','Type',opts.types,'All types'));
+  if(showCaliber) parts.push(renderSelect('t9_f_caliber','Caliber',opts.calibers,'All calibers'));
+  if(showMake) parts.push(renderSelect('t9_f_make','Make',opts.makes,'All makes'));
+
+  if(showCondition){
+    parts.push('<label style="font-size:11px;color:#8a95a8;display:block;margin-bottom:3px">Condition (minimum)</label>');
+    parts.push('<select id="t9_f_condition" data-t9-filter="1" style="'+selectStyle+'">');
+    parts.push('<option value="">Any condition</option>');
+    for(var i=0; i<_T9_CONDITION_ORDER.length; i++){
+      var c = _T9_CONDITION_ORDER[i];
+      parts.push('<option value="'+eh(c)+'">'+eh(c)+' or better</option>');
+    }
+    parts.push('</select>');
+  }
+
+  if(showWorking){
+    parts.push('<label style="font-size:11px;color:#8a95a8;display:block;margin-bottom:3px">Working</label>');
+    parts.push('<div style="display:flex;gap:6px;margin-bottom:8px">');
+    var pillBase = 'flex:1;padding:8px 6px;border-radius:6px;font-size:12px;font-family:inherit;cursor:pointer;font-weight:600';
+    var pillIdle = pillBase+';background:#0f1218;border:1px solid #2e3545;color:#8a95a8';
+    var pillOn = pillBase+';background:#e8c46a;border:1px solid #e8c46a;color:#1a1d24;font-weight:700';
+    parts.push('<button type="button" id="t9_f_w_all" data-t9-working="" data-t9-active="1" style="'+pillOn+'">All</button>');
+    parts.push('<button type="button" id="t9_f_w_yes" data-t9-working="yes" data-t9-active="0" style="'+pillIdle+'">Working</button>');
+    parts.push('<button type="button" id="t9_f_w_no" data-t9-working="no" data-t9-active="0" style="'+pillIdle+'">Not working</button>');
+    parts.push('</div>');
+  }
+
+  if(showStarred){
+    parts.push('<label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px;padding:4px 0">');
+    parts.push('<input type="checkbox" id="t9_f_starred" data-t9-filter="1" style="width:16px;height:16px;accent-color:#e8c46a;cursor:pointer"/>');
+    parts.push('<span style="font-size:12px;color:#c0c8d8">&#9733; Starred only</span>');
+    parts.push('</label>');
+  }
+
+  parts.push('</div>');
+  return parts.join('');
+}
+
+// Read current filter state from DOM controls. Returns a state object.
+function _T9_readFilterState(){
+  function val(id){ var el = document.getElementById(id); return el ? el.value : ''; }
+  function chk(id){ var el = document.getElementById(id); return el ? !!el.checked : false; }
+  var working = '';
+  var wYes = document.getElementById('t9_f_w_yes');
+  var wNo = document.getElementById('t9_f_w_no');
+  if(wYes && wYes.getAttribute('data-t9-active') === '1') working = 'yes';
+  else if(wNo && wNo.getAttribute('data-t9-active') === '1') working = 'no';
+  return {
+    type: val('t9_f_type'),
+    caliber: val('t9_f_caliber'),
+    make: val('t9_f_make'),
+    condition: val('t9_f_condition'),
+    working: working,
+    starred: chk('t9_f_starred')
+  };
+}
+
+// Wire change listeners on all filter controls. onChange() fires on any change.
+function _T9_wireFilterListeners(onChange){
+  var controls = document.querySelectorAll('[data-t9-filter]');
+  for(var i=0; i<controls.length; i++){
+    controls[i].addEventListener('change', onChange);
+  }
+  var wAll = document.getElementById('t9_f_w_all');
+  var wYes = document.getElementById('t9_f_w_yes');
+  var wNo = document.getElementById('t9_f_w_no');
+  if(wAll && wYes && wNo){
+    var pillBase = 'flex:1;padding:8px 6px;border-radius:6px;font-size:12px;font-family:inherit;cursor:pointer;font-weight:600';
+    var pillIdle = pillBase+';background:#0f1218;border:1px solid #2e3545;color:#8a95a8';
+    var pillOn = pillBase+';background:#e8c46a;border:1px solid #e8c46a;color:#1a1d24;font-weight:700';
+    function setActive(active){
+      [wAll, wYes, wNo].forEach(function(b){
+        var isOn = b === active;
+        b.setAttribute('data-t9-active', isOn ? '1' : '0');
+        b.setAttribute('style', isOn ? pillOn : pillIdle);
+      });
+    }
+    wAll.addEventListener('click', function(){ setActive(wAll); onChange(); });
+    wYes.addEventListener('click', function(){ setActive(wYes); onChange(); });
+    wNo.addEventListener('click', function(){ setActive(wNo); onChange(); });
+  }
+}
+// ── END T9 EXPORT FILTER HELPERS ─────────────────────────────────────
+
+// Pre-flight options modal: filter controls (T9) + Include Photos toggle + size estimate + big-file tip.
+// Calls opts.onConfirm(filteredGuns, includePhotos) or opts.onCancel().
 function _showExportOptionsModal(opts){
   var existing = document.getElementById('t8_export_opts_modal');
   if(existing) existing.remove();
 
-  var gunCount = opts.gunCount||0, photoCount = opts.photoCount||0;
-  var rawPhotoBytes = opts.rawPhotoBytes||0;
-  // Compressed estimate: raw photos / 10 (target ~90% reduction), floor 50 KB/photo.
-  var estimatedWithPhotos = photoCount > 0
-    ? Math.max(rawPhotoBytes / 10, photoCount * 50 * 1024)
-    : gunCount * 2000;
-  var estimatedNoPhotos = Math.max(1024, gunCount * 2000);
-
-  var bigFileWarn = estimatedWithPhotos > 25 * 1024 * 1024
-    ? '<div style="background:#e8c46a10;border:1px solid #e8c46a40;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#c0c8d8;line-height:1.6">'
-      +'<strong style="color:#e8c46a">Tip:</strong> Large exports don&rsquo;t fit in most email attachments. Save to Files, then share via Drive, Quick Share, or USB.'
-      +'</div>'
-    : '';
-
-  var photoToggleBlock = photoCount > 0
-    ? '<label style="display:flex;align-items:flex-start;gap:12px;background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer">'
-        +'<input type="checkbox" id="t8_incl_photos" checked style="margin-top:2px;width:18px;height:18px;accent-color:#e8c46a;cursor:pointer"/>'
-        +'<div style="flex:1">'
-          +'<div style="font-size:14px;font-weight:700;color:#f0f2f5;margin-bottom:3px">Include photos</div>'
-          +'<div style="font-size:12px;color:#8a95a8;line-height:1.5">Estimated ~'+_fmtBytes(estimatedWithPhotos)+'</div>'
-        +'</div>'
-      +'</label>'
-      +'<div style="font-size:11px;color:#6a7488;margin:8px 2px 14px 2px;line-height:1.6">Without photos: ~'+_fmtBytes(estimatedNoPhotos)+' &middot; records and maintenance logs only</div>'
-    : '<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:14px;font-size:13px;color:#8a95a8;text-align:center">No photos to compress. Estimated file size: ~'+_fmtBytes(estimatedNoPhotos)+'</div>';
+  var allGuns = Array.isArray(opts.guns) ? opts.guns : [];
+  var filterOpts = _T9_getFilterOptions(allGuns);
+  var filterBlockHtml = _T9_renderFilterBlock(filterOpts);
 
   var modal = document.createElement('div');
   modal.id = 't8_export_opts_modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
-  modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1d24,#222835);border:2px solid #e8c46a60;border-radius:16px;padding:24px 20px;max-width:360px;width:100%">'
+  modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1d24,#222835);border:2px solid #e8c46a60;border-radius:16px;padding:24px 20px;max-width:360px;width:100%;margin:auto">'
     +'<div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#e8c46a;text-align:center;margin-bottom:6px">'+eh(opts.title||'EXPORT')+'</div>'
-    +'<div style="font-size:16px;font-weight:800;color:#f0f2f5;text-align:center;margin-bottom:18px">'+gunCount+' firearm'+(gunCount===1?'':'s')+(photoCount>0?', '+photoCount+' photo'+(photoCount===1?'':'s'):'')+'</div>'
-    + photoToggleBlock
-    + bigFileWarn
+    +'<div id="t8_count_line" style="font-size:16px;font-weight:800;color:#f0f2f5;text-align:center;margin-bottom:14px">&hellip;</div>'
+    + filterBlockHtml
+    +'<div id="t8_photo_toggle_wrap"></div>'
+    +'<div id="t8_bigfile_wrap"></div>'
     +'<button id="t8_export_go" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:13px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Continue</button>'
     +'<button id="t8_export_cancel" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
     +'</div>';
   document.body.appendChild(modal);
 
+  // Refresh count line, photo toggle, big-file warning, and Continue state.
+  // Re-renders on every filter change. Preserves Include-Photos user choice.
+  function refresh(){
+    var state = _T9_readFilterState();
+    var filtered = _T9_filterGuns(allGuns, state);
+    var gunCount = filtered.length;
+    var photoCount = _countPhotos(filtered);
+    var rawPhotoBytes = _photoBytesRoughEstimate(filtered);
+    var estimatedWithPhotos = photoCount > 0
+      ? Math.max(rawPhotoBytes / 10, photoCount * 50 * 1024)
+      : gunCount * 2000;
+    var estimatedNoPhotos = Math.max(1024, gunCount * 2000);
+
+    // Count line
+    var countEl = document.getElementById('t8_count_line');
+    if(countEl){
+      if(gunCount === 0){
+        countEl.innerHTML = '<span style="color:#ff9040">No firearms match these filters</span>';
+      } else {
+        countEl.innerHTML = gunCount+' firearm'+(gunCount===1?'':'s')+(photoCount>0?', '+photoCount+' photo'+(photoCount===1?'':'s'):'');
+      }
+    }
+
+    // Photo toggle block — preserve prior checked state across re-renders
+    var prevChk = document.getElementById('t8_incl_photos');
+    var prevChecked = prevChk ? !!prevChk.checked : true;
+    var toggleWrap = document.getElementById('t8_photo_toggle_wrap');
+    if(toggleWrap){
+      if(gunCount === 0){
+        toggleWrap.innerHTML = '';
+      } else if(photoCount > 0){
+        toggleWrap.innerHTML = '<label style="display:flex;align-items:flex-start;gap:12px;background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer">'
+          +'<input type="checkbox" id="t8_incl_photos" '+(prevChecked?'checked':'')+' style="margin-top:2px;width:18px;height:18px;accent-color:#e8c46a;cursor:pointer"/>'
+          +'<div style="flex:1">'
+            +'<div style="font-size:14px;font-weight:700;color:#f0f2f5;margin-bottom:3px">Include photos</div>'
+            +'<div style="font-size:12px;color:#8a95a8;line-height:1.5">Estimated ~'+_fmtBytes(estimatedWithPhotos)+'</div>'
+          +'</div>'
+          +'</label>'
+          +'<div style="font-size:11px;color:#6a7488;margin:8px 2px 14px 2px;line-height:1.6">Without photos: ~'+_fmtBytes(estimatedNoPhotos)+' &middot; records and maintenance logs only</div>';
+      } else {
+        toggleWrap.innerHTML = '<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:14px;font-size:13px;color:#8a95a8;text-align:center">No photos in this selection. Estimated file size: ~'+_fmtBytes(estimatedNoPhotos)+'</div>';
+      }
+    }
+
+    // Big-file tip
+    var bigWrap = document.getElementById('t8_bigfile_wrap');
+    if(bigWrap){
+      bigWrap.innerHTML = (gunCount > 0 && photoCount > 0 && estimatedWithPhotos > 25 * 1024 * 1024)
+        ? '<div style="background:#e8c46a10;border:1px solid #e8c46a40;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#c0c8d8;line-height:1.6"><strong style="color:#e8c46a">Tip:</strong> Large exports don&rsquo;t fit in most email attachments. Save to Files, then share via Drive, Quick Share, or USB.</div>'
+        : '';
+    }
+
+    // Continue button enabled/disabled based on match count
+    var goBtn = document.getElementById('t8_export_go');
+    if(goBtn){
+      if(gunCount === 0){
+        goBtn.disabled = true;
+        goBtn.style.opacity = '0.4';
+        goBtn.style.cursor = 'not-allowed';
+      } else {
+        goBtn.disabled = false;
+        goBtn.style.opacity = '1';
+        goBtn.style.cursor = 'pointer';
+      }
+    }
+  }
+
+  // Wire filter listeners (no-op if filter block is empty)
+  _T9_wireFilterListeners(refresh);
+  refresh();
+
   document.getElementById('t8_export_go').onclick = function(){
+    var goBtn = document.getElementById('t8_export_go');
+    if(goBtn && goBtn.disabled) return;
+    var state = _T9_readFilterState();
+    var filtered = _T9_filterGuns(allGuns, state);
     var chk = document.getElementById('t8_incl_photos');
     var incl = chk ? !!chk.checked : false;
     modal.remove();
-    if(opts.onConfirm) opts.onConfirm(incl);
+    if(opts.onConfirm) opts.onConfirm(filtered, incl);
   };
   document.getElementById('t8_export_cancel').onclick = function(){
     modal.remove();
@@ -10678,22 +10930,18 @@ function _showExportSizeModal(opts){
 
 function backupData(){
   var collName = collections[activeCollection] ? collections[activeCollection].name : 'My Collection';
-  var photoCount = _countPhotos(guns);
-  var rawPhotoBytes = _photoBytesRoughEstimate(guns);
 
   _showExportOptionsModal({
     title: 'BACKUP',
-    gunCount: guns.length,
-    photoCount: photoCount,
-    rawPhotoBytes: rawPhotoBytes,
+    guns: guns,
     onCancel: function(){ /* no-op */ },
-    onConfirm: function(includePhotos){
-      _runBackupWithCompression(collName, includePhotos);
+    onConfirm: function(filteredGuns, includePhotos){
+      _runBackupWithCompression(collName, filteredGuns, includePhotos);
     }
   });
 }
 
-function _runBackupWithCompression(collName, includePhotos){
+function _runBackupWithCompression(collName, exportGunsIn, includePhotos){
   function finalizeBackup(exportGuns, stats, originalSize){
     var data = {
       guns: exportGuns,
@@ -10724,17 +10972,17 @@ function _runBackupWithCompression(collName, includePhotos){
   }
 
   if(!includePhotos){
-    var stripped = _stripPhotosFromGuns(guns);
+    var stripped = _stripPhotosFromGuns(exportGunsIn);
     var emptyStats = { photos_processed:0, photos_compressed:0, photos_passed_through:0, photos_failed_decode:0 };
     finalizeBackup(stripped, emptyStats, null);
     return;
   }
 
   // Cheap "before" estimate so the preview can show a reduction %.
-  var origEstimate = _photoBytesRoughEstimate(guns) * 1.33 + guns.length * 2000;
+  var origEstimate = _photoBytesRoughEstimate(exportGunsIn) * 1.33 + exportGunsIn.length * 2000;
 
   _showExportProgressModal('Compressing photos for backup');
-  _buildCompressedExportGuns(guns, _updateExportProgress).then(function(result){
+  _buildCompressedExportGuns(exportGunsIn, _updateExportProgress).then(function(result){
     _hideExportProgressModal();
     finalizeBackup(result.guns, result.stats, origEstimate);
   }).catch(function(){
@@ -10914,22 +11162,18 @@ function _hideCollectionShareLoader(){
 
 function shareCollection(){
   var collName = collections[activeCollection] ? collections[activeCollection].name : 'My Collection';
-  var photoCount = _countPhotos(guns);
-  var rawPhotoBytes = _photoBytesRoughEstimate(guns);
 
   _showExportOptionsModal({
     title: 'SHARE COLLECTION',
-    gunCount: guns.length,
-    photoCount: photoCount,
-    rawPhotoBytes: rawPhotoBytes,
+    guns: guns,
     onCancel: function(){ /* no-op */ },
-    onConfirm: function(includePhotos){
-      _runShareWithCompression(collName, includePhotos);
+    onConfirm: function(filteredGuns, includePhotos){
+      _runShareWithCompression(collName, filteredGuns, includePhotos);
     }
   });
 }
 
-function _runShareWithCompression(collName, includePhotos){
+function _runShareWithCompression(collName, exportGunsIn, includePhotos){
   function buildPacket(exportGuns, stats){
     var data = {
       format: 'arsenaldb_packet_v1',
@@ -10984,14 +11228,14 @@ function _runShareWithCompression(collName, includePhotos){
   }
 
   if(!includePhotos){
-    var stripped = _stripPhotosFromGuns(guns);
+    var stripped = _stripPhotosFromGuns(exportGunsIn);
     var emptyStats = { photos_processed:0, photos_compressed:0, photos_passed_through:0, photos_failed_decode:0 };
     buildPacket(stripped, emptyStats);
     return;
   }
 
   _showExportProgressModal('Compressing photos for sharing');
-  _buildCompressedExportGuns(guns, _updateExportProgress).then(function(result){
+  _buildCompressedExportGuns(exportGunsIn, _updateExportProgress).then(function(result){
     _hideExportProgressModal();
     buildPacket(result.guns, result.stats);
   }).catch(function(){
