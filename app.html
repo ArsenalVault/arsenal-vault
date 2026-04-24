@@ -1961,6 +1961,164 @@ function _syncPartsFromDOM(){
   return out;
 }
 
+// ── BEGIN WO-T11 PARTS AUTOSUGGEST ───────────────────────────────────
+// T11: Build a parts index from every WO across every firearm, surface
+// previously-used parts as suggestions when typing part names.
+// Source of truth: gun.maintenanceLog (JSON string of WO array).
+// Each WO has a parts_structured array of {name, qty, cost}.
+// ─────────────────────────────────────────────────────────────────────
+
+var _T11_cachedIndex = null;
+var _T11_activeDropdown = null;
+
+// Pure: build sorted-by-frequency parts index. Testable without DOM.
+function _T11_getPartsIndex(gunList){
+  var source = gunList || (typeof guns !== 'undefined' ? guns : []);
+  var map = {};
+  if(!Array.isArray(source)) return [];
+  for(var i=0; i<source.length; i++){
+    var g = source[i];
+    if(!g || !g.maintenanceLog) continue;
+    var wos;
+    try { wos = JSON.parse(g.maintenanceLog); } catch(e) { continue; }
+    if(!Array.isArray(wos)) continue;
+    for(var j=0; j<wos.length; j++){
+      var wo = wos[j];
+      if(!wo) continue;
+      // Support both the current field name and an older one for safety.
+      var parts = wo.parts_structured || wo.parts || [];
+      if(!Array.isArray(parts)) continue;
+      for(var k=0; k<parts.length; k++){
+        var p = parts[k];
+        if(!p || !p.name) continue;
+        var name = String(p.name).trim();
+        if(!name) continue;
+        var key = name.toLowerCase();
+        var cost = parseFloat(p.cost);
+        if(isNaN(cost)) cost = 0;
+        if(!map[key]){
+          map[key] = { name: name, cost: cost, count: 1 };
+        } else {
+          map[key].count++;
+          // Adopt a cost if we don't yet have one.
+          if(!map[key].cost && cost) map[key].cost = cost;
+        }
+      }
+    }
+  }
+  var out = [];
+  for(var mk in map){ if(map.hasOwnProperty(mk)) out.push(map[mk]); }
+  out.sort(function(a, b){
+    if(b.count !== a.count) return b.count - a.count;
+    return a.name.localeCompare(b.name);
+  });
+  return out;
+}
+
+// Pure: case-insensitive substring filter, capped at maxResults.
+function _T11_filterSuggestions(index, query, maxResults){
+  maxResults = maxResults || 6;
+  if(!Array.isArray(index)) return [];
+  var q = String(query || '').trim().toLowerCase();
+  if(!q) return index.slice(0, maxResults);
+  var results = [];
+  for(var i=0; i<index.length && results.length < maxResults; i++){
+    if(index[i] && index[i].name && index[i].name.toLowerCase().indexOf(q) >= 0){
+      results.push(index[i]);
+    }
+  }
+  return results;
+}
+
+function _T11_resetCache(){ _T11_cachedIndex = null; }
+
+function _T11_getOrBuildIndex(){
+  if(_T11_cachedIndex === null) _T11_cachedIndex = _T11_getPartsIndex();
+  return _T11_cachedIndex;
+}
+
+// Attach input/focus/blur listeners to a part-name input. Idempotent.
+function _T11_attachAutosuggest(nameInput){
+  if(!nameInput || nameInput._t11_attached) return;
+  nameInput._t11_attached = true;
+  nameInput.addEventListener('input', function(){ _T11_showDropdown(nameInput); });
+  nameInput.addEventListener('focus', function(){ _T11_showDropdown(nameInput); });
+  // Delay hide so tap on a suggestion registers before we tear down
+  nameInput.addEventListener('blur',  function(){ setTimeout(_T11_hideDropdown, 200); });
+}
+
+// Wire all name inputs under the modal. Called after _renderWOPartsRows.
+function _T11_wireAllRowInputs(){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  var inputs = modal.querySelectorAll('[data-part-field="name"]');
+  for(var i=0; i<inputs.length; i++){ _T11_attachAutosuggest(inputs[i]); }
+}
+
+function _T11_showDropdown(nameInput){
+  if(!nameInput) return;
+  var index = _T11_getOrBuildIndex();
+  if(!index.length){ _T11_hideDropdown(); return; }
+  var matches = _T11_filterSuggestions(index, nameInput.value, 6);
+  if(!matches.length){ _T11_hideDropdown(); return; }
+
+  _T11_hideDropdown();
+  var rect = nameInput.getBoundingClientRect();
+  var dd = document.createElement('div');
+  dd.id = 't11_suggest_dropdown';
+  dd.style.cssText = 'position:fixed;z-index:10008;background:#13161d;border:1px solid #e8c46a80;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.6);max-height:200px;overflow-y:auto;font-family:inherit';
+  dd.style.top   = (rect.bottom + 2) + 'px';
+  dd.style.left  = rect.left + 'px';
+  dd.style.width = rect.width + 'px';
+
+  var html = '';
+  for(var i=0; i<matches.length; i++){
+    var m = matches[i];
+    html += '<div class="t11_suggest_item" data-idx="'+i+'" style="padding:9px 10px;cursor:pointer;border-bottom:1px solid #2a2f3a;display:flex;justify-content:space-between;align-items:center;gap:8px">'
+      +'<span style="font-size:13px;color:#f0f2f5;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+eh(m.name)+'</span>'
+      +(m.cost ? '<span style="font-size:12px;color:#e8c46a;font-weight:600;flex-shrink:0">$'+m.cost.toFixed(2)+'</span>' : '')
+    +'</div>';
+  }
+  dd.innerHTML = html;
+  document.body.appendChild(dd);
+  _T11_activeDropdown = { el: dd, matches: matches, nameInput: nameInput };
+
+  var items = dd.querySelectorAll('.t11_suggest_item');
+  for(var j=0; j<items.length; j++){
+    (function(idx){
+      var h = function(e){ e.preventDefault(); _T11_pickSuggestion(idx); };
+      items[j].addEventListener('mousedown', h);
+      items[j].addEventListener('touchstart', h);
+    })(j);
+  }
+}
+
+function _T11_pickSuggestion(idx){
+  if(!_T11_activeDropdown) return;
+  var m = _T11_activeDropdown.matches[idx];
+  var nameInput = _T11_activeDropdown.nameInput;
+  if(!m || !nameInput){ _T11_hideDropdown(); return; }
+  nameInput.value = m.name;
+  // Fill cost if blank — don't overwrite user-entered cost
+  var row = nameInput.closest ? nameInput.closest('[data-parts-row]') : null;
+  if(row && m.cost){
+    var costEl = row.querySelector('[data-part-field="cost"]');
+    if(costEl && !costEl.value){
+      costEl.value = m.cost;
+      if(typeof _updateWOPartsTotal === 'function') _updateWOPartsTotal();
+    }
+  }
+  _T11_hideDropdown();
+}
+
+function _T11_hideDropdown(){
+  if(_T11_activeDropdown && _T11_activeDropdown.el){
+    try { _T11_activeDropdown.el.remove(); } catch(e) {}
+  }
+  _T11_activeDropdown = null;
+}
+// ── END WO-T11 ───────────────────────────────────────────────────────
+
 function _renderWOPartsRows(){
   var modal = document.getElementById('wo_modal');
   if(!modal) return;
@@ -1989,6 +2147,8 @@ function _renderWOPartsRows(){
   container.innerHTML = html;
   // T3.5: show total row and refresh value
   _updateWOPartsTotal();
+  // T11: wire autosuggest to the newly-rendered name inputs
+  if(typeof _T11_wireAllRowInputs === 'function') _T11_wireAllRowInputs();
 }
 
 // T3.5: recompute and display running total below the parts table.
@@ -2330,6 +2490,8 @@ function addWorkOrder(editIdx){
 
   var modal = document.createElement('div');
   modal.id = 'wo_modal';
+  // T11: fresh parts index per modal session so it reflects recent saves
+  if(typeof _T11_resetCache === 'function') _T11_resetCache();
   modal.style.cssText = 'position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   // T3.5: stamp edit index so saveWorkOrder can tell new vs update
   if(isEdit) modal.dataset.editIdx = String(editIdx);
@@ -2369,9 +2531,8 @@ function addWorkOrder(editIdx){
     // Notes
     +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Notes</label>'
     +'<textarea id="wo_notes" placeholder="Observations, cost, context, etc." rows="3" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea></div>'
-    // T2: Parts used (freeform) — available to all tiers
-    +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Parts Used (optional)</label>'
-    +'<input type="text" id="wo_parts_freeform" placeholder="e.g. Extractor spring, Wolff 15lb" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;box-sizing:border-box"/></div>'
+    // T11: wo_parts_freeform input removed. Freeform parts text lives only
+    // for backward compatibility on legacy WO records (rendered on read view).
     // T3: Pro details section — either expandable drawer (Pro+) or teaser card (Free)
     +(function(){
       var isPro = _tierLevel(appSettings.tier) >= _tierLevel('pro');
@@ -2576,8 +2737,8 @@ function addWorkOrder(editIdx){
 function saveWorkOrder(){
   var type = document.getElementById('wo_type').value;
   if(!type){ toast('Please select a work type','err'); return; }
-  // T2: gather new fields
-  var partsFreeform = (document.getElementById('wo_parts_freeform')||{}).value || '';
+  // T11: parts_freeform input removed. Value preserved from existingRecord
+  // in the record-build step below to stay migration-safe.
   var safetyConcernEl = document.getElementById('wo_safety_concern');
   var safetyConcern = !!(safetyConcernEl && safetyConcernEl.checked);
   // T2: gather checklist state (only if visible — status=Completed AND major type)
@@ -2655,7 +2816,8 @@ function saveWorkOrder(){
       caliber:      FORM.caliber      || ''
     },
     // T2: new fields
-    parts_freeform:   partsFreeform,
+    // T11: parts_freeform preserved from existing record on edit (input removed in T11).
+    parts_freeform:   existingRecord ? (existingRecord.parts_freeform || '') : '',
     safety_concern:   safetyConcern,
     checklist:        checklistForRecord,
     // T3: Pro structured fields (empty for Free users — defaults handled in _woUpgradeRecord)
@@ -3966,7 +4128,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-F';   // bump on every revision
+var BUILD_TAG   = '2026-04-24-G';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
