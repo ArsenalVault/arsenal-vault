@@ -1317,14 +1317,24 @@ function ld(){
           }
           loadMetaFromDB(db);
           rnd();
+          _ONB_afterLoadHook();
         };
-        req.onerror=function(){ldFallback();rnd();};
-      }catch(e){ldFallback();rnd();}
+        req.onerror=function(){ldFallback();rnd();_ONB_afterLoadHook();};
+      }catch(e){ldFallback();rnd();_ONB_afterLoadHook();}
     } else {
       ldFallback();
       rnd();
+      _ONB_afterLoadHook();
     }
   });
+}
+
+// Fires once per page load after data + initial render are ready.
+var _ONB_loadHookFired = false;
+function _ONB_afterLoadHook(){
+  if(_ONB_loadHookFired) return;
+  _ONB_loadHookFired = true;
+  if(typeof _ONB_maybeStartTours === 'function') _ONB_maybeStartTours();
 }
 
 function ldFallback(){
@@ -3956,7 +3966,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-E';   // bump on every revision
+var BUILD_TAG   = '2026-04-24-F';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -4257,7 +4267,8 @@ function openSettings(){
     +(appSettings.devMode?('<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
         +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">Developer</div>'
         +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px">Simulates subscription tier for gate testing.</div>'
-        +'<div style="display:flex;gap:6px">'+_tierBtnHTML('free','Free')+_tierBtnHTML('pro','Pro')+_tierBtnHTML('proplus','Pro+')+'</div>'
+        +'<div style="display:flex;gap:6px;margin-bottom:10px">'+_tierBtnHTML('free','Free')+_tierBtnHTML('pro','Pro')+_tierBtnHTML('proplus','Pro+')+'</div>'
+        +'<button onclick="_ONB_resetAll();toast(\'Tours reset \u2014 reload app to trigger\');" style="width:100%;background:transparent;border:1px solid #8a95a8;color:#8a95a8;padding:8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Reset tours</button>'
       +'</div>'):'')
     +'<button onclick="document.getElementById(\'settings_modal\').remove()" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Done</button>'
     +'<div id="settings_ver" onclick="_handleVersionTap()" style="text-align:center;font-size:11px;color:#4a5568;margin-top:10px;cursor:pointer;user-select:none">ArsenalDB v'+APP_VERSION+' &middot; '+BUILD_TAG+'</div>'
@@ -8834,6 +8845,243 @@ function _BYO_uiShowWalkthrough(){
   document.body.appendChild(modal);
 }
 // ── END BYO-T1 ───────────────────────────────────────────────────────
+
+// ── BEGIN ONBOARD-T1 GUIDED TOURS ────────────────────────────────────
+// ONBOARD-T1: Two lightweight tooltip tours.
+//   first_run — triggers when app opens with 0 firearms, guides new users.
+//   feature_discovery — triggers when user has >=2 firearms AND is Pro/Pro+.
+// Each runs once. Skip is permanent. Graceful degradation on missing targets.
+// ─────────────────────────────────────────────────────────────────────
+
+var _ONB_FIRST_RUN_DONE = 'arsenal_tour_first_run_done';
+var _ONB_FEATURE_DISC_DONE = 'arsenal_tour_feature_disc_done';
+var _ONB_currentTour = null;
+var _ONB_currentStep = 0;
+var _ONB_TARGET_PADDING = 6;
+
+// Tour content. target is a CSS selector or null (centered modal).
+// position: 'below' | 'above' | 'center'. Tokens: {N} = guns.length.
+var _ONB_TOURS = {
+  first_run: [
+    { target: null, position: 'center',
+      text: 'Welcome to ArsenalDB. Your firearms inventory, stored privately on your device.' },
+    { target: '#fab_add', position: 'above',
+      text: 'Tap here to add your first firearm. Include photos, caliber, serial, and more.' },
+    { target: '.stat-grid', position: 'below',
+      text: 'Your dashboard fills in as you log firearms — readiness, value, and maintenance.' },
+    { target: '#ham_fab', position: 'below',
+      text: 'Settings, Backup, Share, and Import live in this menu.' }
+  ],
+  feature_discovery: [
+    { target: null, position: 'center',
+      text: 'You\u2019ve got {N} firearms logged \u2014 here are a few features worth trying.' },
+    { target: '#ham_fab', position: 'below',
+      text: 'Your Pro features live in this menu: AI Gun Identifier, Bill of Sale, Backup, Share.' },
+    { target: '.stat-grid', position: 'below',
+      text: 'Your dashboard tracks readiness, market value, service needs, and rounds.' },
+    { target: null, position: 'center',
+      text: 'Explore at your own pace. You won\u2019t see this tour again.' }
+  ]
+};
+
+function _ONB_isDone(tourId){
+  try {
+    if(typeof localStorage === 'undefined') return false;
+    var key = tourId === 'first_run' ? _ONB_FIRST_RUN_DONE : _ONB_FEATURE_DISC_DONE;
+    return !!localStorage.getItem(key);
+  } catch(e) { return false; }
+}
+
+function _ONB_markDone(tourId){
+  try {
+    if(typeof localStorage === 'undefined') return;
+    var key = tourId === 'first_run' ? _ONB_FIRST_RUN_DONE : _ONB_FEATURE_DISC_DONE;
+    localStorage.setItem(key, '1');
+  } catch(e) {}
+}
+
+function _ONB_resetAll(){
+  try {
+    if(typeof localStorage === 'undefined') return;
+    localStorage.removeItem(_ONB_FIRST_RUN_DONE);
+    localStorage.removeItem(_ONB_FEATURE_DISC_DONE);
+  } catch(e) {}
+}
+
+// Decide which tour (if any) should fire on app load. Pure logic.
+function _ONB_pickTour(state){
+  state = state || {};
+  var gunCount = state.gunCount || 0;
+  var tier = state.tier || 'free';
+  if(!_ONB_isDone('first_run') && gunCount === 0) return 'first_run';
+  if(!_ONB_isDone('feature_discovery') && gunCount >= 2 && (tier === 'pro' || tier === 'proplus')){
+    return 'feature_discovery';
+  }
+  return null;
+}
+
+function _ONB_maybeStartTours(){
+  var tourId = _ONB_pickTour({ gunCount: (typeof guns !== 'undefined' && guns) ? guns.length : 0, tier: (appSettings && appSettings.tier) || 'free' });
+  if(!tourId) return;
+  // Small delay so app render settles before tour overlays it
+  setTimeout(function(){ _ONB_startTour(tourId); }, 500);
+}
+
+function _ONB_startTour(tourId){
+  if(!_ONB_TOURS[tourId]) return;
+  _ONB_currentTour = tourId;
+  _ONB_currentStep = 0;
+  _ONB_renderCurrentStep();
+}
+
+function _ONB_endTour(){
+  var ids = ['onb_highlight', 'onb_overlay', 'onb_tooltip'];
+  ids.forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.remove();
+  });
+  if(_ONB_currentTour) _ONB_markDone(_ONB_currentTour);
+  _ONB_currentTour = null;
+  _ONB_currentStep = 0;
+}
+
+function _ONB_nextStep(){
+  _ONB_currentStep++;
+  var tour = _ONB_TOURS[_ONB_currentTour];
+  if(!tour || _ONB_currentStep >= tour.length){
+    _ONB_endTour();
+    return;
+  }
+  _ONB_renderCurrentStep();
+}
+
+function _ONB_renderCurrentStep(){
+  var tour = _ONB_TOURS[_ONB_currentTour];
+  if(!tour) return;
+  var step = tour[_ONB_currentStep];
+  if(!step){ _ONB_endTour(); return; }
+
+  // Find target (if any) — skip step silently if missing
+  var target = null;
+  if(step.target){
+    try { target = document.querySelector(step.target); } catch(e){ target = null; }
+    if(!target){
+      _ONB_nextStep();
+      return;
+    }
+  }
+
+  // Clear previous-step artifacts
+  ['onb_highlight', 'onb_overlay', 'onb_tooltip'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.remove();
+  });
+
+  if(target){
+    _ONB_createHighlight(target);
+  } else {
+    _ONB_createOverlay();
+  }
+
+  var tt = _ONB_createTooltip(_ONB_currentTour, _ONB_currentStep);
+  _ONB_positionTooltip(target, tt, step.position);
+
+  var nextBtn = document.getElementById('onb_next_btn');
+  var skipBtn = document.getElementById('onb_skip_btn');
+  if(nextBtn) nextBtn.onclick = _ONB_nextStep;
+  if(skipBtn) skipBtn.onclick = _ONB_endTour;
+}
+
+// Spotlight highlight around target element. The box-shadow trick gives us
+// a darkened screen outside the highlighted area without a separate overlay.
+function _ONB_createHighlight(target){
+  var rect = target.getBoundingClientRect();
+  var hl = document.createElement('div');
+  hl.id = 'onb_highlight';
+  hl.style.cssText = 'position:fixed;pointer-events:none;border:3px solid #e8c46a;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.68),0 0 24px rgba(232,196,106,0.5);z-index:10006;transition:all 0.25s ease';
+  hl.style.top = (rect.top - _ONB_TARGET_PADDING) + 'px';
+  hl.style.left = (rect.left - _ONB_TARGET_PADDING) + 'px';
+  hl.style.width = (rect.width + _ONB_TARGET_PADDING * 2) + 'px';
+  hl.style.height = (rect.height + _ONB_TARGET_PADDING * 2) + 'px';
+  document.body.appendChild(hl);
+  return hl;
+}
+
+function _ONB_createOverlay(){
+  var ov = document.createElement('div');
+  ov.id = 'onb_overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.68);z-index:10006;pointer-events:auto';
+  document.body.appendChild(ov);
+  return ov;
+}
+
+function _ONB_createTooltip(tourId, stepIndex){
+  var tour = _ONB_TOURS[tourId];
+  var step = tour[stepIndex];
+  var isLast = stepIndex === tour.length - 1;
+  var text = step.text;
+  if(tourId === 'feature_discovery' && typeof guns !== 'undefined'){
+    text = text.replace('{N}', String(guns.length));
+  }
+
+  var tt = document.createElement('div');
+  tt.id = 'onb_tooltip';
+  tt.style.cssText = 'position:fixed;z-index:10007;background:#222835;border:2px solid #e8c46a;border-radius:12px;padding:16px;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,0.6);font-family:inherit';
+  tt.innerHTML =
+    '<div style="font-size:10px;color:#8a95a8;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px">Step '+(stepIndex+1)+' of '+tour.length+'</div>'
+    +'<div style="font-size:14px;color:#f0f2f5;line-height:1.5;margin-bottom:14px">'+eh(text)+'</div>'
+    +'<div style="display:flex;gap:8px;align-items:center">'
+      +'<button id="onb_next_btn" style="flex:1;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:10px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">'+(isLast?'Finish':'Next')+'</button>'
+      +'<button id="onb_skip_btn" style="background:transparent;border:none;color:#8a95a8;font-size:11px;cursor:pointer;font-family:inherit;padding:8px;text-decoration:underline">Skip tour</button>'
+    +'</div>';
+  document.body.appendChild(tt);
+  return tt;
+}
+
+// Position tooltip near target. Tries preferred position, falls back gracefully.
+function _ONB_positionTooltip(target, ttEl, preferred){
+  var vw = window.innerWidth, vh = window.innerHeight;
+  var margin = 10;
+
+  if(!target || preferred === 'center'){
+    // Center of screen
+    var ttRect = ttEl.getBoundingClientRect();
+    ttEl.style.top = Math.max(margin, (vh - ttRect.height) / 2) + 'px';
+    ttEl.style.left = Math.max(margin, (vw - ttRect.width) / 2) + 'px';
+    return;
+  }
+
+  var rect = target.getBoundingClientRect();
+  var ttRect = ttEl.getBoundingClientRect();
+  var placement = preferred || 'below';
+
+  // Auto-flip if preferred doesn't fit
+  if(placement === 'below' && (rect.bottom + ttRect.height + margin) > vh){
+    placement = 'above';
+  }
+  if(placement === 'above' && (rect.top - ttRect.height - margin) < 0){
+    // neither fits — center on screen instead
+    ttEl.style.top = Math.max(margin, (vh - ttRect.height) / 2) + 'px';
+    ttEl.style.left = Math.max(margin, (vw - ttRect.width) / 2) + 'px';
+    return;
+  }
+
+  var top;
+  if(placement === 'above'){
+    top = rect.top - ttRect.height - margin;
+  } else {
+    top = rect.bottom + margin;
+  }
+
+  // Center horizontally over target, clamp within viewport
+  var left = rect.left + rect.width / 2 - ttRect.width / 2;
+  left = Math.max(margin, Math.min(vw - ttRect.width - margin, left));
+  top = Math.max(margin, Math.min(vh - ttRect.height - margin, top));
+
+  ttEl.style.top = top + 'px';
+  ttEl.style.left = left + 'px';
+}
+// ── END ONBOARD-T1 ───────────────────────────────────────────────────
 
 function claude(prompt,mt,cb){
   _BYO_claudeCall([{role:'user', content:prompt}], {max_tokens: mt||600})
