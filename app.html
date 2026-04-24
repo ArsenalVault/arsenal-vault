@@ -1739,6 +1739,9 @@ function renderWorkOrders(log){
         +'<div style="font-size:12px;font-weight:700;color:#e8c46a">'+eh(woLabel)+'</div>'
         +'<div style="display:flex;gap:6px;align-items:center">'
           +'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+statusColor+'20;color:'+statusColor+';border:1px solid '+statusColor+'50">'+eh(o.status)+'</span>'
+          +'<button onclick="event.stopPropagation();_flagSuppressWOEdit();printWO('+i+')" title="Print" style="background:#1a1d24;border:1px solid #e8c46a60;color:#e8c46a;border-radius:4px;cursor:pointer;padding:3px 6px;font-family:inherit;line-height:0;display:flex;align-items:center;justify-content:center">'
+            +'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="10" height="4"/><rect x="3" y="7" width="14" height="7" rx="1"/><rect x="6" y="12" width="8" height="5"/><circle cx="14.5" cy="9.5" r="0.6" fill="currentColor"/></svg>'
+          +'</button>'
           +'<button onclick="event.stopPropagation();_flagSuppressWOEdit();shareWO('+i+')" title="Share" style="background:#1a1d24;border:1px solid #e8c46a60;color:#e8c46a;border-radius:4px;cursor:pointer;font-size:12px;padding:3px 7px;font-family:inherit;line-height:1">↗</button>'
           +'<button onclick="event.stopPropagation();_flagSuppressWOEdit();removeWorkOrder('+i+')" style="background:none;border:none;color:#ff707070;cursor:pointer;font-size:14px;padding:0 4px">&#10005;</button>'
         +'</div>'
@@ -2356,6 +2359,41 @@ function _downloadPacket(blob, filename){
   setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
 }
 
+// T4: print a single work order as a professionally-styled document.
+// Opens a new window, writes the same document as Share but with the
+// machine-readable JSON payload omitted, then triggers the native print dialog.
+function printWO(idx){
+  var gun;
+  if(VIEW === 'add' && FORM){
+    gun = FORM;
+  } else if(selId){
+    gun = guns.find(function(x){return x.id===selId;});
+  }
+  if(!gun){ toast('Cannot identify firearm','err'); return; }
+  var orders = [];
+  try{ orders = JSON.parse(gun.maintenanceLog || '[]'); }catch(e){ orders = []; }
+  if(!orders[idx]){ toast('Work order not found','err'); return; }
+  var wo = _woUpgradeRecord(orders[idx]);
+  var snap = wo.snapshot || {};
+  var titleSuffix = [snap.make, snap.model].filter(function(s){return s;}).join(' ');
+  var html = _buildWOPacketHtml(wo, gun, {
+    omitPayload: true,
+    titleSuffix:  titleSuffix
+  });
+  var W;
+  try{ W = window.open('', '_blank'); }catch(e){ W = null; }
+  if(!W){ toast('Pop-ups blocked — enable them to print','err'); return; }
+  W.document.open();
+  W.document.write(html);
+  W.document.close();
+  // Wait for window to finish loading (especially photos) before printing
+  if(W.document.readyState === 'complete'){
+    setTimeout(function(){ try{ W.print(); }catch(e){} }, 200);
+  } else {
+    W.onload = function(){ setTimeout(function(){ try{ W.print(); }catch(e){} }, 200); };
+  }
+}
+
 // T2: escape JSON for safe embedding inside a <script> tag.
 // Default JSON.stringify does not escape < or >, so user-controlled text
 // containing a closing script tag could break out. Escape both as unicode.
@@ -2370,43 +2408,25 @@ function _jsonForScriptTag(obj){
 // T2: build a self-contained HTML packet for one work order.
 // Renders a human-readable document and embeds a machine-readable JSON
 // block for ArsenalDB users who receive the file to import.
-function _buildWOPacketHtml(wo, gun){
-  var ownerProfile = (appSettings && appSettings.ownerProfile) || {};
+function _buildWOVisualSection(wo, gun, opts){
+  opts = opts || {};
+  var esc = eh;
+  var includePhoto = opts.includePhoto !== false;
+  var includeOwner = opts.includeOwner === true;
+  var ownerProfile = opts.ownerProfile || {};
   var firstPhoto = null;
-  if(gun){
+  if(includePhoto && gun){
     if(gun.photos && gun.photos.length) firstPhoto = gun.photos[0];
     else if(gun.photo) firstPhoto = gun.photo;
   }
-  // Build the machine-readable payload (v1 packet format)
-  var payload = {
-    format: 'arsenaldb_packet_v1',
-    schema_v: 1,
-    kind: 'work_order_single',
-    generated_at: new Date().toISOString(),
-    generated_by_device: (appSettings && appSettings.devicePrefix) || '',
-    wo: wo,
-    firearm_snapshot: wo.snapshot || {},
-    owner: {
-      name:  ownerProfile.name  || '',
-      phone: ownerProfile.phone || '',
-      email: ownerProfile.email || ''
-    },
-    photo: firstPhoto
-  };
-  var payloadJson = _jsonForScriptTag(payload);
-
-  // Visible rendering helpers
-  var esc = eh;
-  var statusColor = wo.status === 'Completed' ? '#2d7a3e'
-                  : wo.status === 'In Progress' ? '#8a6e1c'
-                  : wo.status === 'Canceled' ? '#8a4a4a'
-                  : '#4a5568';
   var snap = wo.snapshot || {};
   var fmLine = [snap.make, snap.model].filter(function(s){return s;}).join(' ');
   var snDetails = [snap.serialNumber ? 'Serial: '+snap.serialNumber : '', snap.caliber ? 'Caliber: '+snap.caliber : '', snap.type ? 'Type: '+snap.type : '']
     .filter(function(s){return s;}).join(' · ');
-
-  // Checklist rendering (only if present)
+  var statusColor = wo.status === 'Completed' ? '#2d7a3e'
+                  : wo.status === 'In Progress' ? '#8a6e1c'
+                  : wo.status === 'Canceled' ? '#8a4a4a'
+                  : '#4a5568';
   var checklistHtml = '';
   if(wo.checklist && wo.checklist.length){
     checklistHtml = '<div class="section"><h2>Function Check</h2><ul class="checklist">';
@@ -2417,34 +2437,20 @@ function _buildWOPacketHtml(wo, gun){
     });
     checklistHtml += '</ul></div>';
   }
-  // Safety concern callout
   var safetyHtml = '';
   if(wo.safety_concern === true){
     safetyHtml = '<div class="safety"><strong>⚠ Safety Concern</strong><br/>This work order is flagged as having a safety concern needing attention.</div>';
   }
-  // Owner contact (only if at least one field present)
-  var ownerHtml = '';
-  var hasOwner = (ownerProfile.name || ownerProfile.phone || ownerProfile.email);
-  if(hasOwner){
-    ownerHtml = '<div class="section"><h2>Owner Contact</h2>';
-    if(ownerProfile.name)  ownerHtml += '<div>'+esc(ownerProfile.name)+'</div>';
-    if(ownerProfile.phone) ownerHtml += '<div>'+esc(ownerProfile.phone)+'</div>';
-    if(ownerProfile.email) ownerHtml += '<div>'+esc(ownerProfile.email)+'</div>';
-    ownerHtml += '</div>';
-  }
-  // Photo
   var photoHtml = '';
   if(firstPhoto){
     photoHtml = '<div class="section"><h2>Firearm Photo</h2>'
       +'<img src="'+firstPhoto+'" style="max-width:400px;width:100%;height:auto;border:1px solid #ccc;border-radius:6px"/>'
       +'</div>';
   }
-  // Parts freeform
   var partsHtml = '';
   if(wo.parts_freeform){
     partsHtml = '<div class="section"><h2>Parts Used</h2><p>'+esc(wo.parts_freeform)+'</p></div>';
   }
-  // T3: Structured parts table (Pro+). Rendered below freeform if both present.
   var partsStructHtml = '';
   if(wo.parts_structured && wo.parts_structured.length){
     var fmCurrency = function(v){
@@ -2478,7 +2484,6 @@ function _buildWOPacketHtml(wo, gun){
       +'</table>'
     +'</div>';
   }
-  // T3: Torque / threadlocker / lubricants / round count
   var techHtml = '';
   var techBits = [];
   if(wo.torque_notes)  techBits.push({label:'Torque', value:wo.torque_notes});
@@ -2491,68 +2496,119 @@ function _buildWOPacketHtml(wo, gun){
     }).join('');
     techHtml = '<div class="section"><h2>Technical Details</h2><dl class="kv">'+dlRows+'</dl></div>';
   }
+  var ownerHtml = '';
+  if(includeOwner){
+    var hasOwner = (ownerProfile.name || ownerProfile.phone || ownerProfile.email);
+    if(hasOwner){
+      ownerHtml = '<div class="section"><h2>Owner Contact</h2>';
+      if(ownerProfile.name)  ownerHtml += '<div>'+esc(ownerProfile.name)+'</div>';
+      if(ownerProfile.phone) ownerHtml += '<div>'+esc(ownerProfile.phone)+'</div>';
+      if(ownerProfile.email) ownerHtml += '<div>'+esc(ownerProfile.email)+'</div>';
+      ownerHtml += '</div>';
+    }
+  }
+  return '<div class="wo-card" style="page-break-inside:avoid;break-inside:avoid">'
+    +'<div class="wo-banner">'
+      +'<div class="wo-num">Work Order · '+esc(wo.wo_number||'')+'</div>'
+      +'<div class="wo-status" style="background:'+statusColor+'">'+esc(wo.status||'')+'</div>'
+    +'</div>'
+    +'<div class="firearm">'
+      +'<div class="name">'+esc(fmLine||'(unnamed firearm)')+'</div>'
+      +(snDetails ? '<div class="details">'+esc(snDetails)+'</div>' : '')
+    +'</div>'
+    +safetyHtml
+    +'<div class="section"><h2>Work Details</h2><dl class="kv">'
+      +'<dt>Type</dt><dd>'+esc(wo.type||'')+'</dd>'
+      +(wo.date ? '<dt>Date</dt><dd>'+esc(wo.date)+'</dd>' : '')
+      +(wo.tech ? '<dt>Performed By</dt><dd>'+esc(wo.tech)+'</dd>' : '')
+    +'</dl></div>'
+    +(wo.notes ? '<div class="section"><h2>Notes</h2><p>'+esc(wo.notes)+'</p></div>' : '')
+    +partsHtml
+    +partsStructHtml
+    +techHtml
+    +checklistHtml
+    +photoHtml
+    +ownerHtml
+  +'</div>';
+}
 
+function _woDocStyles(){
+  return '*{box-sizing:border-box}'
+    +'body{margin:0;padding:28px 20px;background:#f6f5f2;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    +'.wrap{max-width:720px;margin:0 auto;background:#fff;padding:32px;border:1px solid #d8d4ca;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.04)}'
+    +'.brand{font-size:11px;letter-spacing:.2em;color:#8a7440;text-transform:uppercase;font-weight:700;margin-bottom:2px}'
+    +'.brand-sub{font-size:12px;color:#888;margin-bottom:20px}'
+    +'.wo-banner{background:#1a1d24;color:#e8c46a;padding:16px 20px;border-radius:8px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}'
+    +'.wo-num{font-size:18px;font-weight:800;letter-spacing:.04em}'
+    +'.wo-status{color:#fff;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}'
+    +'.wo-card{margin-bottom:28px}'
+    +'.wo-card + .wo-card{border-top:1px dashed #d8d4ca;padding-top:24px}'
+    +'.firearm{background:#f6f5f2;border-left:3px solid #8a7440;padding:12px 16px;margin-bottom:20px}'
+    +'.firearm .name{font-size:18px;font-weight:700;color:#1a1a1a;margin-bottom:4px}'
+    +'.firearm .details{font-size:12px;color:#666}'
+    +'.section{margin-bottom:20px}'
+    +'.section h2{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#8a7440;font-weight:800;margin:0 0 8px;border-bottom:1px solid #e0ddd4;padding-bottom:4px}'
+    +'.section p{margin:0;white-space:pre-wrap;word-wrap:break-word}'
+    +'.kv{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;font-size:14px}'
+    +'.kv dt{color:#888;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em}'
+    +'.kv dd{margin:0;color:#1a1a1a}'
+    +'.checklist{list-style:none;padding:0;margin:0}'
+    +'.checklist li{padding:6px 0;border-bottom:1px solid #f0ede6;font-size:14px}'
+    +'.checklist li:last-child{border-bottom:none}'
+    +'.checklist .mark{display:inline-block;width:22px;font-weight:800;font-size:15px}'
+    +'.checklist .chk{color:#1a1a1a}'
+    +'.checklist .chk .mark{color:#2d7a3e}'
+    +'.checklist .unchk{color:#888}'
+    +'.safety{background:#fff3f0;border:1px solid #e89080;border-radius:6px;padding:12px 16px;margin-bottom:20px;color:#8a4a4a;font-size:14px}'
+    +'.footer{margin-top:28px;padding-top:12px;border-top:1px solid #e0ddd4;font-size:11px;color:#8a7440;text-align:center;letter-spacing:.04em}'
+    +'@page{margin:0.5in}'
+    +'@media print{body{background:#fff;padding:0} .wrap{border:none;box-shadow:none;padding:0}}';
+}
+
+function _buildWOPacketHtml(wo, gun, opts){
+  opts = opts || {};
+  var ownerProfile = (appSettings && appSettings.ownerProfile) || {};
+  var firstPhoto = null;
+  if(gun){
+    if(gun.photos && gun.photos.length) firstPhoto = gun.photos[0];
+    else if(gun.photo) firstPhoto = gun.photo;
+  }
+  var payloadTag = '';
+  if(!opts.omitPayload){
+    var payload = {
+      format: 'arsenaldb_packet_v1',
+      schema_v: 1,
+      kind: 'work_order_single',
+      generated_at: new Date().toISOString(),
+      generated_by_device: (appSettings && appSettings.devicePrefix) || '',
+      wo: wo,
+      firearm_snapshot: wo.snapshot || {},
+      owner: {
+        name:  ownerProfile.name  || '',
+        phone: ownerProfile.phone || '',
+        email: ownerProfile.email || ''
+      },
+      photo: firstPhoto
+    };
+    payloadTag = '<script type="application/json" id="arsenaldb_packet">'+_jsonForScriptTag(payload)+'<\/script>';
+  }
+  var visible = _buildWOVisualSection(wo, gun, {
+    includePhoto: true,
+    includeOwner: !opts.omitPayload,
+    ownerProfile: ownerProfile
+  });
   var html = '<!DOCTYPE html>'
     +'<html lang="en"><head><meta charset="UTF-8">'
     +'<meta name="viewport" content="width=device-width,initial-scale=1">'
-    +'<title>Work Order '+esc(wo.wo_number||'')+'</title>'
-    +'<style>'
-      +'*{box-sizing:border-box}'
-      +'body{margin:0;padding:28px 20px;background:#f6f5f2;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-      +'.wrap{max-width:720px;margin:0 auto;background:#fff;padding:32px;border:1px solid #d8d4ca;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.04)}'
-      +'.brand{font-size:11px;letter-spacing:.2em;color:#8a7440;text-transform:uppercase;font-weight:700;margin-bottom:2px}'
-      +'.brand-sub{font-size:12px;color:#888;margin-bottom:20px}'
-      +'.wo-banner{background:#1a1d24;color:#e8c46a;padding:16px 20px;border-radius:8px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}'
-      +'.wo-num{font-size:18px;font-weight:800;letter-spacing:.04em}'
-      +'.wo-status{background:'+statusColor+';color:#fff;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}'
-      +'.firearm{background:#f6f5f2;border-left:3px solid #8a7440;padding:12px 16px;margin-bottom:20px}'
-      +'.firearm .name{font-size:18px;font-weight:700;color:#1a1a1a;margin-bottom:4px}'
-      +'.firearm .details{font-size:12px;color:#666}'
-      +'.section{margin-bottom:20px}'
-      +'.section h2{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#8a7440;font-weight:800;margin:0 0 8px;border-bottom:1px solid #e0ddd4;padding-bottom:4px}'
-      +'.section p{margin:0;white-space:pre-wrap;word-wrap:break-word}'
-      +'.kv{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;font-size:14px}'
-      +'.kv dt{color:#888;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em}'
-      +'.kv dd{margin:0;color:#1a1a1a}'
-      +'.checklist{list-style:none;padding:0;margin:0}'
-      +'.checklist li{padding:6px 0;border-bottom:1px solid #f0ede6;font-size:14px}'
-      +'.checklist li:last-child{border-bottom:none}'
-      +'.checklist .mark{display:inline-block;width:22px;font-weight:800;font-size:15px}'
-      +'.checklist .chk{color:#1a1a1a}'
-      +'.checklist .chk .mark{color:#2d7a3e}'
-      +'.checklist .unchk{color:#888}'
-      +'.safety{background:#fff3f0;border:1px solid #e89080;border-radius:6px;padding:12px 16px;margin-bottom:20px;color:#8a4a4a;font-size:14px}'
-      +'.footer{margin-top:28px;padding-top:12px;border-top:1px solid #e0ddd4;font-size:11px;color:#8a7440;text-align:center;letter-spacing:.04em}'
-      +'@media print{body{background:#fff;padding:0} .wrap{border:none;box-shadow:none;padding:0}}'
-    +'</style>'
+    +'<title>Work Order '+eh(wo.wo_number||'')+(opts.titleSuffix?(' - '+eh(opts.titleSuffix)):'')+'</title>'
+    +'<style>'+_woDocStyles()+'</style>'
     +'</head><body><div class="wrap">'
       +'<div class="brand">ArsenalDB</div>'
       +'<div class="brand-sub">Private Armory Management</div>'
-      +'<div class="wo-banner">'
-        +'<div class="wo-num">Work Order &middot; '+esc(wo.wo_number||'')+'</div>'
-        +'<div class="wo-status">'+esc(wo.status||'')+'</div>'
-      +'</div>'
-      +'<div class="firearm">'
-        +'<div class="name">'+esc(fmLine||'(unnamed firearm)')+'</div>'
-        +(snDetails ? '<div class="details">'+esc(snDetails)+'</div>' : '')
-      +'</div>'
-      +safetyHtml
-      +'<div class="section"><h2>Work Details</h2><dl class="kv">'
-        +'<dt>Type</dt><dd>'+esc(wo.type||'')+'</dd>'
-        +(wo.date ? '<dt>Date</dt><dd>'+esc(wo.date)+'</dd>' : '')
-        +(wo.tech ? '<dt>Performed By</dt><dd>'+esc(wo.tech)+'</dd>' : '')
-      +'</dl></div>'
-      +(wo.notes ? '<div class="section"><h2>Notes</h2><p>'+esc(wo.notes)+'</p></div>' : '')
-      +partsHtml
-      +partsStructHtml
-      +techHtml
-      +checklistHtml
-      +photoHtml
-      +ownerHtml
-      +'<div class="footer">Generated by ArsenalDB · '+esc((appSettings&&appSettings.devicePrefix)||'')+' · '+esc(new Date().toLocaleDateString())+'</div>'
+      +visible
+      +'<div class="footer">Generated by ArsenalDB · '+eh((appSettings&&appSettings.devicePrefix)||'')+' · '+eh(new Date().toLocaleDateString())+'</div>'
     +'</div>'
-    // Machine-readable payload for ArsenalDB imports
-    +'<script type="application/json" id="arsenaldb_packet">'+payloadJson+'<\/script>'
+    +payloadTag
   +'</body></html>';
   return html;
 }
@@ -3432,7 +3488,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-K2';  // bump on every revision (K2 = T3.5.1 hotfix: ghost-tap after delete/share)
+var BUILD_TAG   = '2026-04-23-L';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -8836,9 +8892,8 @@ function pOneOpts(id, includePhotos){
 
   if(g.repairNotes) W.document.write('<h3>Repair Notes</h3><p style="font-size:13px;line-height:1.6">'+g.repairNotes+'</p>');
   if(g.maintenanceLog){
-    // T1 stopgap: if maintenanceLog is v1 JSON records, don't print raw JSON.
-    // Show a simple table of the records (WO#, date, type, status). T6 will
-    // replace this with full formatted per-WO printing.
+    // T4: render full per-WO cards (was T1 stopgap compact table).
+    // Uses the same visual section as Share/Print packets for consistency.
     var _isJson = false, _rows = [];
     try{
       var _parsed = JSON.parse(g.maintenanceLog);
@@ -8850,11 +8905,11 @@ function pOneOpts(id, includePhotos){
     if(_isJson){
       W.document.write('<h3>Maintenance Log</h3>');
       if(_rows.length){
-        W.document.write('<table><thead><tr><th>WO #</th><th>Date</th><th>Type</th><th>Performed By</th><th>Status</th></tr></thead><tbody>');
+        // Inject the packet stylesheet once so the cards render correctly
+        W.document.write('<style>'+_woDocStyles()+'</style>');
         _rows.forEach(function(r){
-          W.document.write('<tr><td>'+(r.wo_number||'—')+'</td><td>'+(r.date||'—')+'</td><td>'+(r.type||'—')+'</td><td>'+(r.tech||'—')+'</td><td>'+(r.status||'—')+'</td></tr>');
+          W.document.write(_buildWOVisualSection(r, g, {includePhoto:false, includeOwner:false}));
         });
-        W.document.write('</tbody></table>');
       } else {
         W.document.write('<p style="font-size:13px;color:#666">No work orders.</p>');
       }
