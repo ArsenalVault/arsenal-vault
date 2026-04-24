@@ -1678,6 +1678,45 @@ var _woStatusEngine = {
 };
 // ── END WORK ORDER FOUNDATION ──────────────────────────────────────
 
+// T3.5: canonical cost computation helper. Single source of truth for any
+// place in the app that needs to display WO cost rollups (Maintenance tab
+// summary card, firearm info card invested/net line, future analytics).
+// Safe on missing/malformed data — all fields default to zero.
+function _computeFirearmCosts(gun){
+  var out = {
+    partsCostTotal: 0,
+    woCount: 0,
+    completedWoCount: 0,
+    totalInvested: 0,
+    currentValue: 0,
+    netVsValue: 0
+  };
+  if(!gun) return out;
+  // Parse maintenanceLog — use upgrade helper so legacy records normalize
+  var orders = [];
+  try{
+    var upgraded = _woUpgradeLog(gun.maintenanceLog || '[]');
+    orders = JSON.parse(upgraded);
+  }catch(e){ orders = []; }
+  if(!Array.isArray(orders)) orders = [];
+  out.woCount = orders.length;
+  orders.forEach(function(o){
+    if(o && o.status === 'Completed') out.completedWoCount++;
+    if(o && Array.isArray(o.parts_structured)){
+      o.parts_structured.forEach(function(p){
+        var qty  = parseFloat(p && p.qty)  || 0;
+        var cost = parseFloat(p && p.cost) || 0;
+        if(qty > 0 && cost > 0) out.partsCostTotal += qty * cost;
+      });
+    }
+  });
+  out.currentValue  = parseFloat(gun.currentValue)  || 0;
+  var purchasePrice = parseFloat(gun.purchasePrice) || 0;
+  out.totalInvested = purchasePrice + out.partsCostTotal;
+  out.netVsValue    = out.currentValue - out.totalInvested;
+  return out;
+}
+
 
 // ── WORK ORDER SYSTEM ────────────────────────────────────────────────
 function renderWorkOrders(log){
@@ -1693,13 +1732,15 @@ function renderWorkOrders(log){
   return orders.map(function(o,i){
     var statusColor = o.status==='Completed'?'#60e880':o.status==='In Progress'?'#ffd060':o.status==='Canceled'?'#ff707080':'#8a95a8';
     var woLabel = o.wo_number || ('WO-'+(String(i+1).padStart(3,'0')));
-    return '<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:8px">'
+    // T3.5: WO card is tap-to-edit. Inner Share/Delete buttons stop propagation
+    // so they don't also trigger edit. Hover cursor signals tappability.
+    return '<div onclick="editWorkOrder('+i+')" style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s ease" onmouseover="this.style.borderColor=\'#e8c46a50\'" onmouseout="this.style.borderColor=\'#2e3545\'">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
         +'<div style="font-size:12px;font-weight:700;color:#e8c46a">'+eh(woLabel)+'</div>'
         +'<div style="display:flex;gap:6px;align-items:center">'
           +'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+statusColor+'20;color:'+statusColor+';border:1px solid '+statusColor+'50">'+eh(o.status)+'</span>'
-          +'<button onclick="shareWO('+i+')" title="Share" style="background:#1a1d24;border:1px solid #e8c46a60;color:#e8c46a;border-radius:4px;cursor:pointer;font-size:12px;padding:3px 7px;font-family:inherit;line-height:1">↗</button>'
-          +'<button onclick="removeWorkOrder('+i+')" style="background:none;border:none;color:#ff707070;cursor:pointer;font-size:14px;padding:0 4px">&#10005;</button>'
+          +'<button onclick="event.stopPropagation();shareWO('+i+')" title="Share" style="background:#1a1d24;border:1px solid #e8c46a60;color:#e8c46a;border-radius:4px;cursor:pointer;font-size:12px;padding:3px 7px;font-family:inherit;line-height:1">↗</button>'
+          +'<button onclick="event.stopPropagation();removeWorkOrder('+i+')" style="background:none;border:none;color:#ff707070;cursor:pointer;font-size:14px;padding:0 4px">&#10005;</button>'
         +'</div>'
       +'</div>'
       +'<div style="font-size:13px;font-weight:600;color:#f0f2f5;margin-bottom:4px">'+eh(o.type)+'</div>'
@@ -1812,6 +1853,9 @@ function _renderWOPartsRows(){
   try{ parts = modal.dataset.partsStructured ? JSON.parse(modal.dataset.partsStructured) : []; }catch(e){ parts = []; }
   if(!parts.length){
     container.innerHTML = '';
+    // T3.5: hide the total line when no rows
+    var totalRow = document.getElementById('wo_parts_total_row');
+    if(totalRow) totalRow.style.display = 'none';
     return;
   }
   var html = '';
@@ -1819,12 +1863,41 @@ function _renderWOPartsRows(){
     var p = parts[i];
     html += '<div data-parts-row style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
       +'<input data-part-field="name" type="text" placeholder="Part name" value="'+eh(p.name||'')+'" style="flex:2;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:8px 10px;border-radius:6px;font-size:13px;font-family:inherit;min-width:0;box-sizing:border-box"/>'
-      +'<input data-part-field="qty" type="number" inputmode="numeric" placeholder="Qty" value="'+(p.qty||'')+'" style="width:60px;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:8px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/>'
-      +'<input data-part-field="cost" type="number" inputmode="decimal" placeholder="$" value="'+(p.cost||'')+'" style="width:70px;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:8px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/>'
+      // T3.5: oninput triggers live total recalculation
+      +'<input data-part-field="qty" type="number" inputmode="numeric" placeholder="Qty" value="'+(p.qty||'')+'" oninput="_updateWOPartsTotal()" style="width:60px;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:8px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/>'
+      +'<input data-part-field="cost" type="number" inputmode="decimal" placeholder="$" value="'+(p.cost||'')+'" oninput="_updateWOPartsTotal()" style="width:70px;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:8px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/>'
       +'<button onclick="_removeWOPartRow('+i+')" style="background:none;border:none;color:#ff707080;font-size:16px;cursor:pointer;padding:4px 6px;line-height:1">&#10005;</button>'
     +'</div>';
   }
   container.innerHTML = html;
+  // T3.5: show total row and refresh value
+  _updateWOPartsTotal();
+}
+
+// T3.5: recompute and display running total below the parts table.
+// Reads current DOM state (not dataset) so live typing updates without
+// needing to sync state first.
+function _updateWOPartsTotal(){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  var totalRow = document.getElementById('wo_parts_total_row');
+  var totalEl  = document.getElementById('wo_parts_total');
+  if(!totalRow || !totalEl) return;
+  var rows = modal.querySelectorAll('[data-parts-row]');
+  if(!rows.length){
+    totalRow.style.display = 'none';
+    return;
+  }
+  var total = 0;
+  for(var i=0;i<rows.length;i++){
+    var qtyEl  = rows[i].querySelector('[data-part-field="qty"]');
+    var costEl = rows[i].querySelector('[data-part-field="cost"]');
+    var qty  = qtyEl  && qtyEl.value  ? parseFloat(qtyEl.value)  : 0;
+    var cost = costEl && costEl.value ? parseFloat(costEl.value) : 0;
+    if(qty > 0 && cost > 0) total += qty * cost;
+  }
+  totalRow.style.display = 'flex';
+  totalEl.textContent = '$' + total.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
 function _addWOPartRow(){
@@ -1870,26 +1943,65 @@ function _toggleWODetailsDrawer(){
 }
 // ── END T3 PRO DETAILS DRAWER ────────────────────────────────────────
 
-function addWorkOrder(){
-  // T2: preview WO number (computed now, assigned permanently on save)
-  var woNumberPreview = _woGenerateNumber(FORM);
+// T3.5: tap-to-edit entry point. Wraps addWorkOrder with the index to edit.
+function editWorkOrder(idx){
+  addWorkOrder(idx);
+}
+
+function addWorkOrder(editIdx){
+  // T3.5: edit-mode detection — if editIdx is a valid number, load the
+  // existing record and pre-populate the form. Preserve wo_number/created_at/id
+  // on save so edits don't create new records.
+  var isEdit = (typeof editIdx === 'number' && editIdx >= 0);
+  var existingWO = null;
+  if(isEdit){
+    var existingOrders = [];
+    try{ existingOrders = FORM.maintenanceLog ? JSON.parse(FORM.maintenanceLog) : []; }catch(e){ existingOrders = []; }
+    if(existingOrders[editIdx]){
+      existingWO = _woUpgradeRecord(existingOrders[editIdx]);
+    } else {
+      isEdit = false; // fallback to new-record flow if index is invalid
+    }
+  }
+
+  // T2: preview WO number (computed now, assigned permanently on save).
+  // T3.5: when editing, show the existing wo_number instead of a new preview.
+  var woNumberPreview;
+  if(isEdit && existingWO.wo_number){
+    woNumberPreview = existingWO.wo_number;
+  } else if(isEdit){
+    // Legacy record with no wo_number — generate one now (silent repair on save)
+    woNumberPreview = _woGenerateNumber(FORM);
+  } else {
+    woNumberPreview = _woGenerateNumber(FORM);
+  }
   // T2: snapshot display — which firearm is this WO for
   var snapshotLine = [FORM.make, FORM.model].filter(function(s){return s;}).join(' ');
   if(FORM.serialNumber) snapshotLine += ' · SN: ' + FORM.serialNumber;
   if(!snapshotLine) snapshotLine = '(unnamed firearm)';
-  // T2: status options from canonical WO_STATUSES constant
+  // T2/T3.5: status options. Default to Scheduled for new, existing value for edit.
+  var selectedStatus = isEdit ? existingWO.status : 'Scheduled';
   var statusOpts = WO_STATUSES.map(function(s){
-    var selected = (s === 'Scheduled') ? ' selected' : ''; // default to Scheduled for new WOs
+    var selected = (s === selectedStatus) ? ' selected' : '';
     return '<option'+selected+'>'+s+'</option>';
   }).join('');
+  // T3.5: remove any existing modal (prevents double-open on rapid taps)
+  var existingModal = document.getElementById('wo_modal');
+  if(existingModal) existingModal.remove();
 
   var modal = document.createElement('div');
   modal.id = 'wo_modal';
   modal.style.cssText = 'position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  // T3.5: stamp edit index so saveWorkOrder can tell new vs update
+  if(isEdit) modal.dataset.editIdx = String(editIdx);
+  // T3.5: header + save label change for edit mode
+  var modalTitle = isEdit ? 'Edit Work Order' : '+ New Work Order';
+  var saveBtnLabel = isEdit ? 'Update Work Order' : 'Save Work Order';
+  var numberSuffix = isEdit ? '' : ' <span style="color:#8a95a8;font-weight:400;letter-spacing:0">(assigned on save)</span>';
   modal.innerHTML = '<div style="background:#222835;border-top:2px solid #3a4455;border-radius:12px 12px 0 0;padding:20px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto">'
     // T2: header with WO number preview + snapshot
-    +'<div style="font-size:15px;font-weight:700;color:#e8c46a;margin-bottom:6px">+ New Work Order</div>'
-    +'<div style="font-size:11px;color:#e8c46a;font-weight:700;letter-spacing:.04em;margin-bottom:3px">'+eh(woNumberPreview)+' <span style="color:#8a95a8;font-weight:400;letter-spacing:0">(assigned on save)</span></div>'
+    +'<div style="font-size:15px;font-weight:700;color:#e8c46a;margin-bottom:6px">'+modalTitle+'</div>'
+    +'<div style="font-size:11px;color:#e8c46a;font-weight:700;letter-spacing:.04em;margin-bottom:3px">'+eh(woNumberPreview)+numberSuffix+'</div>'
     +'<div style="font-size:12px;color:#8a95a8;margin-bottom:16px">For: '+eh(snapshotLine)+'</div>'
     // Type of Work
     +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a95a8;display:block;margin-bottom:4px">Type of Work</label>'
@@ -1947,6 +2059,11 @@ function addWorkOrder(){
           +'<div style="margin-bottom:14px">'
             +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;margin-bottom:6px">Parts Used (structured)</div>'
             +'<div id="wo_parts_rows"></div>'
+            // T3.5: running total row — hidden when no parts rows, shown with live updates
+            +'<div id="wo_parts_total_row" style="display:none;justify-content:flex-end;align-items:center;gap:8px;margin-top:8px;margin-bottom:8px;padding-right:32px">'
+              +'<span style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600">Total</span>'
+              +'<span id="wo_parts_total" style="font-size:14px;color:#e8c46a;font-weight:800">$0.00</span>'
+            +'</div>'
             +'<button onclick="_addWOPartRow()" style="background:#2a1a10;border:1px solid #e8c46a60;color:#e8c46a;padding:7px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px">+ Add part</button>'
           +'</div>'
           // Torque notes
@@ -1976,12 +2093,73 @@ function addWorkOrder(){
     // Actions
     +'<div style="display:flex;gap:10px">'
     +'<button onclick="document.getElementById(\'wo_modal\').remove()" style="flex:1;background:#1a1d24;border:1px solid #3a4455;color:#8a95a8;padding:13px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit">Cancel</button>'
-    +'<button onclick="saveWorkOrder()" style="flex:1;background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Save Work Order</button>'
+    +'<button onclick="saveWorkOrder()" style="flex:1;background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">'+saveBtnLabel+'</button>'
     +'</div>'
     +'</div>';
   modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
   document.body.appendChild(modal);
-  // Render checklist based on initial dropdown values (Scheduled default → hidden)
+  // T3.5: pre-populate fields when editing existing record
+  if(isEdit && existingWO){
+    // Basic fields (date, tech, notes, type)
+    var typeEl = document.getElementById('wo_type');
+    if(typeEl){
+      // Check if the existing type is one of our options; if so, select it
+      for(var o=0; o<typeEl.options.length; o++){
+        if(typeEl.options[o].value === existingWO.type || typeEl.options[o].text === existingWO.type){
+          typeEl.selectedIndex = o;
+          break;
+        }
+      }
+    }
+    var dateEl = document.getElementById('wo_date');
+    if(dateEl && existingWO.date) dateEl.value = existingWO.date;
+    var techEl = document.getElementById('wo_tech');
+    if(techEl) techEl.value = existingWO.tech || '';
+    var notesEl = document.getElementById('wo_notes');
+    if(notesEl) notesEl.value = existingWO.notes || '';
+    // T2 fields: parts_freeform, safety_concern
+    var pfEl = document.getElementById('wo_parts_freeform');
+    if(pfEl) pfEl.value = existingWO.parts_freeform || '';
+    var scEl = document.getElementById('wo_safety_concern');
+    if(scEl) scEl.checked = (existingWO.safety_concern === true);
+    // T2 checklist — store state on dataset so _renderWOChecklistSection picks it up
+    if(existingWO.checklist && existingWO.checklist.length){
+      modal.dataset.checklist = JSON.stringify(existingWO.checklist);
+    }
+    // T3 Pro fields (only populate if Pro; DOM elements only exist for Pro users)
+    var isPro = _tierLevel(appSettings.tier) >= _tierLevel('pro');
+    if(isPro){
+      // Structured parts — stamp on dataset, render rows
+      if(Array.isArray(existingWO.parts_structured) && existingWO.parts_structured.length){
+        modal.dataset.partsStructured = JSON.stringify(existingWO.parts_structured);
+        _renderWOPartsRows();
+        _updateWOPartsTotal();
+        // Auto-expand drawer if user has structured parts to show
+        modal.dataset.detailsExpanded = 'true';
+        var body = document.getElementById('wo_details_body');
+        var chev = document.getElementById('wo_details_chev');
+        if(body) body.style.display = 'block';
+        if(chev) chev.textContent = '▾';
+      }
+      var tqEl = document.getElementById('wo_torque_notes');
+      if(tqEl) tqEl.value = existingWO.torque_notes || '';
+      var tlEl = document.getElementById('wo_threadlocker');
+      if(tlEl) tlEl.value = existingWO.threadlocker || '';
+      var luEl = document.getElementById('wo_lubricants');
+      if(luEl) luEl.value = existingWO.lubricants || '';
+      var rcEl = document.getElementById('wo_round_count');
+      if(rcEl && existingWO.round_count != null) rcEl.value = existingWO.round_count;
+      // If any tech fields are populated, auto-expand the drawer
+      if(existingWO.torque_notes || existingWO.threadlocker || existingWO.lubricants || existingWO.round_count != null){
+        modal.dataset.detailsExpanded = 'true';
+        var body2 = document.getElementById('wo_details_body');
+        var chev2 = document.getElementById('wo_details_chev');
+        if(body2) body2.style.display = 'block';
+        if(chev2) chev2.textContent = '▾';
+      }
+    }
+  }
+  // Render checklist based on current dropdown values
   _renderWOChecklistSection();
 }
 
@@ -2032,15 +2210,24 @@ function saveWorkOrder(){
     if(rcEl && rcEl.value !== '') roundCount = parseInt(rcEl.value, 10);
   }
   // T1: build full v1 record with snapshot, permanent wo_number, and status guard.
+  // T3.5: in edit mode, preserve identity fields from the existing record.
+  var editIdxStr = modal ? modal.dataset.editIdx : null;
+  var isEdit = (editIdxStr !== null && editIdxStr !== undefined && editIdxStr !== '');
+  var editIdx = isEdit ? parseInt(editIdxStr, 10) : -1;
+  var priorOrders = [];
+  try{ priorOrders = FORM.maintenanceLog ? JSON.parse(FORM.maintenanceLog) : []; }catch(e){ priorOrders = []; }
+  var existingRecord = (isEdit && priorOrders[editIdx]) ? _woUpgradeRecord(priorOrders[editIdx]) : null;
+
   var order = _woUpgradeRecord({
     type:       type,
     date:       document.getElementById('wo_date').value,
     tech:       document.getElementById('wo_tech').value,
     status:     rawStatus,
     notes:      document.getElementById('wo_notes').value,
-    id:         Date.now().toString(36)+Math.random().toString(36).substr(2),
-    created_at: new Date().toISOString(),
-    snapshot: {
+    // T3.5: preserve identity fields on edit, generate new on create
+    id:         existingRecord ? existingRecord.id : (Date.now().toString(36)+Math.random().toString(36).substr(2)),
+    created_at: existingRecord ? existingRecord.created_at : new Date().toISOString(),
+    snapshot: existingRecord && existingRecord.snapshot ? existingRecord.snapshot : {
       make:         FORM.make         || '',
       model:        FORM.model        || '',
       serialNumber: FORM.serialNumber || '',
@@ -2058,17 +2245,26 @@ function saveWorkOrder(){
     lubricants:       lubricants,
     round_count:      roundCount
   });
-  order.wo_number = _woGenerateNumber(FORM);
+  // T3.5: preserve wo_number on edit. Silently repair legacy records with no wo_number.
+  if(existingRecord && existingRecord.wo_number){
+    order.wo_number = existingRecord.wo_number;
+  } else {
+    order.wo_number = _woGenerateNumber(FORM);
+  }
   // Status engine guard: reject invalid transitions (e.g. Completed w/o notes, or safety concern unresolved).
   var guard = _woStatusEngine.canTransition(null, order.status, order);
   if(!guard.ok){ toast(guard.error, 'err'); return; }
-  var orders = [];
-  try{ orders = FORM.maintenanceLog ? JSON.parse(FORM.maintenanceLog) : []; }catch(e){ orders = []; }
-  orders.unshift(order);
-  FORM.maintenanceLog = JSON.stringify(orders);
+  // T3.5: edit mode replaces at index; new mode unshifts to front
+  if(isEdit && editIdx >= 0 && editIdx < priorOrders.length){
+    priorOrders[editIdx] = order;
+    FORM.maintenanceLog = JSON.stringify(priorOrders);
+  } else {
+    priorOrders.unshift(order);
+    FORM.maintenanceLog = JSON.stringify(priorOrders);
+  }
   document.getElementById('wo_modal').remove();
   haptic('save');
-  toast('Work order saved');
+  toast(isEdit ? 'Work order updated' : 'Work order saved');
   rnd();
 }
 
@@ -3215,7 +3411,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-J';   // bump on every revision
+var BUILD_TAG   = '2026-04-23-K';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -7052,6 +7248,17 @@ function rDet(){
   if(!g)return'<div class="empty">Not found</div>';
   var gain=(parseFloat(g.currentValue)||0)-(parseFloat(g.purchasePrice)||0);
   var gainStr=(g.currentValue&&g.purchasePrice)?((gain>=0?'+':'')+fm(gain)):'';
+  // T3.5: cost rollup including WO parts (canonical helper, single source of truth)
+  var _costs = _computeFirearmCosts(g);
+  var investedRow = '';
+  if(_costs.partsCostTotal > 0 && (parseFloat(g.purchasePrice)||0) > 0){
+    var netColor = _costs.netVsValue >= 0 ? '#60e880' : '#ff7070';
+    var netStr   = (_costs.netVsValue >= 0 ? '+' : '') + fm(_costs.netVsValue);
+    investedRow = '<div style="margin-top:8px;display:flex;gap:18px;flex-wrap:wrap;font-size:13px">'
+      +'<span style="color:#8a95a8">Invested: <span style="color:#c0c8d8;font-weight:600">'+fm(_costs.totalInvested)+'</span></span>'
+      +(g.currentValue ? '<span style="color:#8a95a8">Net: <span style="color:'+netColor+';font-weight:700">'+netStr+'</span></span>' : '')
+    +'</div>';
+  }
 
   var _photos=((g.photos&&g.photos.length)?g.photos:(g.photo?[g.photo]:[]));
   var ph=_photos.length
@@ -7112,12 +7319,29 @@ function rDet(){
     // Maintenance tab — render work order tickets
     var orders=[];
     try{if(g.maintenanceLog)orders=JSON.parse(g.maintenanceLog);}catch(e){orders=[];}
+    // T3.5: compute cost rollups via canonical helper for display
+    var _costs = _computeFirearmCosts(g);
+    var partsSummaryCard = '';
+    if(_costs.woCount > 0){
+      var _fmCost = function(v){ return '$'+(v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+      if(_costs.partsCostTotal > 0){
+        partsSummaryCard = '<div style="background:#1a1d24;border:1px solid #e8c46a40;border-radius:8px;padding:14px 16px;margin-bottom:14px">'
+          +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;margin-bottom:4px">Parts &amp; Service</div>'
+          +'<div style="font-size:20px;font-weight:800;color:#e8c46a;line-height:1.1">'+_fmCost(_costs.partsCostTotal)+'</div>'
+          +'<div style="font-size:11px;color:#8a95a8;margin-top:4px">across '+_costs.woCount+' work order'+(_costs.woCount!==1?'s':'')+'</div>'
+        +'</div>';
+      } else {
+        partsSummaryCard = '<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:12px 16px;margin-bottom:14px">'
+          +'<div style="font-size:13px;color:#c0c8d8">'+_costs.woCount+' work order'+(_costs.woCount!==1?'s':'')+' logged</div>'
+        +'</div>';
+      }
+    }
     var maintBody=orders.length
       ? renderWorkOrders(g.maintenanceLog)
       : '<div style="text-align:center;padding:20px;color:#4a5568;font-size:13px">No maintenance records yet.<br/>Edit this firearm to add a work order.</div>';
     tc='<div class="panel"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">⚙ Maintenance History'
       +(g.totalRounds?'<span style="font-size:12px;color:#8a95a8;font-weight:400">'+Number(g.totalRounds||0).toLocaleString()+' rounds logged</span>':'')
-      +'</div>'+maintBody
+      +'</div>'+partsSummaryCard+maintBody
       +'<button class="btn-g" style="margin-top:16px" onclick="editGun(\''+g.id+'\')">+ New Work Order</button></div>';
   }
 
@@ -7153,7 +7377,7 @@ function rDet(){
   +'</div>'+
   '<div class="panel" style="border-color:#e8c46a40"><div style="display:flex;gap:18px;flex-wrap:wrap">'+ph+
   '<div style="flex:1;min-width:200px"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px"><div><div style="font-size:24px;font-weight:700;color:#f0f2f5">'+eh(g.make)+' '+eh(g.model)+'</div><div style="color:#a0aab8;font-size:14px;margin-top:4px">'+eh(g.type||'')+(g.type?' · ':'')+eh(g.caliber)+'</div><div style="color:#7a8598;font-size:13px;margin-top:3px">SN: '+(eh(g.serialNumber)||'N/A')+(g.year?' · '+eh(g.year):'')+'</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:700;color:#e8c46a">'+fm(g.currentValue)+'</div><div style="font-size:12px;color:#8a95a8">current value</div><div style="margin-top:6px">'+bj(g.condition,CC[g.condition]||'#8a95a8')+'</div></div></div>'+
-  '<div style="margin-top:11px;display:flex;gap:18px;flex-wrap:wrap"><span style="color:'+(g.working?'#60e880':'#ff7070')+';font-size:14px;font-weight:700">'+(g.working?'✓ Operational':'✗ Needs Repair')+'</span>'+(g.purchasePrice?'<span style="color:#8a95a8;font-size:13px">Paid: '+fm(g.purchasePrice)+'</span>':'')+(gainStr?'<span style="color:'+(gain>=0?'#60e880':'#ff7070')+';font-size:13px;font-weight:600">'+gainStr+'</span>':'')+'</div></div></div></div>'+
+  '<div style="margin-top:11px;display:flex;gap:18px;flex-wrap:wrap"><span style="color:'+(g.working?'#60e880':'#ff7070')+';font-size:14px;font-weight:700">'+(g.working?'✓ Operational':'✗ Needs Repair')+'</span>'+(g.purchasePrice?'<span style="color:#8a95a8;font-size:13px">Paid: '+fm(g.purchasePrice)+'</span>':'')+(gainStr?'<span style="color:'+(gain>=0?'#60e880':'#ff7070')+';font-size:13px;font-weight:600">'+gainStr+'</span>':'')+'</div>'+investedRow+'</div></div></div>'+
   '<div class="tabs"><button class="tab'+(dTab==='mnt'?' on':'')+'" onclick="dTab=\'mnt\';rnd()"><span class="tab-icon">⚙</span>Maintenance</button><button class="tab'+(dTab==='info'?' on':'')+'" onclick="dTab=\'info\';rnd()"><span class="tab-icon">ⓘ</span>Info</button><button class="tab'+(dTab==='sch'?' on':'')+'" onclick="dTab=\'sch\';rnd()"><span class="tab-icon">🔩</span>Schematics</button><button class="tab'+(dTab==='range'?' on':'')+'" onclick="dTab=\'range\';rnd()"><span class="tab-icon">🎯</span>Range</button><button class="tab'+(dTab==='coc'?' on':'')+'" onclick="dTab=\'coc\';rnd()"><span class="tab-icon">&#128275;</span>Custody</button></div>'+tc;
 }
 
