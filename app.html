@@ -3956,7 +3956,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-B';   // bump on every revision
+var BUILD_TAG   = '2026-04-24-C';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -10747,6 +10747,246 @@ function _T9_wireFilterListeners(onChange){
 }
 // ── END T9 EXPORT FILTER HELPERS ─────────────────────────────────────
 
+// ── BEGIN T10 SAVED FILTER PRESETS ───────────────────────────────────
+// T10: Saved Filter Presets.
+// Store/recall filter combinations. Builds on top of T9 filter state.
+// Storage: localStorage key below. Global across collections (workflow,
+// not data). Tier-gating: none — soft cap at 25 to protect mobile UX.
+// ─────────────────────────────────────────────────────────────────────
+
+var _T10_STORAGE_KEY = 'arsenal_export_presets';
+var _T10_PRESET_CAP = 25;
+
+// Read presets from localStorage. Safe against corrupt data; returns [].
+function _T10_loadPresets(){
+  try {
+    var raw = (typeof localStorage !== 'undefined') ? localStorage.getItem(_T10_STORAGE_KEY) : null;
+    if(!raw) return [];
+    var arr = JSON.parse(raw);
+    if(!Array.isArray(arr)) return [];
+    return arr.filter(function(p){
+      return p && typeof p.id === 'string' && typeof p.name === 'string' && p.filters && typeof p.filters === 'object';
+    });
+  } catch(e) { return []; }
+}
+
+// Persist presets. Returns true on success, false on quota/serialize error.
+function _T10_savePresetsToStorage(presets){
+  try {
+    if(typeof localStorage === 'undefined') return false;
+    localStorage.setItem(_T10_STORAGE_KEY, JSON.stringify(presets));
+    return true;
+  } catch(e) { return false; }
+}
+
+function _T10_generatePresetId(){
+  return 'p_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+}
+
+// Returns true if at least one filter is actively applied in the state.
+// Used to gate the Save button — empty presets are not savable.
+function _T10_hasActiveFilters(state){
+  if(!state) return false;
+  return !!(state.type || state.caliber || state.make || state.condition
+    || (state.working === 'yes' || state.working === 'no')
+    || state.starred);
+}
+
+// Build a human-readable auto-suggested name from a filter state.
+// Order: Caliber, Type, Make (most distinctive first), then modifiers.
+// Capped at 30 chars. Returns 'Preset' for empty state.
+function _T10_suggestPresetName(state){
+  if(!state) return 'Preset';
+  var parts = [];
+  if(state.caliber) parts.push(state.caliber);
+  if(state.type) parts.push(state.type);
+  if(state.make) parts.push(state.make);
+  var base = parts.join(' ');
+  var mods = [];
+  if(state.condition) mods.push(state.condition + '+');
+  if(state.working === 'yes') mods.push('Working');
+  if(state.working === 'no') mods.push('Non-working');
+  if(state.starred) mods.push('Starred');
+  var name = base;
+  if(mods.length){
+    name = name ? (name + ', ' + mods.join(', ')) : mods.join(', ');
+  }
+  if(!name) name = 'Preset';
+  if(name.length > 30) name = name.substring(0, 27).replace(/\s+$/, '') + '...';
+  return name;
+}
+
+// Inject filter state from a preset into the live DOM controls.
+// Caller triggers refresh() afterward to update counts.
+function _T10_applyPresetToControls(preset){
+  if(!preset || !preset.filters) return;
+  var f = preset.filters;
+  function setVal(id, v){
+    var el = document.getElementById(id);
+    if(el) el.value = v || '';
+  }
+  function setChk(id, v){
+    var el = document.getElementById(id);
+    if(el) el.checked = !!v;
+  }
+  setVal('t9_f_type', f.type);
+  setVal('t9_f_caliber', f.caliber);
+  setVal('t9_f_make', f.make);
+  setVal('t9_f_condition', f.condition);
+  setChk('t9_f_starred', f.starred);
+
+  // Working pills — simulate click to get styling + data attribute in sync
+  var targetId = 't9_f_w_all';
+  if(f.working === 'yes') targetId = 't9_f_w_yes';
+  else if(f.working === 'no') targetId = 't9_f_w_no';
+  var target = document.getElementById(targetId);
+  if(target) target.click();
+}
+
+// Render the preset row (chips + save button). Returns HTML string.
+// Caller inserts into modal DOM and wires listeners separately.
+function _T10_renderPresetRow(presets, saveEnabled){
+  var chipIdle = 'background:#0f1218;border:1px solid #3a4455;color:#c0c8d8;padding:7px 12px;border-radius:999px;font-size:12px;font-family:inherit;cursor:pointer;font-weight:600;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto';
+  var saveBase = 'padding:7px 12px;border-radius:999px;font-size:12px;font-family:inherit;font-weight:700;white-space:nowrap;flex:0 0 auto;border:1px dashed #e8c46a80;background:transparent';
+  var saveEnabledStyle = saveBase + ';color:#e8c46a;cursor:pointer;border-color:#e8c46a';
+  var saveDisabledStyle = saveBase + ';color:#6a7488;cursor:not-allowed;opacity:0.5';
+
+  var parts = [];
+  parts.push('<div id="t10_preset_row" style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #2e3545">');
+  parts.push('<div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:#8a95a8;margin-bottom:8px;text-transform:uppercase">Quick Filters</div>');
+  parts.push('<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">');
+
+  if(presets && presets.length){
+    for(var i=0; i<presets.length; i++){
+      var p = presets[i];
+      parts.push('<button type="button" class="t10-preset-chip" data-t10-preset-id="'+eh(p.id)+'" style="'+chipIdle+'" title="Tap to apply · Long-press to delete">'+eh(p.name)+'</button>');
+    }
+  } else {
+    parts.push('<span style="font-size:11px;color:#6a7488;margin-right:4px">No saved presets yet.</span>');
+  }
+
+  parts.push('<button type="button" id="t10_preset_save" data-t10-save="1" style="'+(saveEnabled?saveEnabledStyle:saveDisabledStyle)+'">+ Save current</button>');
+  parts.push('</div>');
+  parts.push('</div>');
+  return parts.join('');
+}
+
+// Small tap-or-long-press helper. Works for touch and mouse.
+// onShort/onLong are called with no args. Threshold: 600ms, 10px move.
+function _T10_attachPressHandlers(el, onShort, onLong){
+  var LONG_MS = 600;
+  var MOVE_PX = 10;
+  var timer = null;
+  var longFired = false;
+  var sx = 0, sy = 0;
+
+  function start(x, y){
+    longFired = false;
+    sx = x; sy = y;
+    if(timer) clearTimeout(timer);
+    timer = setTimeout(function(){
+      longFired = true;
+      if(onLong) onLong();
+    }, LONG_MS);
+  }
+  function move(x, y){
+    if(Math.abs(x - sx) > MOVE_PX || Math.abs(y - sy) > MOVE_PX){
+      if(timer){ clearTimeout(timer); timer = null; }
+    }
+  }
+  function cancel(){
+    if(timer){ clearTimeout(timer); timer = null; }
+  }
+
+  el.addEventListener('touchstart', function(e){
+    if(e.touches && e.touches[0]) start(e.touches[0].clientX, e.touches[0].clientY);
+  }, {passive:true});
+  el.addEventListener('touchmove', function(e){
+    if(e.touches && e.touches[0]) move(e.touches[0].clientX, e.touches[0].clientY);
+  }, {passive:true});
+  el.addEventListener('touchend', function(){ cancel(); });
+  el.addEventListener('touchcancel', cancel);
+  el.addEventListener('mousedown', function(e){ start(e.clientX, e.clientY); });
+  el.addEventListener('mousemove', function(e){ move(e.clientX, e.clientY); });
+  el.addEventListener('mouseup', function(){ cancel(); });
+  el.addEventListener('mouseleave', cancel);
+
+  el.addEventListener('click', function(e){
+    if(longFired){
+      e.preventDefault();
+      e.stopPropagation();
+      longFired = false;
+      return;
+    }
+    if(onShort) onShort();
+  });
+}
+
+// Show a small modal prompting the user to name a new preset.
+// opts.suggestedName, opts.onSave(finalName), opts.onCancel()
+function _T10_promptSavePreset(opts){
+  var existing = document.getElementById('t10_save_prompt');
+  if(existing) existing.remove();
+
+  var suggested = opts.suggestedName || 'Preset';
+  var modal = document.createElement('div');
+  modal.id = 't10_save_prompt';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10003;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1d24,#222835);border:2px solid #e8c46a60;border-radius:16px;padding:22px 20px;max-width:340px;width:100%">'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#e8c46a;text-align:center;margin-bottom:6px">SAVE PRESET</div>'
+    +'<div style="font-size:13px;color:#c0c8d8;text-align:center;margin-bottom:14px">Name this filter combo</div>'
+    +'<input type="text" id="t10_save_input" maxlength="30" value="'+eh(suggested)+'" style="width:100%;background:#0f1218;border:1px solid #3a4455;color:#f0f2f5;padding:10px 12px;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:14px;box-sizing:border-box"/>'
+    +'<button id="t10_save_confirm" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Save</button>'
+    +'<button id="t10_save_cancel" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+
+  var input = document.getElementById('t10_save_input');
+  if(input){
+    setTimeout(function(){ try{ input.focus(); input.select(); }catch(e){} }, 50);
+  }
+
+  document.getElementById('t10_save_confirm').onclick = function(){
+    var name = input ? (input.value||'').trim() : '';
+    if(!name) name = suggested;
+    if(name.length > 30) name = name.substring(0, 30);
+    modal.remove();
+    if(opts.onSave) opts.onSave(name);
+  };
+  document.getElementById('t10_save_cancel').onclick = function(){
+    modal.remove();
+    if(opts.onCancel) opts.onCancel();
+  };
+}
+
+// Delete confirmation modal.
+function _T10_confirmDeletePreset(preset, onConfirm, onCancel){
+  var existing = document.getElementById('t10_delete_prompt');
+  if(existing) existing.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 't10_delete_prompt';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10003;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1d24,#222835);border:2px solid #ff904060;border-radius:16px;padding:22px 20px;max-width:340px;width:100%">'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#ff9040;text-align:center;margin-bottom:6px">DELETE PRESET</div>'
+    +'<div style="font-size:14px;color:#f0f2f5;text-align:center;margin-bottom:4px;font-weight:700">'+eh(preset.name)+'</div>'
+    +'<div style="font-size:12px;color:#8a95a8;text-align:center;margin-bottom:16px">This preset will be removed permanently.</div>'
+    +'<button id="t10_del_confirm" style="width:100%;background:linear-gradient(135deg,#ff9040,#d06020);color:#1a1d24;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Delete</button>'
+    +'<button id="t10_del_cancel" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+
+  document.getElementById('t10_del_confirm').onclick = function(){
+    modal.remove();
+    if(onConfirm) onConfirm();
+  };
+  document.getElementById('t10_del_cancel').onclick = function(){
+    modal.remove();
+    if(onCancel) onCancel();
+  };
+}
+// ── END T10 SAVED FILTER PRESETS ─────────────────────────────────────
+
 // Pre-flight options modal: filter controls (T9) + Include Photos toggle + size estimate + big-file tip.
 // Calls opts.onConfirm(filteredGuns, includePhotos) or opts.onCancel().
 function _showExportOptionsModal(opts){
@@ -10756,6 +10996,7 @@ function _showExportOptionsModal(opts){
   var allGuns = Array.isArray(opts.guns) ? opts.guns : [];
   var filterOpts = _T9_getFilterOptions(allGuns);
   var filterBlockHtml = _T9_renderFilterBlock(filterOpts);
+  var t10Presets = _T10_loadPresets();
 
   var modal = document.createElement('div');
   modal.id = 't8_export_opts_modal';
@@ -10836,10 +11077,119 @@ function _showExportOptionsModal(opts){
         goBtn.style.cursor = 'pointer';
       }
     }
+
+    // T10: save button enabled only when at least one filter is applied
+    refreshSaveButton();
   }
+
+  // ── T10 preset row wiring ─────────────────────────────────────────
+  // Updates just the Save button style based on current filter state.
+  function refreshSaveButton(){
+    var btn = document.getElementById('t10_preset_save');
+    if(!btn) return;
+    var enabled = _T10_hasActiveFilters(_T9_readFilterState());
+    var base = 'padding:7px 12px;border-radius:999px;font-size:12px;font-family:inherit;font-weight:700;white-space:nowrap;flex:0 0 auto;border:1px dashed #e8c46a80;background:transparent';
+    if(enabled){
+      btn.setAttribute('style', base + ';color:#e8c46a;cursor:pointer;border-color:#e8c46a');
+      btn.disabled = false;
+    } else {
+      btn.setAttribute('style', base + ';color:#6a7488;cursor:not-allowed;opacity:0.5');
+      btn.disabled = true;
+    }
+  }
+
+  // (Re)render the preset row inside the T9 filter block and wire listeners.
+  // Safe to call repeatedly; fully replaces any existing row.
+  function mountPresetRow(){
+    var filterBlock = document.getElementById('t9_filter_block');
+    if(!filterBlock) return; // no filter block (single-gun inventory) → no presets UI
+
+    // Remove any stale row
+    var old = document.getElementById('t10_preset_row');
+    if(old && old.parentNode) old.parentNode.removeChild(old);
+
+    // Build and inject at top of filter block
+    var saveEnabled = _T10_hasActiveFilters(_T9_readFilterState());
+    var wrap = document.createElement('div');
+    wrap.innerHTML = _T10_renderPresetRow(t10Presets, saveEnabled);
+    var row = wrap.firstChild;
+    filterBlock.insertBefore(row, filterBlock.firstChild);
+
+    // Wire chip press handlers: short-press = apply, long-press = delete
+    var chips = row.querySelectorAll('[data-t10-preset-id]');
+    for(var i=0; i<chips.length; i++){
+      (function(chip){
+        var id = chip.getAttribute('data-t10-preset-id');
+        _T10_attachPressHandlers(chip,
+          function(){ // short press → apply
+            var preset = null;
+            for(var k=0; k<t10Presets.length; k++){
+              if(t10Presets[k].id === id){ preset = t10Presets[k]; break; }
+            }
+            if(preset){
+              _T10_applyPresetToControls(preset);
+              refresh();
+            }
+          },
+          function(){ // long press → delete
+            var preset = null;
+            for(var k=0; k<t10Presets.length; k++){
+              if(t10Presets[k].id === id){ preset = t10Presets[k]; break; }
+            }
+            if(!preset) return;
+            _T10_confirmDeletePreset(preset, function(){
+              t10Presets = t10Presets.filter(function(p){ return p.id !== id; });
+              _T10_savePresetsToStorage(t10Presets);
+              mountPresetRow();
+              try{ haptic('tap'); }catch(e){}
+              toast('Preset deleted');
+            });
+          }
+        );
+      })(chips[i]);
+    }
+
+    // Wire save button
+    var saveBtn = document.getElementById('t10_preset_save');
+    if(saveBtn){
+      saveBtn.onclick = function(){
+        if(saveBtn.disabled) return;
+        if(t10Presets.length >= _T10_PRESET_CAP){
+          toast(_T10_PRESET_CAP + '-preset limit reached. Delete one to save a new one.','err');
+          return;
+        }
+        var state = _T9_readFilterState();
+        if(!_T10_hasActiveFilters(state)) return;
+        var suggested = _T10_suggestPresetName(state);
+        _T10_promptSavePreset({
+          suggestedName: suggested,
+          onSave: function(name){
+            var newPreset = {
+              id: _T10_generatePresetId(),
+              name: name,
+              filters: state,
+              created: new Date().toISOString()
+            };
+            t10Presets.push(newPreset);
+            var ok = _T10_savePresetsToStorage(t10Presets);
+            if(!ok){
+              toast('Could not save preset','err');
+              t10Presets.pop();
+              return;
+            }
+            mountPresetRow();
+            try{ haptic('ok'); }catch(e){}
+            toast('Preset saved');
+          }
+        });
+      };
+    }
+  }
+  // ── END T10 preset row wiring ─────────────────────────────────────
 
   // Wire filter listeners (no-op if filter block is empty)
   _T9_wireFilterListeners(refresh);
+  mountPresetRow();
   refresh();
 
   document.getElementById('t8_export_go').onclick = function(){
