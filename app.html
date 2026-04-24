@@ -1571,6 +1571,37 @@ function _woGenerateNumber(gun){
 // Idempotent — a v1 record passed in is returned essentially unchanged
 // (with any missing reserved fields filled from defaults).
 // Non-mutating — returns a new object.
+// T5: Normalize a test_fire blob into a consistent shape.
+// Returns null for missing/empty/invalid input, or a fully-shaped object
+// where every field is present with safe defaults. Idempotent.
+// Readers should treat null as "no test-fire data".
+function _woNormalizeTestFire(tf){
+  if(!tf || typeof tf !== 'object') return null;
+  var groups = [];
+  if(Array.isArray(tf.groups)){
+    for(var i=0; i<tf.groups.length; i++){
+      var g = tf.groups[i];
+      if(!g || typeof g !== 'object') continue;
+      var d = parseFloat(g.distance_yd);
+      var s = parseFloat(g.size_in);
+      groups.push({
+        distance_yd: (isFinite(d) && d > 0) ? d : null,
+        size_in:     (isFinite(s) && s >= 0) ? s : null
+      });
+    }
+  }
+  var outcome = (tf.outcome === 'Accept' || tf.outcome === 'Retest' || tf.outcome === 'Reject') ? tf.outcome : null;
+  var rounds = parseInt(tf.rounds_fired, 10);
+  return {
+    date:         (typeof tf.date === 'string') ? tf.date : '',
+    ammo:         (typeof tf.ammo === 'string') ? tf.ammo : '',
+    rounds_fired: (isFinite(rounds) && rounds >= 0) ? rounds : null,
+    groups:       groups,
+    failures:     (typeof tf.failures === 'string') ? tf.failures : '',
+    outcome:      outcome
+  };
+}
+
 function _woUpgradeRecord(rec){
   if(!rec || typeof rec !== 'object') rec = {};
   var isV1 = rec.schema_v === WO_SCHEMA_V;
@@ -1595,7 +1626,7 @@ function _woUpgradeRecord(rec){
     threadlocker:      rec.threadlocker || '',
     lubricants:        rec.lubricants || '',
     round_count:       (typeof rec.round_count === 'number') ? rec.round_count : null,
-    test_fire:         rec.test_fire || null,
+    test_fire:         _woNormalizeTestFire(rec.test_fire),
     template_id:       rec.template_id || null,
     signature:         rec.signature || null
   };
@@ -1660,6 +1691,11 @@ var _woStatusEngine = {
       }
       if(record.safety_concern === true && record.safety_concern_resolved !== true){
         return {ok:false, error:'Unresolved safety concern — cannot mark Completed.'};
+      }
+      // T5: outcome_blocks_completed — Reject/Retest blocks completion.
+      // Null or 'Accept' passes through. Missing test_fire passes through.
+      if(record.test_fire && (record.test_fire.outcome === 'Reject' || record.test_fire.outcome === 'Retest')){
+        return {ok:false, error:'Test-fire outcome must be Accept to complete this work order.'};
       }
     }
     return {ok:true, error:null};
@@ -1946,6 +1982,193 @@ function _toggleWODetailsDrawer(){
 }
 // ── END T3 PRO DETAILS DRAWER ────────────────────────────────────────
 
+// ── T5: TEST-FIRE MINI-RECORD (Work Order sub-section) ───────────────
+// Sub-section of the Pro Details Drawer. Captures validation of a
+// repair/modification via range data. Outcome ties into _woStatusEngine
+// to gate Completed when Retest/Reject is chosen.
+
+// MOA math: 1 MOA ≈ 1.047 inches at 100 yards.
+// Exact formula: MOA = (size_in * 95.4929) / distance_yd
+// Returns null if distance is missing/zero or non-numeric.
+function _computeMOA(distance_yd, size_in){
+  var d = parseFloat(distance_yd);
+  var s = parseFloat(size_in);
+  if(!isFinite(d) || d <= 0) return null;
+  if(!isFinite(s) || s < 0) return null;
+  return (s * 95.4929) / d;
+}
+
+// Sync DOM group rows back into modal.dataset.testFireGroups before
+// structural changes (add/remove). Mirrors _syncPartsFromDOM pattern.
+function _syncTestFireGroupsFromDOM(){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return [];
+  var rows = modal.querySelectorAll('[data-tf-row]');
+  var out = [];
+  for(var i=0; i<rows.length; i++){
+    var dEl = rows[i].querySelector('[data-tf-field="distance_yd"]');
+    var sEl = rows[i].querySelector('[data-tf-field="size_in"]');
+    out.push({
+      distance_yd: dEl && dEl.value ? parseFloat(dEl.value) : null,
+      size_in:     sEl && sEl.value ? parseFloat(sEl.value) : null
+    });
+  }
+  modal.dataset.testFireGroups = JSON.stringify(out);
+  return out;
+}
+
+// Render group rows from modal.dataset.testFireGroups into #wo_tf_groups_rows.
+function _renderWOTestFireGroups(){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  var container = document.getElementById('wo_tf_groups_rows');
+  if(!container) return;
+  var groups = [];
+  try{ groups = modal.dataset.testFireGroups ? JSON.parse(modal.dataset.testFireGroups) : []; }catch(e){ groups = []; }
+  if(!groups.length){
+    container.innerHTML = '';
+    var aggRow = document.getElementById('wo_tf_agg_row');
+    if(aggRow) aggRow.style.display = 'none';
+    return;
+  }
+  var html = '';
+  for(var i=0; i<groups.length; i++){
+    var g = groups[i];
+    var moa = _computeMOA(g.distance_yd, g.size_in);
+    var moaText = (moa === null) ? '—' : moa.toFixed(2);
+    html += '<div data-tf-row style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
+      +'<input data-tf-field="distance_yd" type="number" inputmode="decimal" placeholder="yd" value="'+(g.distance_yd!=null?g.distance_yd:'')+'" oninput="_updateWOTestFireMOA()" style="width:62px;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:8px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/>'
+      +'<span style="color:#8a95a8;font-size:11px">@</span>'
+      +'<input data-tf-field="size_in" type="number" inputmode="decimal" placeholder="in" value="'+(g.size_in!=null?g.size_in:'')+'" oninput="_updateWOTestFireMOA()" style="width:62px;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:8px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/>'
+      +'<span data-tf-moa style="flex:1;text-align:right;font-size:12px;color:#e8c46a;font-weight:700;letter-spacing:.02em">'+moaText+' MOA</span>'
+      +'<button onclick="event.stopPropagation();_flagSuppressWOEdit();_removeWOTestFireGroup('+i+')" style="background:none;border:none;color:#ff707080;font-size:16px;cursor:pointer;padding:4px 6px;line-height:1">&#10005;</button>'
+    +'</div>';
+  }
+  container.innerHTML = html;
+  _updateWOTestFireMOA();
+}
+
+// Live-update MOA readouts on every row, plus the Best/Avg aggregate.
+// Reads DOM (not dataset) so typing updates without needing to sync.
+function _updateWOTestFireMOA(){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  var rows = modal.querySelectorAll('[data-tf-row]');
+  var moas = [];
+  for(var i=0; i<rows.length; i++){
+    var dEl = rows[i].querySelector('[data-tf-field="distance_yd"]');
+    var sEl = rows[i].querySelector('[data-tf-field="size_in"]');
+    var moaEl = rows[i].querySelector('[data-tf-moa]');
+    var moa = _computeMOA(dEl ? dEl.value : '', sEl ? sEl.value : '');
+    if(moaEl) moaEl.textContent = (moa === null ? '—' : moa.toFixed(2)) + ' MOA';
+    if(moa !== null) moas.push(moa);
+  }
+  var aggRow  = document.getElementById('wo_tf_agg_row');
+  var aggBest = document.getElementById('wo_tf_agg_best');
+  var aggAvg  = document.getElementById('wo_tf_agg_avg');
+  if(!aggRow || !aggBest || !aggAvg) return;
+  if(moas.length >= 2){
+    var best = moas[0], sum = 0;
+    for(var j=0; j<moas.length; j++){ if(moas[j] < best) best = moas[j]; sum += moas[j]; }
+    aggBest.textContent = best.toFixed(2);
+    aggAvg.textContent  = (sum / moas.length).toFixed(2);
+    aggRow.style.display = 'flex';
+  } else {
+    aggRow.style.display = 'none';
+  }
+}
+
+function _addWOTestFireGroup(){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  _syncTestFireGroupsFromDOM();
+  var groups = [];
+  try{ groups = modal.dataset.testFireGroups ? JSON.parse(modal.dataset.testFireGroups) : []; }catch(e){ groups = []; }
+  groups.push({distance_yd:null, size_in:null});
+  modal.dataset.testFireGroups = JSON.stringify(groups);
+  _renderWOTestFireGroups();
+  // Focus the newly added row's distance input
+  var rows = modal.querySelectorAll('[data-tf-row]');
+  if(rows.length){
+    var last = rows[rows.length-1].querySelector('[data-tf-field="distance_yd"]');
+    if(last) last.focus();
+  }
+}
+
+function _removeWOTestFireGroup(idx){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  _syncTestFireGroupsFromDOM();
+  var groups = [];
+  try{ groups = modal.dataset.testFireGroups ? JSON.parse(modal.dataset.testFireGroups) : []; }catch(e){ groups = []; }
+  if(idx < 0 || idx >= groups.length) return;
+  groups.splice(idx, 1);
+  modal.dataset.testFireGroups = JSON.stringify(groups);
+  _renderWOTestFireGroups();
+}
+
+// Set outcome radio selection. Stores on modal.dataset.tfOutcome and
+// re-styles the three buttons. null is a valid state (nothing chosen).
+function _setWOTestFireOutcome(value){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return;
+  var current = modal.dataset.tfOutcome || '';
+  // Tap again to clear
+  if(current === value){
+    modal.dataset.tfOutcome = '';
+    value = null;
+  } else {
+    modal.dataset.tfOutcome = value || '';
+  }
+  var opts = ['Accept','Retest','Reject'];
+  for(var i=0; i<opts.length; i++){
+    var btn = document.getElementById('wo_tf_outcome_' + opts[i].toLowerCase());
+    if(!btn) continue;
+    var active = (opts[i] === value);
+    var colorMap = {Accept:'#2d7a3e', Retest:'#c49a3e', Reject:'#a84343'};
+    if(active){
+      btn.style.background = colorMap[opts[i]];
+      btn.style.color = '#fff';
+      btn.style.borderColor = colorMap[opts[i]];
+    } else {
+      btn.style.background = '#13161d';
+      btn.style.color = '#8a95a8';
+      btn.style.borderColor = '#3a4455';
+    }
+  }
+}
+
+// Collect all test-fire data from the DOM into a normalized blob, or null
+// if nothing meaningful was entered.
+function _collectWOTestFireFromDOM(){
+  var modal = document.getElementById('wo_modal');
+  if(!modal) return null;
+  _syncTestFireGroupsFromDOM();
+  var dateEl     = document.getElementById('wo_tf_date');
+  var ammoEl     = document.getElementById('wo_tf_ammo');
+  var roundsEl   = document.getElementById('wo_tf_rounds');
+  var failuresEl = document.getElementById('wo_tf_failures');
+  var groups = [];
+  try{ groups = modal.dataset.testFireGroups ? JSON.parse(modal.dataset.testFireGroups) : []; }catch(e){ groups = []; }
+  // Drop fully-empty rows
+  groups = groups.filter(function(g){ return g && (g.distance_yd || g.size_in); });
+  var blob = {
+    date:         dateEl ? dateEl.value : '',
+    ammo:         ammoEl ? ammoEl.value : '',
+    rounds_fired: (roundsEl && roundsEl.value !== '') ? parseInt(roundsEl.value, 10) : null,
+    groups:       groups,
+    failures:     failuresEl ? failuresEl.value : '',
+    outcome:      modal.dataset.tfOutcome || null
+  };
+  // If truly empty across the board, return null so the normalizer/renderer
+  // can skip it cleanly.
+  var hasData = blob.date || blob.ammo || (blob.rounds_fired != null)
+             || blob.groups.length || blob.failures || blob.outcome;
+  if(!hasData) return null;
+  return _woNormalizeTestFire(blob);
+}
+// ── END T5 TEST-FIRE MINI-RECORD ─────────────────────────────────────
+
 // T3.5: tap-to-edit entry point. Wraps addWorkOrder with the index to edit.
 // T3.5.1: ghost-tap defense. When Delete or Share is tapped on a WO card,
 // the card's onclick can still fire after the dialog/share sheet closes on
@@ -2066,7 +2289,7 @@ function addWorkOrder(editIdx){
           +'<span style="font-size:18px">🔒</span>'
           +'<div style="flex:1">'
             +'<div style="font-size:13px;font-weight:700;color:#e8c46a;margin-bottom:2px">Details <span style="background:#e8c46a;color:#1a1d24;font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px;margin-left:6px;letter-spacing:.05em">PRO</span></div>'
-            +'<div style="font-size:11px;color:#8a95a8;line-height:1.4">Parts list, torque values, threadlocker, lubricants, round count — tap to upgrade.</div>'
+            +'<div style="font-size:11px;color:#8a95a8;line-height:1.4">Parts, torque, lubricants, round count, test-fire tracking — tap to upgrade.</div>'
           +'</div>'
         +'</div>';
       }
@@ -2100,8 +2323,52 @@ function addWorkOrder(editIdx){
           +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:4px">Lubricants</label>'
           +'<input type="text" id="wo_lubricants" placeholder="e.g. Slip 2000 EWL on bolt lugs" style="width:100%;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:9px 10px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/></div>'
           // Round count
-          +'<div><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:4px">Round Count</label>'
+          +'<div style="margin-bottom:14px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:4px">Round Count</label>'
           +'<input type="number" inputmode="numeric" id="wo_round_count" placeholder="Total rounds through this firearm" style="width:100%;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:9px 10px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/></div>'
+          // T5: Test-Fire section — repair/mod validation record
+          +'<div style="border-top:1px dashed #3a4455;margin-top:4px;padding-top:14px">'
+            +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+              +'<span style="font-size:12px;font-weight:700;color:#e8c46a;letter-spacing:.06em;text-transform:uppercase">Test-Fire</span>'
+              +'<span style="background:#e8c46a;color:#1a1d24;font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px;letter-spacing:.05em">PRO</span>'
+              +'<span style="font-size:10px;color:#8a95a8;margin-left:auto">validation at the range</span>'
+            +'</div>'
+            // Date
+            +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:4px">Date</label>'
+            +'<input type="date" id="wo_tf_date" style="width:100%;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:9px 10px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/></div>'
+            // Ammo
+            +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:4px">Ammo</label>'
+            +'<input type="text" id="wo_tf_ammo" placeholder="e.g. Federal GMM 168gr SMK" style="width:100%;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:9px 10px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/></div>'
+            // Rounds fired + add-to-round-count
+            +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:4px">Rounds Fired</label>'
+            +'<input type="number" inputmode="numeric" id="wo_tf_rounds" placeholder="Total rounds this session" style="width:100%;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:9px 10px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box"/>'
+              +'<label style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;color:#8a95a8;cursor:pointer">'
+                +'<input type="checkbox" id="wo_tf_add_to_round_count" style="accent-color:#e8c46a;width:14px;height:14px"/>'
+                +'<span>Add to firearm round count on save</span>'
+              +'</label>'
+            +'</div>'
+            // Groups — header + rows + add button + aggregates
+            +'<div style="margin-bottom:10px">'
+              +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;margin-bottom:6px">Groups (distance @ size → MOA)</div>'
+              +'<div id="wo_tf_groups_rows"></div>'
+              +'<div id="wo_tf_agg_row" style="display:none;justify-content:flex-end;align-items:center;gap:12px;margin-top:4px;margin-bottom:8px;padding-right:32px;font-size:11px;color:#8a95a8">'
+                +'<span>Best: <span id="wo_tf_agg_best" style="color:#e8c46a;font-weight:700">—</span> MOA</span>'
+                +'<span>Avg: <span id="wo_tf_agg_avg" style="color:#e8c46a;font-weight:700">—</span> MOA</span>'
+              +'</div>'
+              +'<button onclick="event.stopPropagation();_addWOTestFireGroup()" style="background:#2a1a10;border:1px solid #e8c46a60;color:#e8c46a;padding:7px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px">+ Add group</button>'
+            +'</div>'
+            // Failures
+            +'<div style="margin-bottom:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:4px">Failures / Malfunctions</label>'
+            +'<textarea id="wo_tf_failures" rows="2" placeholder="e.g. 2× failure to extract, rounds 47 & 82" style="width:100%;background:#13161d;border:1px solid #3a4455;color:#f0f2f5;padding:9px 10px;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea></div>'
+            // Outcome — radio-style buttons
+            +'<div style="margin-bottom:4px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a95a8;font-weight:600;display:block;margin-bottom:6px">Outcome</label>'
+              +'<div style="display:flex;gap:6px">'
+                +'<button type="button" id="wo_tf_outcome_accept" onclick="event.stopPropagation();_setWOTestFireOutcome(\'Accept\')" style="flex:1;background:#13161d;border:1px solid #3a4455;color:#8a95a8;padding:9px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Accept</button>'
+                +'<button type="button" id="wo_tf_outcome_retest" onclick="event.stopPropagation();_setWOTestFireOutcome(\'Retest\')" style="flex:1;background:#13161d;border:1px solid #3a4455;color:#8a95a8;padding:9px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Retest</button>'
+                +'<button type="button" id="wo_tf_outcome_reject" onclick="event.stopPropagation();_setWOTestFireOutcome(\'Reject\')" style="flex:1;background:#13161d;border:1px solid #3a4455;color:#8a95a8;padding:9px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Reject</button>'
+              +'</div>'
+              +'<div style="font-size:10px;color:#8a95a8;margin-top:6px;line-height:1.4">Retest or Reject will block marking this work order Completed.</div>'
+            +'</div>'
+          +'</div>'
         +'</div>'
       +'</div>';
     })()
@@ -2181,6 +2448,33 @@ function addWorkOrder(editIdx){
         if(body2) body2.style.display = 'block';
         if(chev2) chev2.textContent = '▾';
       }
+      // T5: restore test-fire section
+      var tf = existingWO.test_fire;
+      if(tf){
+        var tfDate     = document.getElementById('wo_tf_date');
+        var tfAmmo     = document.getElementById('wo_tf_ammo');
+        var tfRounds   = document.getElementById('wo_tf_rounds');
+        var tfFailures = document.getElementById('wo_tf_failures');
+        if(tfDate && tf.date) tfDate.value = tf.date;
+        if(tfAmmo) tfAmmo.value = tf.ammo || '';
+        if(tfRounds && tf.rounds_fired != null) tfRounds.value = tf.rounds_fired;
+        if(tfFailures) tfFailures.value = tf.failures || '';
+        if(tf.groups && tf.groups.length){
+          modal.dataset.testFireGroups = JSON.stringify(tf.groups);
+          _renderWOTestFireGroups();
+        }
+        if(tf.outcome) _setWOTestFireOutcome(tf.outcome);
+        // Auto-expand drawer if any test-fire data exists
+        var hasTF = tf.date || tf.ammo || (tf.rounds_fired != null)
+                 || (tf.groups && tf.groups.length) || tf.failures || tf.outcome;
+        if(hasTF){
+          modal.dataset.detailsExpanded = 'true';
+          var body3 = document.getElementById('wo_details_body');
+          var chev3 = document.getElementById('wo_details_chev');
+          if(body3) body3.style.display = 'block';
+          if(chev3) chev3.textContent = '▾';
+        }
+      }
     }
   }
   // Render checklist based on current dropdown values
@@ -2221,6 +2515,7 @@ function saveWorkOrder(){
   var threadlocker    = '';
   var lubricants      = '';
   var roundCount      = null;
+  var testFire        = null;
   if(isPro){
     // Sync DOM state into dataset first, then read.
     _syncPartsFromDOM();
@@ -2232,6 +2527,15 @@ function saveWorkOrder(){
     lubricants    = (document.getElementById('wo_lubricants')||{}).value || '';
     var rcEl = document.getElementById('wo_round_count');
     if(rcEl && rcEl.value !== '') roundCount = parseInt(rcEl.value, 10);
+    // T5: collect test-fire blob (normalized or null)
+    testFire = _collectWOTestFireFromDOM();
+    // T5: honor "Add to round count" — add test-fire rounds to this WO's
+    // round_count on save. Requires rounds_fired > 0 and checkbox checked.
+    var addBoxEl = document.getElementById('wo_tf_add_to_round_count');
+    if(addBoxEl && addBoxEl.checked && testFire && testFire.rounds_fired > 0){
+      var existingRC = (roundCount == null || isNaN(roundCount)) ? 0 : roundCount;
+      roundCount = existingRC + testFire.rounds_fired;
+    }
   }
   // T1: build full v1 record with snapshot, permanent wo_number, and status guard.
   // T3.5: in edit mode, preserve identity fields from the existing record.
@@ -2267,7 +2571,9 @@ function saveWorkOrder(){
     torque_notes:     torqueNotes,
     threadlocker:     threadlocker,
     lubricants:       lubricants,
-    round_count:      roundCount
+    round_count:      roundCount,
+    // T5: test-fire blob (null if nothing entered, normalized if present)
+    test_fire:        testFire
   });
   // T3.5: preserve wo_number on edit. Silently repair legacy records with no wo_number.
   if(existingRecord && existingRecord.wo_number){
@@ -2496,6 +2802,72 @@ function _buildWOVisualSection(wo, gun, opts){
     }).join('');
     techHtml = '<div class="section"><h2>Technical Details</h2><dl class="kv">'+dlRows+'</dl></div>';
   }
+  // T5: Test-Fire validation block. Rendered only when test_fire has real data.
+  var testFireHtml = '';
+  if(wo.test_fire){
+    var tf = wo.test_fire;
+    var hasTF = tf.date || tf.ammo || (tf.rounds_fired != null)
+             || (tf.groups && tf.groups.length) || tf.failures || tf.outcome;
+    if(hasTF){
+      var tfBits = [];
+      if(tf.date)                  tfBits.push({label:'Date', value:tf.date});
+      if(tf.ammo)                  tfBits.push({label:'Ammo', value:tf.ammo});
+      if(tf.rounds_fired != null)  tfBits.push({label:'Rounds Fired', value:String(tf.rounds_fired)});
+      var tfDlHtml = '';
+      if(tfBits.length){
+        tfDlHtml = '<dl class="kv">' + tfBits.map(function(b){
+          return '<dt>'+esc(b.label)+'</dt><dd>'+esc(b.value)+'</dd>';
+        }).join('') + '</dl>';
+      }
+      // Groups table with MOA column
+      var groupsTableHtml = '';
+      if(tf.groups && tf.groups.length){
+        var gRows = '';
+        var moas = [];
+        tf.groups.forEach(function(g){
+          var moa = _computeMOA(g.distance_yd, g.size_in);
+          if(moa !== null) moas.push(moa);
+          gRows += '<tr>'
+            +'<td style="text-align:right">'+(g.distance_yd!=null?esc(String(g.distance_yd)):'')+'</td>'
+            +'<td style="text-align:right">'+(g.size_in!=null?esc(String(g.size_in)):'')+'</td>'
+            +'<td style="text-align:right">'+(moa===null?'—':moa.toFixed(2))+'</td>'
+          +'</tr>';
+        });
+        var aggRowHtml = '';
+        if(moas.length >= 2){
+          var best = moas[0], sum = 0;
+          for(var m=0; m<moas.length; m++){ if(moas[m] < best) best = moas[m]; sum += moas[m]; }
+          aggRowHtml = '<tr style="border-top:2px solid #d8d4ca;font-weight:700">'
+            +'<td colspan="2" style="text-align:right;padding-top:8px">Best / Avg</td>'
+            +'<td style="text-align:right;padding-top:8px">'+best.toFixed(2)+' / '+(sum/moas.length).toFixed(2)+'</td>'
+          +'</tr>';
+        }
+        groupsTableHtml = '<div style="margin-top:10px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:4px">Groups</div>'
+          +'<table style="width:100%;border-collapse:collapse;font-size:13px">'
+            +'<thead><tr style="text-align:right;border-bottom:1px solid #d8d4ca;color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.08em">'
+              +'<th style="padding:6px 4px">Distance (yd)</th>'
+              +'<th style="padding:6px 4px">Size (in)</th>'
+              +'<th style="padding:6px 4px">MOA</th>'
+            +'</tr></thead>'
+            +'<tbody>'+gRows+aggRowHtml+'</tbody>'
+          +'</table>'
+        +'</div>';
+      }
+      var failuresHtml = tf.failures ? '<div style="margin-top:10px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:4px">Failures / Malfunctions</div><p style="margin:0">'+esc(tf.failures)+'</p></div>' : '';
+      var outcomeHtml = '';
+      if(tf.outcome){
+        var outcomeColorMap = {Accept:'#2d7a3e', Retest:'#c49a3e', Reject:'#a84343'};
+        var oc = outcomeColorMap[tf.outcome] || '#4a5568';
+        outcomeHtml = '<div style="margin-top:10px"><span style="display:inline-block;background:'+oc+';color:#fff;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">'+esc(tf.outcome)+'</span></div>';
+      }
+      testFireHtml = '<div class="section"><h2>Test-Fire Validation</h2>'
+        +tfDlHtml
+        +groupsTableHtml
+        +failuresHtml
+        +outcomeHtml
+      +'</div>';
+    }
+  }
   var ownerHtml = '';
   if(includeOwner){
     var hasOwner = (ownerProfile.name || ownerProfile.phone || ownerProfile.email);
@@ -2526,6 +2898,7 @@ function _buildWOVisualSection(wo, gun, opts){
     +partsHtml
     +partsStructHtml
     +techHtml
+    +testFireHtml
     +checklistHtml
     +photoHtml
     +ownerHtml
@@ -3488,7 +3861,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-23-L';   // bump on every revision
+var BUILD_TAG   = '2026-04-23-M';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
