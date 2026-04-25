@@ -4154,13 +4154,12 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-H';   // bump on every revision
+var BUILD_TAG   = '2026-04-24-I';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
   pinEnabled: false,
   tier: 'free',
-  devMode: false,
   devicePrefix: '',           // 4-char device identifier, generated once on first load
   importEducationSeen: false, // T1.10: flag for one-time Import Collection education banner
   licenseKey: null,           // LS license key (UUID)
@@ -4452,14 +4451,13 @@ function openSettings(){
       +'</div>'
     +'</div>'
     + _BYO_renderSettingsSection()
-    +(appSettings.devMode?('<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
-        +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">Developer</div>'
-        +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px">Simulates subscription tier for gate testing.</div>'
-        +'<div style="display:flex;gap:6px;margin-bottom:10px">'+_tierBtnHTML('free','Free')+_tierBtnHTML('pro','Pro')+_tierBtnHTML('proplus','Pro+')+'</div>'
-        +'<button onclick="_ONB_resetAll();toast(\'Tours reset \u2014 reload app to trigger\');" style="width:100%;background:transparent;border:1px solid #8a95a8;color:#8a95a8;padding:8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Reset tours</button>'
-      +'</div>'):'')
+    +'<div style="background:#0f1218;border:1px solid #2a3140;border-radius:10px;padding:16px;margin-bottom:12px">'
+        +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8a95a8;margin-bottom:4px">Help</div>'
+        +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px">Replay the welcome tours next time you open the app.</div>'
+        +'<button onclick="_ONB_resetAll();toast(\'Tours reset \u2014 reload app to replay\');" style="width:100%;background:transparent;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Replay onboarding tours</button>'
+      +'</div>'
     +'<button onclick="document.getElementById(\'settings_modal\').remove()" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Done</button>'
-    +'<div id="settings_ver" onclick="_handleVersionTap()" style="text-align:center;font-size:11px;color:#4a5568;margin-top:10px;cursor:pointer;user-select:none">ArsenalDB v'+APP_VERSION+' &middot; '+BUILD_TAG+'</div>'
+    +'<div id="settings_ver" style="text-align:center;font-size:11px;color:#4a5568;margin-top:10px">ArsenalDB v'+APP_VERSION+' &middot; '+BUILD_TAG+'</div>'
     +'</div>';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
   document.body.appendChild(modal);
@@ -4478,46 +4476,7 @@ function avToggle(key){
 }
 
 
-// ── DEV: tier switcher — remove before public launch ─────────────────
-function _tierBtnHTML(t, label){
-  var active=(appSettings.tier||'free')===t;
-  return '<button id="tier_btn_'+t+'" onclick="setTierDev(\''+t+'\')" '
-    +'style="flex:1;background:'+(active?'#e8c46a':'transparent')+';'
-    +'color:'+(active?'#1a1d24':'#f0f2f5')+';'
-    +'border:2px solid '+(active?'#e8c46a':'#3a4455')+';'
-    +'padding:10px 8px;border-radius:8px;font-size:13px;font-weight:700;'
-    +'cursor:pointer;font-family:inherit">'+label+'</button>';
-}
-var _verTapCount=0, _verTapTimer=null;
-function _handleVersionTap(){
-  _verTapCount++;
-  if(_verTapTimer) clearTimeout(_verTapTimer);
-  _verTapTimer=setTimeout(function(){ _verTapCount=0; }, 3000);
-  if(_verTapCount>=5){
-    _verTapCount=0;
-    appSettings.devMode=!appSettings.devMode;
-    saveSettings();
-    toast(appSettings.devMode?'Developer mode ON':'Developer mode OFF');
-    haptic('medium');
-    var m=document.getElementById('settings_modal');
-    if(m){ m.remove(); openSettings(); }
-  }
-}
-function setTierDev(t){
-  appSettings.tier=t;
-  saveSettings();
-  ['free','pro','proplus'].forEach(function(x){
-    var btn=document.getElementById('tier_btn_'+x);
-    if(!btn) return;
-    var active=(t===x);
-    btn.style.background=active?'#e8c46a':'transparent';
-    btn.style.color=active?'#1a1d24':'#f0f2f5';
-    btn.style.borderColor=active?'#e8c46a':'#3a4455';
-  });
-  toast('Tier: '+(t==='proplus'?'Pro+':t==='pro'?'Pro':'Free'));
-  haptic('light');
-}
-// ── END DEV ──────────────────────────────────────────────────────────
+// Dev tier switcher removed at BUILD_TAG 2026-04-24-I (was in -H and prior).
 
 
 // ── OWNER / SELLER PROFILE ────────────────────────────────────────────
