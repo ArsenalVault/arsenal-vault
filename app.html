@@ -1772,19 +1772,27 @@ function _pushViewState(){
   _viewHistory.push(st);
 }
 
-// ── DEVICE BACK BUTTON HANDLING (2026-04-25-A) ──────────────────────
-// Sentinel-state pattern: trap the OS back button via popstate, route
-// through handleBack() (which already covers modals/ham/views/unsaved),
-// and at dashboard root show an exit confirmation. STAY is the primary
-// action (gold), Exit App is secondary (red border) — accidental back
-// presses far outnumber intentional exits.
+// ── DEVICE BACK BUTTON HANDLING (2026-04-25-C) ──────────────────────
+// replaceState/pushState pattern: mark the current entry as our app
+// root with state {arsenalRoot:1}, push a sentinel state {arsenalSentinel:1}
+// in front of it. The popstate handler keys all decisions off e.state
+// (delivered with the event) instead of history.state (which can be
+// stale during the transition — that was the -B regression). If e.state
+// matches our markers, we stay in the app and re-arm. Otherwise we let
+// the navigation through.
 //
-// Note: a prior implementation was removed in an earlier build. This
-// is the reinstated version with the new hierarchy-first design.
+// Note: a prior implementation (-A through -B) used a time-of-check
+// guard against history.state. That worked initially but failed on
+// re-arm in standalone PWA mode on Android. -C drops the guard.
 var _arsenalExitInProgress = false;
 
+function _initBackGuard(){
+  try{ history.replaceState({arsenalRoot:1}, '', location.href); }catch(e){}
+  try{ history.pushState({arsenalSentinel:1}, '', location.href); }catch(e){}
+}
+
 function _armBackSentinel(){
-  if(history.state && history.state.arsenalSentinel) return;
+  // Used after popstate consumes a sentinel — push another one forward.
   try{ history.pushState({arsenalSentinel:1}, '', location.href); }catch(e){}
 }
 
@@ -4695,7 +4703,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-25-B';   // bump on every revision
+var BUILD_TAG   = '2026-04-25-C';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -13326,21 +13334,26 @@ initSwipeNav();
   document.addEventListener('touchstart', unlockAudio);
   document.addEventListener('click', unlockAudio);
   checkNFCScan();
-  // Device back button trap (2026-04-25-A) — see _showExitConfirm above
-  _armBackSentinel();
+  // Device back button trap (2026-04-25-C) — see _showExitConfirm above
+  _initBackGuard();
   window.addEventListener('popstate', function(e){
     if(_arsenalExitInProgress) return;
-    try{ if(typeof handleBack==='function') handleBack(); }catch(err){ console.warn('back handler error', err); }
-    _armBackSentinel();
+    // Key the decision off e.state (delivered with the event), not
+    // history.state which can be stale during the transition. If we
+    // popped to our root entry or another sentinel, stay in the app.
+    if(e.state && (e.state.arsenalRoot || e.state.arsenalSentinel)){
+      try{ if(typeof handleBack==='function') handleBack(); }catch(err){ console.warn('back handler error', err); }
+      _armBackSentinel();
+    }
+    // Otherwise (null state or unknown) — let the navigation happen.
   });
-  // 2026-04-25-B: when the app comes back to focus (resume from background,
-  // tab refocus), reset any stuck exit flag and re-arm the sentinel — this
-  // fixes the case where _arsenalExitInProgress stayed true across the
-  // app being backgrounded and reopened, silently disabling the back guard.
+  // 2026-04-25-B: when the app comes back to focus, reset any stuck exit
+  // flag from a prior _doExit attempt. Don't push a new sentinel here —
+  // existing browser history is preserved on resume in standalone PWA
+  // mode, so a sentinel from before backgrounding is still in place.
   document.addEventListener('visibilitychange', function(){
     if(!document.hidden){
       _arsenalExitInProgress=false;
-      _armBackSentinel();
     }
   });
   ld(); // rnd() called inside ld() after async DB load
