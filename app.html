@@ -800,6 +800,7 @@ td{padding:13px 14px;font-size:15px;border-bottom:1px solid #252c38;vertical-ali
 .tab-h{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;border:1px solid #2e3545;border-radius:8px;background:#1a1d24;color:#c8d4e8;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:600;white-space:nowrap;flex-shrink:0;box-shadow:inset 0 1px 0 #ffffff08,0 1px 2px #00000040;transition:all .15s ease}
 .tab-h:active{transform:translateY(1px)}
 .tab-h.on{background:#e8c46a;border-color:#e8c46a;color:#1a1d24;font-weight:800;box-shadow:inset 0 1px 0 #ffffff30,0 2px 6px #e8c46a40}
+.tab-divider{display:inline-block;width:1px;align-self:stretch;background:linear-gradient(to bottom,transparent,#3a4455 30%,#3a4455 70%,transparent);margin:0 6px;flex-shrink:0;min-height:32px}
 .empty{text-align:center;padding:50px 20px;color:#8a95a8}
 .toast{position:fixed;bottom:22px;right:22px;z-index:10000;padding:13px 22px;border-radius:8px;font-size:14px;display:none;font-weight:600}
 .toast.ok{background:#0d1f12;border:2px solid #60e880;color:#60e880}
@@ -949,6 +950,11 @@ td{padding:13px 14px;font-size:15px;border-bottom:1px solid #252c38;vertical-ali
 <symbol id="M-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" fill-rule="evenodd" d="M11 6h2v1.2c.5.1 1 .3 1.5.6l.8-.8 1.4 1.4-.8.8c.3.5.5 1 .6 1.5H18v2h-1.2c-.1.5-.3 1-.6 1.5l.8.8-1.4 1.4-.8-.8c-.5.3-1 .5-1.5.6V18h-2v-1.2c-.5-.1-1-.3-1.5-.6l-.8.8-1.4-1.4.8-.8c-.3-.5-.5-1-.6-1.5H6v-2h1.2c.1-.5.3-1 .6-1.5L7 9l1.4-1.4.8.8c.5-.3 1-.5 1.5-.6Zm1 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/></symbol>
 <symbol id="M-x-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path d="m9 9 6 6M15 9l-6 6" stroke-width="2.5"/></symbol>
 <symbol id="M-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" fill-rule="evenodd" d="M12 7 16.5 15h-9ZM11.4 10h1.2v3.6h-1.2Zm0 4.6h1.2v1.2h-1.2z"/></symbol>
+<symbol id="M-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><circle cx="12" cy="12" r="4.7"/><circle cx="12" cy="12" r="2.8"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="M-bolt-nut" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" fill-rule="evenodd" d="m12 6.9 4.5 2.6v5L12 17.1l-4.5-2.6v-5Zm0 3.1a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></symbol>
+<symbol id="M-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" fill-rule="evenodd" d="M12 6.8a5.2 5.2 0 1 1 0 10.4 5.2 5.2 0 0 1 0-10.4Zm-.75 4.35h1.5v4.1h-1.5Zm.75-2.65a.85.85 0 1 0 0 1.7.85.85 0 0 0 0-1.7Z"/></symbol>
+<symbol id="M-ammo-cartridge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" d="M12 5.8 14.2 9v1.2l1 1.1v5.2l-1.1 1.1H9.9l-1.1-1.1v-5.2l1-1.1V9z"/></symbol>
+<symbol id="M-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" d="m8.1 16.8 5.6-5.6-1.1-2.7 1.8-1.8 1.1 2 2 1.1-1.8 1.8-2.7-1.1-5.6 5.6z"/></symbol>
 <symbol id="B-printer" viewBox="0 0 512 512"><g filter="url(#shadow)">
     <polygon points="256,30 454,144 454,368 256,482 58,368 58,144" fill="url(#steel)"/>
     <polygon points="256,52 432,154 432,358 256,460 80,358 80,154" fill="#05070a" stroke="#1b2027" stroke-width="4"/>
@@ -4245,11 +4251,16 @@ function _reportFromDetail(gunId, kind){
 }
 
 function rReports(){
+  // -N: tabs reorganized into two semantic groups with a visual divider between them.
+  //   INSIGHTS: Worth · Cleaning · Milestones (analytics about your inventory)
+  //   REPORTS:  Insurance · Theft · Custody (printable documents for external use)
   var tabs='<div class="tabs-h">'
     +'<button class="tab-h'+(reportTab==='worth'?' on':'')+'" onclick="if(reportTab!==\'worth\'){_pushViewState();reportTab=\'worth\';rnd()}">&#128176; Worth</button>'
     +'<button class="tab-h'+(reportTab==='maint'?' on':'')+'" onclick="if(reportTab!==\'maint\'){_pushViewState();reportTab=\'maint\';rnd()}">&#129529; Cleaning</button>'
+    +'<button class="tab-h'+(reportTab==='milestones'?' on':'')+'" onclick="if(reportTab!==\'milestones\'){_pushViewState();reportTab=\'milestones\';rnd()}">&#127942; Milestones</button>'
+    +'<span class="tab-divider" aria-hidden="true"></span>'
     +'<button class="tab-h'+(reportTab==='ins'?' on':'')+'" onclick="if(reportTab!==\'ins\'){_pushViewState();reportTab=\'ins\';rnd()}">'+_iM('document')+' Insurance</button>'
-    +'<button class="tab-h'+(reportTab==='theft'?' on':'')+'" onclick="if(reportTab!==\'theft\'){_pushViewState();reportTab=\'theft\';rnd()}">'+_iM('lock')+' Theft Report</button>'+'<button class="tab-h'+(reportTab==='milestones'?' on':'')+'" onclick="if(reportTab!==\'milestones\'){_pushViewState();reportTab=\'milestones\';rnd()}">&#127942; Milestones</button>'
+    +'<button class="tab-h'+(reportTab==='theft'?' on':'')+'" onclick="if(reportTab!==\'theft\'){_pushViewState();reportTab=\'theft\';rnd()}">'+_iM('lock')+' Theft</button>'
     +'<button class="tab-h'+(reportTab==='custody'?' on':'')+'" onclick="if(reportTab!==\'custody\'){_pushViewState();reportTab=\'custody\';rnd()}">'+_iM('lock-open')+' Custody</button>'
     +'</div>';
 
@@ -4629,7 +4640,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-M';   // bump on every revision
+var BUILD_TAG   = '2026-04-24-N';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -5901,23 +5912,33 @@ function rCustodyTab(gunId){
     events='<div style="text-align:center;padding:24px;color:#4a5568;font-size:14px">No custody events recorded yet</div>';
   }
 
-  // Transfer out button
+  // -N: Permanent Actions zone — clearly fenced, with warning header, explanatory copy,
+  //   and the Transfer-Out button as full-width red. Visually distinct from everyday actions.
   var transferBtn=!g.transferred?
-    '<div style="margin-top:16px;padding-top:16px;border-top:2px solid #252c38">'
-    +'<div style="font-size:12px;color:#8a95a8;margin-bottom:10px">Mark this firearm as permanently transferred out of your possession:</div>'
-    +'<button onclick="markTransferredOut(\''+gunId+'\')" style="background:#ff707015;border:2px solid #ff707050;color:#ff7070;padding:11px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">'+_iM('lock-open')+' Mark as Transferred Out</button>'
+    '<div style="margin-top:24px;padding:16px;background:#1a0808;border:1px solid #ff707030;border-radius:10px">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+      +'<span style="color:#ff7070">'+_iM('alert-triangle', 14)+'</span>'
+      +'<div style="font-size:11px;color:#ff7070;font-weight:800;letter-spacing:.12em;text-transform:uppercase">Permanent Actions</div>'
+    +'</div>'
+    +'<div style="font-size:12px;color:#a0aab8;margin-bottom:12px;line-height:1.5">Mark this firearm as permanently transferred out of your possession. This action removes it from your active inventory.</div>'
+    +'<button onclick="markTransferredOut(\''+gunId+'\')" style="background:#ff707015;border:2px solid #ff707050;color:#ff7070;padding:11px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:6px">'+_iM('lock-open')+' Mark as Transferred Out</button>'
     +'</div>':'';
 
   return txBadge
+    // -N: Add (primary) + Print (secondary) live in a split row at the top.
+    //   Add takes ~70% width, Print ~30%. Same vertical space as before.
     +(g.transferred?''
-      :'<button onclick="showCustodyForm=true;editingCustodyId=null;rnd()" style="display:block;width:100%;background:#1e2535;border:2px solid #e8c46a40;color:#e8c46a;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px">+ Add Custody Event</button>')
+      :'<div style="display:flex;gap:8px;margin-bottom:14px">'
+        +'<button onclick="showCustodyForm=true;editingCustodyId=null;rnd()" style="flex:2.3;background:#1e2535;border:2px solid #e8c46a40;color:#e8c46a;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">+ Add Custody Event</button>'
+        +'<button onclick="printCustodyRecord(\''+gunId+'\')" style="flex:1;background:transparent;border:1px solid #3a4455;color:#c0c8d8;padding:8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:5px">'+_iM('printer', 14)+' Print</button>'
+      +'</div>')
     +form
     +'<div style="font-size:11px;color:#4a5568;margin-bottom:10px">'+custody.length+' event'+(custody.length!==1?'s':'')+' recorded</div>'
     +events
     +transferBtn
-    +'<div style="margin-top:16px">'
-    +'<button onclick="printCustodyRecord(\''+gunId+'\')" class="custody-btn">'+_iM('printer')+' Print Custody Record</button>'
-    +'</div>';
+    // -N: Bottom Print button removed — it's now in the split row up top.
+    //   Transferred-out firearms still need a Print button since the Add row is hidden.
+    +(g.transferred?'<div style="margin-top:16px"><button onclick="printCustodyRecord(\''+gunId+'\')" class="custody-btn">'+_iM('printer')+' Print Custody Record</button></div>':'');
 }
 
 function saveCustodyEvent(gunId){
@@ -8587,29 +8608,51 @@ function rDet(){
 
   var tc='';
   if(dTab==='info'){
-      // Build extra info cards
-  var extraInfo='';
-  if(g.storageLocation||g.lastCleaned||g.insuranceValue||g.ammoType||g.ammoCount){
-    var today=new Date();
-    var cleanedStr='';
-    if(g.lastCleaned){
-      var days=Math.floor((today-new Date(g.lastCleaned))/(1000*60*60*24));
-      var cleanedClass=days>90?'overdue':'cleaning-ok';
-      cleanedStr='<div class="form-group" style="margin-bottom:0"><div class="lbl">Last Cleaned</div><div class="'+cleanedClass+'" style="font-size:14px;font-weight:600">'+g.lastCleaned+(days>90?' <span style="font-size:12px">('+days+' days — overdue!)</span>':' <span style="font-size:12px">('+days+' days ago)</span>')+'</div></div>';
-    }
-    extraInfo='<div class="panel">'
-      +'<div class="sec-title">🔫 Storage &amp; Ammo</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
-      +(g.storageLocation?'<div class="form-group" style="margin-bottom:0"><div class="lbl">Storage Location</div><div style="font-size:14px;color:#f0f2f5">'+eh(g.storageLocation)+'</div></div>':'')
-      +(g.insuranceValue?'<div class="form-group" style="margin-bottom:0"><div class="lbl">Insurance Value</div><div style="font-size:14px;color:#e8c46a;font-weight:700">'+fm(g.insuranceValue)+'</div></div>':'')
-      +(g.ammoType?'<div class="form-group" style="margin-bottom:0"><div class="lbl">Ammo Loaded</div><div style="font-size:14px;color:#f0f2f5">'+eh(g.ammoType)+'</div></div>':'')
-      +(g.ammoCount?'<div class="form-group" style="margin-bottom:0"><div class="lbl">Rounds on Hand</div><div style="font-size:14px;color:#f0f2f5">'+eh(g.ammoCount)+'</div></div>':'')
-      +(g.ammoLocation?'<div class="form-group" style="margin-bottom:0;grid-column:span 2"><div class="lbl">Ammo Location</div><div style="font-size:14px;color:#f0f2f5">'+eh(g.ammoLocation)+'</div></div>':'')
-      +'</div>'
-      +(cleanedStr?'<hr style="border:none;border-top:1px solid #2e3545;margin:12px 0"/>'+cleanedStr:'')
-      +'</div>';
-  }
-  tc=((!g.working&&g.repairNotes)?'<div class="panel" style="border-color:#ff707050"><div class="sec-title" style="color:#ff7070">⚠ Repair Notes</div><div style="font-size:15px;color:#f0f2f5;line-height:1.6">'+eh(g.repairNotes)+'</div></div>':'')+
+      // -N: split former "Storage & Ammo" card into three: Storage & Status / Ammunition / Last Cleaned
+      var storageCard='', ammoCard='', cleanedCard='';
+      var hasStorage = g.storageLocation || g.insuranceValue;
+      var hasAmmo = g.ammoType || g.ammoCount || g.ammoLocation;
+      var hasCleaned = !!g.lastCleaned;
+
+      if(hasStorage){
+        storageCard = '<div class="panel">'
+          +'<div class="sec-title">'+_iM('lock')+' Storage &amp; Status</div>'
+          +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+          +(g.storageLocation?'<div class="form-group" style="margin-bottom:0"><div class="lbl">Storage Location</div><div style="font-size:14px;color:#f0f2f5">'+eh(g.storageLocation)+'</div></div>':'')
+          +(g.insuranceValue?'<div class="form-group" style="margin-bottom:0"><div class="lbl">Insurance Value</div><div style="font-size:14px;color:#e8c46a;font-weight:700">'+fm(g.insuranceValue)+'</div></div>':'')
+          +'</div>'
+          +'</div>';
+      }
+
+      if(hasAmmo){
+        ammoCard = '<div class="panel">'
+          +'<div class="sec-title">'+_iM('ammo-cartridge')+' Ammunition</div>'
+          +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+          +(g.ammoType?'<div class="form-group" style="margin-bottom:0"><div class="lbl">Ammo Loaded</div><div style="font-size:14px;color:#f0f2f5">'+eh(g.ammoType)+'</div></div>':'')
+          +(g.ammoCount?'<div class="form-group" style="margin-bottom:0"><div class="lbl">Rounds on Hand</div><div style="font-size:14px;color:#f0f2f5">'+eh(g.ammoCount)+'</div></div>':'')
+          +(g.ammoLocation?'<div class="form-group" style="margin-bottom:0;grid-column:span 2"><div class="lbl">Ammo Location</div><div style="font-size:14px;color:#f0f2f5">'+eh(g.ammoLocation)+'</div></div>':'')
+          +'</div>'
+          +'</div>';
+      }
+
+      if(hasCleaned){
+        var today=new Date();
+        var days=Math.floor((today-new Date(g.lastCleaned))/(1000*60*60*24));
+        var overdue = days>90;
+        // "X days ago" front-and-center as the hero metric
+        cleanedCard = '<div class="panel"'+(overdue?' style="border-color:#ff904050"':'')+'>'
+          +'<div class="sec-title"'+(overdue?' style="color:#ff9040"':'')+'>'+_iM('check')+' Last Cleaned</div>'
+          +'<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">'
+            +'<div style="font-size:34px;font-weight:800;color:'+(overdue?'#ff9040':'#60e880')+';line-height:1">'+days+'</div>'
+            +'<div style="font-size:14px;color:'+(overdue?'#ff9040':'#a0aab8')+';font-weight:600">days ago'+(overdue?' &mdash; <span style="color:#ff9040;font-weight:800">overdue</span>':'')+'</div>'
+            +'<div style="margin-left:auto;font-size:12px;color:#7a8598">'+eh(g.lastCleaned)+'</div>'
+          +'</div>'
+          +'</div>';
+      }
+
+      var extraInfo = storageCard + ammoCard + cleanedCard;
+
+  tc=((!g.working&&g.repairNotes)?'<div class="panel" style="border-color:#ff707050"><div class="sec-title" style="color:#ff7070">'+_iM('alert-triangle')+' Repair Notes</div><div style="font-size:15px;color:#f0f2f5;line-height:1.6">'+eh(g.repairNotes)+'</div></div>':'')+
     (!g.repairNotes&&!extraInfo?'<div class="empty" style="padding:28px 0"><div style="font-size:15px;color:#b0bac8">No additional info yet</div><button class="btn-g" style="margin-top:14px" onclick="editGun(\''+g.id+'\')">Add Info</button></div>':'')+extraInfo;
   } else if(dTab==='sch'){
     var sc='';
@@ -8617,7 +8660,7 @@ function rDet(){
       sc='<div style="text-align:center;padding:40px 20px;color:#a0b8ff"><div style="font-size:34px;margin-bottom:12px">⟳</div><div style="font-size:15px;font-weight:600">Generating breakdown for '+eh(g.make)+' '+eh(g.model)+'...</div><div style="font-size:13px;color:#8a95a8;margin-top:6px">Usually takes 10–20 seconds</div></div>';
     } else if(SCH){
       var warns=SCH.safetyWarnings&&SCH.safetyWarnings.length?'<div class="warn-box"><div class="sec-title" style="color:#ff9040">⚠ SAFETY WARNINGS — READ FIRST</div>'+SCH.safetyWarnings.map(function(w){return '<div class="warn-i">⚠ '+eh(w)+'</div>';}).join('')+'</div>':'';
-      var tools=SCH.toolsRequired&&SCH.toolsRequired.length?'<div class="panel"><div class="sec-title">🔧 Tools Required</div><div class="tools">'+SCH.toolsRequired.map(function(t){return '<span class="tool">'+eh(t)+'</span>';}).join('')+'</div></div>':'';
+      var tools=SCH.toolsRequired&&SCH.toolsRequired.length?'<div class="panel"><div class="sec-title">'+_iM('wrench')+' Tools Required</div><div class="tools">'+SCH.toolsRequired.map(function(t){return '<span class="tool">'+eh(t)+'</span>';}).join('')+'</div></div>':'';
       var sub='';
       if(scTab==='dis'){sub=(SCH.disassemblySteps||[]).map(function(s){return '<div class="step-row"><div class="step-n sng">'+s.step+'</div><div style="flex:1"><div class="step-t">'+eh(s.title)+'</div><div class="step-d">'+eh(s.description)+'</div>'+(s.caution?'<div class="caution">⚠ '+eh(s.caution)+'</div>':'')+'</div></div>';}).join('');}
       else if(scTab==='asm'){sub=(SCH.assemblySteps||[]).map(function(s){return '<div class="step-row"><div class="step-n snb">'+s.step+'</div><div style="flex:1"><div class="step-t">'+eh(s.title)+'</div><div class="step-d">'+eh(s.description)+'</div>'+(s.caution?'<div class="caution">⚠ '+eh(s.caution)+'</div>':'')+'</div></div>';}).join('');}
@@ -8698,13 +8741,14 @@ function rDet(){
   '<div class="panel" style="border-color:#e8c46a40"><div style="display:flex;gap:18px;flex-wrap:wrap">'+ph+
   '<div style="flex:1;min-width:200px"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px"><div><div style="font-size:24px;font-weight:700;color:#f0f2f5">'+eh(g.make)+' '+eh(g.model)+'</div><div style="color:#a0aab8;font-size:14px;margin-top:4px">'+eh(g.type||'')+(g.type?' · ':'')+eh(g.caliber)+'</div><div style="color:#7a8598;font-size:13px;margin-top:3px">SN: '+(eh(g.serialNumber)||'N/A')+(g.year?' · '+eh(g.year):'')+'</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:700;color:#e8c46a">'+fm(g.currentValue)+'</div><div style="font-size:12px;color:#8a95a8">current value</div><div style="margin-top:6px">'+bj(g.condition,CC[g.condition]||'#8a95a8')+'</div></div></div>'+
   '<div style="margin-top:11px;display:flex;gap:18px;flex-wrap:wrap"><span style="color:'+(g.working?'#60e880':'#ff7070')+';font-size:14px;font-weight:700">'+(g.working?'✓ Operational':'✗ Needs Repair')+'</span>'+(g.purchasePrice?'<span style="color:#8a95a8;font-size:13px">Paid: '+fm(g.purchasePrice)+'</span>':'')+(gainStr?'<span style="color:'+(gain>=0?'#60e880':'#ff7070')+';font-size:13px;font-weight:600">'+gainStr+'</span>':'')+'</div>'+investedRow+'</div></div></div>'+
-  // REPORT-T12: per-firearm quick-report shortcuts
+  // REPORT-T12 / -N: per-firearm quick-report shortcuts with section header
+  '<div style="font-size:10px;color:#7a8598;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;padding-left:2px">Quick Reports &mdash; This Firearm</div>'+
   '<div style="display:flex;gap:6px;margin-bottom:14px">'
     +'<button onclick="_reportFromDetail(\''+g.id+'\',\'ins\')" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #a0c0ff40;border-radius:8px;color:#a0c0ff;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('document')+' Insurance</button>'
     +'<button onclick="_reportFromDetail(\''+g.id+'\',\'theft\')" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #ff707040;border-radius:8px;color:#ff7070;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('lock')+' Theft</button>'
     +'<button onclick="_reportFromDetail(\''+g.id+'\',\'custody\')" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #e8c46a40;border-radius:8px;color:#e8c46a;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('lock-open')+' Custody</button>'
   +'</div>'+
-  '<div class="tabs"><button class="tab'+(dTab==='mnt'?' on':'')+'" onclick="dTab=\'mnt\';rnd()"><span class="tab-icon">⚙</span>Maintenance</button><button class="tab'+(dTab==='info'?' on':'')+'" onclick="dTab=\'info\';rnd()"><span class="tab-icon">ⓘ</span>Info</button><button class="tab'+(dTab==='sch'?' on':'')+'" onclick="dTab=\'sch\';rnd()"><span class="tab-icon">🔩</span>Schematics</button><button class="tab'+(dTab==='range'?' on':'')+'" onclick="dTab=\'range\';rnd()"><span class="tab-icon">🎯</span>Range</button><button class="tab'+(dTab==='coc'?' on':'')+'" onclick="dTab=\'coc\';rnd()"><span class="tab-icon">'+_iM('lock-open')+'</span>Custody</button></div>'+tc;
+  '<div class="tabs"><button class="tab'+(dTab==='mnt'?' on':'')+'" onclick="dTab=\'mnt\';rnd()"><span class="tab-icon">'+_iM('wrench')+'</span>Maintenance</button><button class="tab'+(dTab==='info'?' on':'')+'" onclick="dTab=\'info\';rnd()"><span class="tab-icon">'+_iM('info')+'</span>Details</button><button class="tab'+(dTab==='sch'?' on':'')+'" onclick="dTab=\'sch\';rnd()"><span class="tab-icon">'+_iM('bolt-nut')+'</span>Schematics</button><button class="tab'+(dTab==='range'?' on':'')+'" onclick="dTab=\'range\';rnd()"><span class="tab-icon">'+_iM('target')+'</span>Range</button><button class="tab'+(dTab==='coc'?' on':'')+'" onclick="dTab=\'coc\';rnd()"><span class="tab-icon">'+_iM('lock-open')+'</span>Custody</button></div>'+tc;
 }
 
 // ── AI ────────────────────────────────────────────────────────────────
