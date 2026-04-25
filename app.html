@@ -854,6 +854,15 @@ td{padding:13px 14px;font-size:15px;border-bottom:1px solid #252c38;vertical-ali
 .lightbox{position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column}
 .lightbox img{max-width:95vw;max-height:80vh;object-fit:contain;border-radius:8px;border:2px solid #3a4455}
 .lightbox-nav{display:flex;gap:20px;margin-top:14px;align-items:center}
+/* 2026-04-25-E: fullscreen photo viewer (album-style takeover) */
+.pv-modal{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;overscroll-behavior:contain}
+.pv-stage{flex:1;display:flex;align-items:center;justify-content:center;width:100%;padding:0 16px;min-height:0}
+.pv-img{max-width:100%;max-height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.pv-close{position:absolute;top:16px;right:16px;width:42px;height:42px;border-radius:50%;background:#1a1d24cc;border:1px solid #ffffff20;color:#f0f2f5;font-size:24px;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1;padding:0;z-index:1}
+.pv-counter{position:absolute;top:24px;left:50%;transform:translateX(-50%);background:#1a1d24cc;border:1px solid #ffffff20;border-radius:999px;padding:6px 14px;color:#f0f2f5;font-size:12px;font-weight:700;letter-spacing:.08em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:1}
+.pv-dots{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:7px;align-items:center}
+.pv-dot{width:7px;height:7px;border-radius:50%;background:#3a4455;transition:background .15s ease,transform .15s ease}
+.pv-dot-on{background:#e8c46a;transform:scale(1.3)}
 .lb-btn{background:#222835;border:1px solid #3a4455;color:#f0f2f5;padding:10px 20px;border-radius:6px;cursor:pointer;font-size:16px;font-family:inherit}
 .lb-counter{color:#8a95a8;font-size:13px;font-family:monospace}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -4703,7 +4712,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-25-D';   // bump on every revision
+var BUILD_TAG   = '2026-04-25-E';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -5323,7 +5332,7 @@ function handleBack(){
     'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal',
     'pin_forgot_modal','exit_modal','bos_modal','inv_cap_modal','magnifier_modal',
     'merge_conflicts_modal','merge_preview_modal','pro_gate_modal','profile_modal',
-    'range_detail_modal','range_form_modal'];
+    'range_detail_modal','range_form_modal','photo_view_modal'];
   for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();return;}}
   // Close hamburger menu
   if(hamOpen){closeHam();return;}
@@ -8673,7 +8682,7 @@ function rDet(){
 
   var _photos=((g.photos&&g.photos.length)?g.photos:(g.photo?[g.photo]:[]));
   var ph=_photos.length
-    ?'<img src="'+_photos[0]+'" class="ph-img" style="width:130px;height:95px;object-fit:cover;border-radius:6px;border:2px solid #3a4455;flex-shrink:0;cursor:pointer" onclick="openLb('+JSON.stringify(_photos)+',0)"/>'
+    ?'<img src="'+_photos[0]+'" class="ph-img" style="width:130px;height:95px;object-fit:cover;border-radius:6px;border:2px solid #3a4455;flex-shrink:0;cursor:pointer" onclick="openPhotoView('+JSON.stringify(_photos)+',0)"/>'
     :'<div class="ph-none" style="width:130px;height:95px">No Photo</div>';
 
   var tc='';
@@ -11648,6 +11657,95 @@ document.addEventListener('keydown', function(e){
   else if(e.key==='ArrowLeft') lbPrev();
   else if(e.key==='Escape') closeLb();
 });
+
+// ── FULLSCREEN PHOTO VIEWER (2026-04-25-E) ───────────────────────────
+// Album-style takeover. Photos only — no chrome, no firearm details,
+// no swipe hint. Tap × or device back to close. State is local; no
+// VIEW change or history pushState, so device back via handleBack
+// closes the modal and returns the user to wherever they came from.
+var _pvPhotos = [];
+var _pvIdx = 0;
+var _pvTouchStartX = 0;
+var _pvTouchStartY = 0;
+var _pvTouchStartT = 0;
+
+function openPhotoView(photos, startIdx){
+  if(!photos || !photos.length) return;
+  _pvPhotos = photos;
+  _pvIdx = startIdx || 0;
+  _renderPhotoView();
+}
+
+function _renderPhotoView(){
+  var existing = document.getElementById('photo_view_modal');
+  if(existing) existing.remove();
+
+  var multi = _pvPhotos.length > 1;
+  var dots = '';
+  if(multi){
+    var d = '';
+    for(var i = 0; i < _pvPhotos.length; i++){
+      d += '<span class="pv-dot' + (i === _pvIdx ? ' pv-dot-on' : '') + '"></span>';
+    }
+    dots = '<div class="pv-dots">' + d + '</div>';
+  }
+  var counter = multi ? '<div class="pv-counter">' + (_pvIdx+1) + ' / ' + _pvPhotos.length + '</div>' : '';
+
+  var m = document.createElement('div');
+  m.id = 'photo_view_modal';
+  m.className = 'pv-modal';
+  m.innerHTML =
+    '<button class="pv-close" onclick="_closePhotoView()" aria-label="Close">&times;</button>'
+    + counter
+    + '<div class="pv-stage" id="pv_stage"><img src="' + _pvPhotos[_pvIdx] + '" class="pv-img" alt="Photo ' + (_pvIdx+1) + '"/></div>'
+    + dots;
+
+  // Tap on backdrop or stage closes; image has pointer-events:none so taps fall through.
+  m.addEventListener('click', function(e){
+    if(e.target === m || e.target.id === 'pv_stage' || e.target.classList && e.target.classList.contains('pv-stage')) _closePhotoView();
+  });
+
+  // Swipe nav (only meaningful when multiple photos)
+  if(multi){
+    m.addEventListener('touchstart', function(e){
+      _pvTouchStartX = e.touches[0].clientX;
+      _pvTouchStartY = e.touches[0].clientY;
+      _pvTouchStartT = Date.now();
+    }, {passive: true});
+    m.addEventListener('touchend', function(e){
+      var dx = e.changedTouches[0].clientX - _pvTouchStartX;
+      var dy = e.changedTouches[0].clientY - _pvTouchStartY;
+      var dt = Date.now() - _pvTouchStartT;
+      if(dt > 600) return;
+      if(Math.abs(dx) < 60 || Math.abs(dy) > 60) return;
+      if(dx < 0) _pvIdx = (_pvIdx + 1) % _pvPhotos.length;
+      else _pvIdx = (_pvIdx - 1 + _pvPhotos.length) % _pvPhotos.length;
+      _renderPhotoView();
+      if(typeof haptic === 'function') haptic('light');
+    }, {passive: true});
+  }
+
+  document.body.appendChild(m);
+  if(typeof haptic === 'function') haptic('light');
+}
+
+function _closePhotoView(){
+  var m = document.getElementById('photo_view_modal');
+  if(m) m.remove();
+  _pvPhotos = [];
+  _pvIdx = 0;
+}
+
+// Keyboard nav for fullscreen photo viewer
+document.addEventListener('keydown', function(e){
+  if(!document.getElementById('photo_view_modal')) return;
+  if(_pvPhotos.length > 1){
+    if(e.key === 'ArrowRight'){ _pvIdx = (_pvIdx + 1) % _pvPhotos.length; _renderPhotoView(); }
+    else if(e.key === 'ArrowLeft'){ _pvIdx = (_pvIdx - 1 + _pvPhotos.length) % _pvPhotos.length; _renderPhotoView(); }
+  }
+  if(e.key === 'Escape') _closePhotoView();
+});
+// ── END FULLSCREEN PHOTO VIEWER ──────────────────────────────────────
 
 // ── BACKUP & RESTORE ─────────────────────────────────────────────────
 
