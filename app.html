@@ -4703,7 +4703,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-25-C';   // bump on every revision
+var BUILD_TAG   = '2026-04-25-D';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -9136,9 +9136,12 @@ function handleRangePhotos(input){
   files.forEach(function(file){
     var reader=new FileReader();
     reader.onload=function(e){
-      rangeForm.photos.push(e.target.result);
-      pending--;
-      if(pending===0) renderRangeFormModal();
+      // 2026-04-25-D: compress at capture (1600 max edge, JPEG q0.85, 500 KB cap)
+      _compressPhotoForStorage(e.target.result).then(function(compressed){
+        rangeForm.photos.push(compressed);
+        pending--;
+        if(pending===0) renderRangeFormModal();
+      });
     };
     reader.readAsDataURL(file);
   });
@@ -10610,10 +10613,13 @@ function onPhoto(){
   files.forEach(function(file){
     var r=new FileReader();
     r.onload=function(e){
-      FORM.photos.push(e.target.result);
-      if(FORM.photos.length>0)FORM.photo=FORM.photos[0];
-      loaded++;
-      if(loaded===files.length)rnd();
+      // 2026-04-25-D: compress at capture (1600 max edge, JPEG q0.85, 500 KB cap)
+      _compressPhotoForStorage(e.target.result).then(function(compressed){
+        FORM.photos.push(compressed);
+        if(FORM.photos.length>0)FORM.photo=FORM.photos[0];
+        loaded++;
+        if(loaded===files.length)rnd();
+      });
     };
     r.readAsDataURL(file);
   });
@@ -10668,8 +10674,12 @@ function onSch(){
   var nm=file.name;
   var r=new FileReader();
   r.onload=function(e){
-    guns=guns.map(function(g){return g.id===selId?Object.assign({},g,{uploadedSchematic:e.target.result,uploadedSchematicName:nm}):g;});
-    sv();rnd();toast('Schematic uploaded');
+    // 2026-04-25-D: compress images at capture; non-image schematics (PDFs etc.)
+    // pass through unchanged because the compressor img.onerror's on non-decodable input.
+    _compressPhotoForStorage(e.target.result).then(function(compressed){
+      guns=guns.map(function(g){return g.id===selId?Object.assign({},g,{uploadedSchematic:compressed,uploadedSchematicName:nm}):g;});
+      sv();rnd();toast('Schematic uploaded');
+    });
   };
   r.readAsDataURL(file);this.value='';
 }
@@ -11704,6 +11714,15 @@ function _countPhotos(gs){
     if(g.photo) n += 1;
   }
   return n;
+}
+
+// 2026-04-25-D: Capture-time alias for the export compressor. Photos are
+// now compressed at capture time (onPhoto, onSch, handleRangePhotos)
+// instead of only at export — fixes IndexedDB bloat and sluggish detail
+// rendering. Export-time compression is retained as defense-in-depth.
+// The underlying logic is identical for both use cases.
+function _compressPhotoForStorage(dataUri){
+  return _compressPhotoForExport(dataUri);
 }
 
 // Core compressor. Returns Promise<string>.
