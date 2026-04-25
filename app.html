@@ -1188,6 +1188,14 @@ var transferredGuns=[];
 var editingCustodyId=null;
 var showCustodyForm=false;
 var reportTab='worth';
+// REPORT-T12: selection state for filterable reports (Insurance/Theft/Custody).
+// null = "all firearms" (default; auto-includes newly added). A Set of gun IDs = explicit selection.
+var reportSelection=null;
+function getSelectedGuns(pool){
+  if(reportSelection===null) return pool.slice();
+  return pool.filter(function(g){ return reportSelection.has(g.id); });
+}
+function clearReportSelection(){ reportSelection=null; }
 var maintSort='overdue';
 var collapsed={photo:false,basic:false,condition:false,value:true,extra:true,custody:true};
 var lbPhotos=[];
@@ -1425,6 +1433,8 @@ function _pushViewState(){
   _viewHistory.push(st);
 }
 function go(v){
+  // REPORT-T12: clear ephemeral report selection when leaving Reports view
+  if(VIEW==='reports' && v!=='reports'){ clearReportSelection(); }
   showCustodyForm=false;
   editingCustodyId=null;
   aiLoad=null;
@@ -3799,6 +3809,135 @@ function deleteGun(id){
 
 
 // ── REPORTS VIEW ──────────────────────────────────────────────────────
+// REPORT-T12 helpers: picker modal, summary bar, print roster.
+// Picker is context-aware: on Custody tab it includes transferredGuns;
+// on Insurance/Theft tabs it shows active guns only.
+function _reportPickerPool(){
+  if(reportTab==='custody') return guns.concat(transferredGuns||[]);
+  return guns.slice();
+}
+function openReportPicker(){
+  var pool=_reportPickerPool();
+  if(!pool.length){ toast('No firearms to select','err'); return; }
+  var existing=document.getElementById('report_picker_modal');
+  if(existing) existing.remove();
+  var modal=document.createElement('div');
+  modal.id='report_picker_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  // Build rows. For Custody tab, group active vs transferred.
+  function _row(g, isTransferred){
+    var checked=(reportSelection===null)||reportSelection.has(g.id);
+    return '<label style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid #252c38;cursor:pointer;-webkit-tap-highlight-color:rgba(232,196,106,0.1)">'
+      +'<input type="checkbox" class="rp-chk" data-id="'+g.id+'"'+(checked?' checked':'')+' style="width:18px;height:18px;accent-color:#e8c46a;flex-shrink:0"/>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:700;color:#f0f2f5;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+eh(g.make)+' '+eh(g.model)+(isTransferred?' <span style="color:#ff7070;font-size:11px;font-weight:600">(transferred)</span>':'')+'</div>'
+        +'<div style="font-size:12px;color:#8a95a8;margin-top:2px">'+eh(g.caliber||'')+(g.serialNumber?' &middot; SN: '+eh(g.serialNumber):'')+'</div>'
+      +'</div>'
+    +'</label>';
+  }
+  var rowsHtml='';
+  if(reportTab==='custody'){
+    var activeGs=guns.slice();
+    var transG=transferredGuns||[];
+    if(activeGs.length){
+      rowsHtml+='<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8a95a8;padding:10px 14px;background:#171a22">Active</div>';
+      rowsHtml+=activeGs.map(function(g){return _row(g,false);}).join('');
+    }
+    if(transG.length){
+      rowsHtml+='<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#ff7070;padding:10px 14px;background:#171a22">Transferred Out</div>';
+      rowsHtml+=transG.map(function(g){return _row(g,true);}).join('');
+    }
+  } else {
+    rowsHtml=pool.map(function(g){return _row(g,false);}).join('');
+  }
+  modal.innerHTML='<div style="background:#222835;border:2px solid #3a4455;border-radius:12px;max-width:380px;width:100%;margin:auto">'
+    +'<div style="padding:20px 20px 0">'
+      +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:4px">&#128196; Select Firearms</div>'
+      +'<div style="font-size:12px;color:#8a95a8;margin-bottom:14px">Pick which firearms to include in this report</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:12px">'
+        +'<button onclick="_rpSelectAll(true)" style="flex:1;background:#1e3050;border:1px solid #a0c0ff40;color:#a0c0ff;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Select All</button>'
+        +'<button onclick="_rpSelectAll(false)" style="flex:1;background:#1e2535;border:1px solid #3a4455;color:#8a95a8;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Clear All</button>'
+      +'</div>'
+    +'</div>'
+    +'<div style="max-height:50vh;overflow-y:auto;border-top:1px solid #2e3545;border-bottom:1px solid #2e3545">'+rowsHtml+'</div>'
+    +'<div style="padding:14px 20px;display:flex;gap:10px">'
+      +'<button onclick="document.getElementById(\'report_picker_modal\').remove()" style="flex:1;background:#1a1d24;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>'
+      +'<button onclick="_rpApply()" style="flex:1;background:#e8c46a;border:none;color:#1a1d24;padding:11px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">Apply</button>'
+    +'</div>'
+  +'</div>';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  document.body.appendChild(modal);
+}
+function _rpSelectAll(check){
+  var els=document.querySelectorAll('#report_picker_modal .rp-chk');
+  for(var i=0;i<els.length;i++) els[i].checked=!!check;
+}
+function _rpApply(){
+  var els=document.querySelectorAll('#report_picker_modal .rp-chk');
+  var picked=[];
+  for(var i=0;i<els.length;i++){ if(els[i].checked) picked.push(els[i].getAttribute('data-id')); }
+  // Total count in CURRENT pool — if all checked, collapse to null (default)
+  var poolSize=_reportPickerPool().length;
+  if(picked.length===poolSize){
+    reportSelection=null;
+  } else if(picked.length===0){
+    // Disallow zero — show toast and keep modal open
+    toast('Pick at least one firearm','err');
+    return;
+  } else {
+    reportSelection=new Set(picked);
+  }
+  document.getElementById('report_picker_modal').remove();
+  rnd();
+}
+// Summary bar shown above each filterable report
+function _reportSelectionBar(pool){
+  var poolSize=pool.length;
+  if(reportSelection===null){
+    return '<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'
+      +'<div style="font-size:12px;color:#8a95a8">Showing all '+poolSize+' firearm'+(poolSize!==1?'s':'')+'</div>'
+      +'<button onclick="openReportPicker()" style="background:transparent;border:1px solid #3a4455;color:#a0c0ff;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Change Selection</button>'
+    +'</div>';
+  }
+  var selN=getSelectedGuns(pool).length;
+  return '<div style="background:#1a1d24;border:1px solid #e8c46a40;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'
+    +'<div style="font-size:12px;color:#e8c46a;font-weight:600">&#128204; Showing '+selN+' of '+poolSize+'</div>'
+    +'<div style="display:flex;gap:6px">'
+      +'<button onclick="openReportPicker()" style="background:transparent;border:1px solid #3a4455;color:#a0c0ff;padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Change</button>'
+      +'<button onclick="clearReportSelection();rnd()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Reset (All)</button>'
+    +'</div>'
+  +'</div>';
+}
+// Roster line for printed reports — only renders when filtered.
+// Returns plain HTML (already escaped via eh()) suitable for print docs.
+function _reportSelectionRoster(pool){
+  if(reportSelection===null) return '';
+  var sel=getSelectedGuns(pool);
+  if(!sel.length) return '';
+  var names=sel.map(function(g){return eh(g.make)+' '+eh(g.model);});
+  var first=names.slice(0,3).join(' &middot; ');
+  var more=names.length>3?(' + '+(names.length-3)+' more'):'';
+  return '<div style="font-size:11px;color:#666;margin-top:6px;font-style:italic">Selection: '+first+more+'</div>';
+}
+// Empty-state body when 0 firearms selected for a report
+function _reportEmptyBody(){
+  return '<div class="empty">'
+    +'<div style="font-size:38px;margin-bottom:12px">&#128204;</div>'
+    +'<div style="font-size:15px;color:#d0d8e8;margin-bottom:6px;font-weight:600">No firearms selected</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:14px">Pick at least one firearm to generate this report</div>'
+    +'<button onclick="openReportPicker()" style="background:#e8c46a;border:none;color:#1a1d24;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Change Selection</button>'
+  +'</div>';
+}
+// Detail-view quick-report shortcut: pre-select THIS firearm and jump to the right Reports tab.
+// All 3 buttons (ins/theft/custody) follow the same path for consistency — user lands on the
+// rendered report with a 1-of-N selection bar showing, can Print or adjust selection from there.
+function _reportFromDetail(gunId, kind){
+  reportSelection=new Set([gunId]);
+  reportTab=kind;
+  haptic('light');
+  go('reports');
+}
+
 function rReports(){
   var tabs='<div class="tabs-h">'
     +'<button class="tab-h'+(reportTab==='worth'?' on':'')+'" onclick="if(reportTab!==\'worth\'){_pushViewState();reportTab=\'worth\';rnd()}">&#128176; Worth</button>'
@@ -3924,20 +4063,24 @@ function rMaint(){
 
 // ── INSURANCE REPORT ─────────────────────────────────────────────────
 function rIns(){
-  var s=stats();
-  var totalIns=guns.reduce(function(t,g){return t+(parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0);},0);
-  return '<div class="panel" style="border-color:#a0c0ff40">'
+  // REPORT-T12: filter to selected firearms
+  var selGuns=getSelectedGuns(guns);
+  var bar=_reportSelectionBar(guns);
+  if(!selGuns.length){ return bar+_reportEmptyBody(); }
+  var totalIns=selGuns.reduce(function(t,g){return t+(parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0);},0);
+  var totalMkt=selGuns.reduce(function(t,g){return t+(parseFloat(g.currentValue)||0);},0);
+  return bar+'<div class="panel" style="border-color:#a0c0ff40">'
     +'<div class="sec-title" style="color:#a0c0ff">&#128196; Insurance Report</div>'
-    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:14px">Generated '+new Date().toLocaleDateString()+' &middot; '+guns.length+' firearms</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:14px">Generated '+new Date().toLocaleDateString()+' &middot; '+selGuns.length+' firearm'+(selGuns.length!==1?'s':'')+'</div>'
     +'<div style="display:flex;gap:20px;margin-bottom:16px;flex-wrap:wrap">'
       +'<div><div style="font-size:11px;color:#8a95a8;text-transform:uppercase">Total Insured Value</div><div style="font-size:22px;font-weight:800;color:#a0c0ff">'+fm(totalIns)+'</div></div>'
-      +'<div><div style="font-size:11px;color:#8a95a8;text-transform:uppercase">Market Value</div><div style="font-size:22px;font-weight:800;color:#e8c46a">'+fm(s.totalValue)+'</div></div>'
+      +'<div><div style="font-size:11px;color:#8a95a8;text-transform:uppercase">Market Value</div><div style="font-size:22px;font-weight:800;color:#e8c46a">'+fm(totalMkt)+'</div></div>'
     +'</div>'
     +'<button class="report-btn" onclick="printIns()" style="width:100%">&#128424; Print / Save Insurance Report</button>'
     +'</div>'
     +'<div class="panel">'
     +'<div class="sec-title">Firearms Schedule</div>'
-    +guns.map(function(g,i){
+    +selGuns.map(function(g,i){
       var insVal=parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0;
       return '<div style="padding:10px 0;border-bottom:1px solid #252c38">'
         +'<div style="display:flex;justify-content:space-between;align-items:start">'
@@ -3964,15 +4107,19 @@ function rIns(){
 
 // ── THEFT / LOSS REPORT ───────────────────────────────────────────────
 function rTheft(){
-  return '<div class="panel" style="border-color:#ff707050">'
+  // REPORT-T12: filter to selected firearms
+  var selGuns=getSelectedGuns(guns);
+  var bar=_reportSelectionBar(guns);
+  if(!selGuns.length){ return bar+_reportEmptyBody(); }
+  return bar+'<div class="panel" style="border-color:#ff707050">'
     +'<div class="sec-title" style="color:#ff7070">&#128272; Theft / Loss Report</div>'
-    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:10px">Generated '+new Date().toLocaleDateString()+'</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:10px">Generated '+new Date().toLocaleDateString()+' &middot; '+selGuns.length+' firearm'+(selGuns.length!==1?'s':'')+'</div>'
     +'<div style="font-size:13px;color:#ffd060;background:#1a1000;border:1px solid #ffd06040;border-radius:6px;padding:10px;margin-bottom:14px">&#9888; In case of theft, file a police report immediately. Provide this document and your serial numbers to law enforcement.</div>'
     +'<button class="report-btn" onclick="printTheft()" style="width:100%;border-color:#ff707060;color:#ff7070">&#128424; Print / Save Theft Report</button>'
     +'</div>'
     +'<div class="panel">'
     +'<div class="sec-title">Serial Number Registry</div>'
-    +guns.map(function(g,i){
+    +selGuns.map(function(g,i){
       return '<div style="padding:10px 0;border-bottom:1px solid #252c38">'
         +'<div style="display:flex;justify-content:space-between;align-items:start">'
           +'<div>'
@@ -3993,38 +4140,48 @@ function rTheft(){
 
 // ── PRINT INSURANCE REPORT ────────────────────────────────────────────
 function printIns(){
-  var s=stats();
-  var totalIns=guns.reduce(function(t,g){return t+(parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0);},0);
+  // REPORT-T12: filter to selection
+  var selGuns=getSelectedGuns(guns);
+  if(!selGuns.length){ toast('No firearms selected','err'); return; }
+  var totalIns=selGuns.reduce(function(t,g){return t+(parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0);},0);
+  var totalMkt=selGuns.reduce(function(t,g){return t+(parseFloat(g.currentValue)||0);},0);
+  var roster=_reportSelectionRoster(guns);
   var W=window.open('','_blank');
-  var rows=guns.map(function(g,i){
+  var rows=selGuns.map(function(g,i){
     var insVal=parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0;
     return '<tr><td>'+(i+1)+'</td><td>'+g.make+' '+g.model+'</td><td>'+(g.type||'—')+'</td><td>'+g.caliber+'</td><td>'+(g.serialNumber||'N/A')+'</td><td>'+(g.year||'—')+'</td><td>'+g.condition+'</td><td style="text-align:right">'+fm(g.purchasePrice)+'</td><td style="text-align:right;font-weight:bold">'+fm(insVal)+'</td></tr>';
   }).join('');
   W.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Insurance Report - ArsenalDB</title><style>body{font-family:Georgia,serif;padding:40px;color:#000;max-width:900px;margin:0 auto}h1{margin:0;font-size:24px}h2{font-size:16px;color:#444;margin:4px 0 0}table{width:100%;border-collapse:collapse;margin-top:20px;font-size:12px}th{background:#1a1d24;color:#e8c46a;padding:8px;text-align:left}td{border:1px solid #ddd;padding:7px}tr:nth-child(even){background:#f9f9f9}.total{margin-top:20px;text-align:right;font-size:18px;font-weight:bold}.footer{margin-top:30px;font-size:11px;color:#999;border-top:1px solid #ccc;padding-top:10px}</style></head><body>');
   W.document.write('<h1>&#128196; Firearms Insurance Schedule</h1>');
-  W.document.write('<h2>ArsenalDB &mdash; Prepared '+new Date().toLocaleDateString()+'</h2>');
+  W.document.write('<h2>ArsenalDB &mdash; Prepared '+new Date().toLocaleDateString()+(reportSelection!==null?' &mdash; '+selGuns.length+' of '+guns.length+' firearms':'')+'</h2>');
+  W.document.write(roster);
   W.document.write('<table><thead><tr><th>#</th><th>Make &amp; Model</th><th>Type</th><th>Caliber</th><th>Serial Number</th><th>Year</th><th>Condition</th><th>Purchase Price</th><th>Insured Value</th></tr></thead><tbody>'+rows+'</tbody></table>');
   W.document.write('<div class="total">Total Insured Value: '+fm(totalIns)+'</div>');
-  W.document.write('<div class="total" style="font-size:14px;color:#555">Total Market Value: '+fm(s.totalValue)+'</div>');
-  W.document.write('<div class="footer">This document was generated by ArsenalDB on '+new Date().toLocaleDateString()+'. Total firearms: '+guns.length+'. Keep a copy with your insurance policy.</div>');
+  W.document.write('<div class="total" style="font-size:14px;color:#555">Total Market Value: '+fm(totalMkt)+'</div>');
+  W.document.write('<div class="footer">This document was generated by ArsenalDB on '+new Date().toLocaleDateString()+'. Total firearms: '+selGuns.length+(reportSelection!==null?' (selected from '+guns.length+')':'')+'. Keep a copy with your insurance policy.</div>');
   W.document.write('</body></html>');
   W.document.close();W.print();
 }
 
 // ── PRINT THEFT REPORT ────────────────────────────────────────────────
 function printTheft(){
+  // REPORT-T12: filter to selection
+  var selGuns=getSelectedGuns(guns);
+  if(!selGuns.length){ toast('No firearms selected','err'); return; }
+  var roster=_reportSelectionRoster(guns);
   var W=window.open('','_blank');
-  var rows=guns.map(function(g,i){
+  var rows=selGuns.map(function(g,i){
     var photos=((g.photos&&g.photos.length)?g.photos:(g.photo?[g.photo]:[]));
     var photoHtml=photos.length?'<img src="'+photos[0]+'" style="width:60px;height:45px;object-fit:cover;border:1px solid #ccc"/>':'<div style="width:60px;height:45px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:10px;color:#999">No photo</div>';
     return '<tr><td>'+photoHtml+'</td><td><strong>'+g.make+' '+g.model+'</strong></td><td>'+(g.type||'—')+'</td><td>'+g.caliber+'</td><td style="font-weight:bold;color:#c00">'+(g.serialNumber||'NOT RECORDED')+'</td><td>'+(g.year||'—')+'</td><td>'+g.condition+'</td><td>'+fm(g.currentValue)+'</td></tr>';
   }).join('');
   W.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Theft Report - ArsenalDB</title><style>body{font-family:Georgia,serif;padding:40px;color:#000;max-width:900px;margin:0 auto}h1{margin:0;font-size:24px;color:#c00}h2{font-size:14px;color:#444;margin:4px 0 20px}.warning{background:#fff3cd;border:2px solid #ffc107;padding:12px;border-radius:6px;margin-bottom:20px;font-size:13px}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#c00;color:#fff;padding:8px;text-align:left}td{border:1px solid #ddd;padding:7px;vertical-align:middle}tr:nth-child(even){background:#f9f9f9}.footer{margin-top:30px;font-size:11px;color:#999;border-top:1px solid #ccc;padding-top:10px}</style></head><body>');
   W.document.write('<h1>&#128272; Firearms Theft / Loss Report</h1>');
-  W.document.write('<h2>ArsenalDB &mdash; Generated '+new Date().toLocaleDateString()+'</h2>');
+  W.document.write('<h2>ArsenalDB &mdash; Generated '+new Date().toLocaleDateString()+(reportSelection!==null?' &mdash; '+selGuns.length+' of '+guns.length+' firearms':'')+'</h2>');
+  W.document.write(roster);
   W.document.write('<div class="warning">&#9888; <strong>IMPORTANT:</strong> File a police report immediately. Provide this document and all serial numbers to law enforcement. Contact your insurance company with this report.</div>');
   W.document.write('<table><thead><tr><th>Photo</th><th>Make &amp; Model</th><th>Type</th><th>Caliber</th><th>Serial Number</th><th>Year</th><th>Condition</th><th>Est. Value</th></tr></thead><tbody>'+rows+'</tbody></table>');
-  W.document.write('<div class="footer">Total firearms listed: '+guns.length+' &middot; Report generated by ArsenalDB &middot; '+new Date().toLocaleDateString()+'</div>');
+  W.document.write('<div class="footer">Total firearms listed: '+selGuns.length+(reportSelection!==null?' (selected from '+guns.length+')':'')+' &middot; Report generated by ArsenalDB &middot; '+new Date().toLocaleDateString()+'</div>');
   W.document.write('</body></html>');
   W.document.close();W.print();
 }
@@ -4154,7 +4311,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-J';   // bump on every revision
+var BUILD_TAG   = '2026-04-24-K';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -6122,20 +6279,31 @@ function bosComplete(){
 
 // ── CUSTODY REPORT VIEW ───────────────────────────────────────────────
 function rCustodyReport(){
-  var allWithCustody=guns.filter(function(g){return g.custody&&g.custody.length>0;});
-  var transferred=transferredGuns;
-  var totalEvents=guns.reduce(function(t,g){return t+(g.custody?g.custody.length:0);},0)
-    +transferred.reduce(function(t,g){return t+(g.custody?g.custody.length:0);},0);
-
-  if(!allWithCustody.length&&!transferred.length){
-    return '<div class="empty">'
+  // REPORT-T12: filter both active and transferred panels by selection.
+  // Pool for the picker on this tab = active guns + transferred guns.
+  var pool=guns.concat(transferredGuns||[]);
+  var bar=_reportSelectionBar(pool);
+  // Pre-empty if there are no custody records at all (across the whole pool)
+  var anyCustodyAnywhere=guns.some(function(g){return g.custody&&g.custody.length>0;})
+    || (transferredGuns||[]).some(function(g){return g.custody&&g.custody.length>0;});
+  if(!anyCustodyAnywhere){
+    return bar+'<div class="empty">'
       +'<div style="font-size:44px;margin-bottom:14px">&#128275;</div>'
       +'<div style="font-size:17px;font-weight:700;color:#d0d8e8;margin-bottom:6px">No Custody Records Yet</div>'
       +'<div style="font-size:14px;color:#4a5568">Open any firearm and tap the Chain of Custody section to start recording transfers</div>'
       +'</div>';
   }
+  // Apply selection filter — both panels respect it
+  var activeFiltered=getSelectedGuns(guns).filter(function(g){return g.custody&&g.custody.length>0;});
+  var transferredFiltered=getSelectedGuns(transferredGuns||[]);
+  // Empty after filter — user has selection but none of the picks have custody
+  if(!activeFiltered.length && !transferredFiltered.length){
+    return bar+_reportEmptyBody();
+  }
+  var totalEvents=activeFiltered.reduce(function(t,g){return t+(g.custody?g.custody.length:0);},0)
+    +transferredFiltered.reduce(function(t,g){return t+(g.custody?g.custody.length:0);},0);
 
-  var activeRows=allWithCustody.map(function(g){
+  var activeRows=activeFiltered.map(function(g){
     var latest=(g.custody||[]).slice(-1)[0];
     return '<div style="padding:12px 0;border-bottom:1px solid #252c38;cursor:pointer" onclick="editGun(\''+g.id+'\')">'
       +'<div style="display:flex;justify-content:space-between;align-items:start">'
@@ -6149,7 +6317,7 @@ function rCustodyReport(){
     +'</div>';
   }).join('');
 
-  var transferredRows=transferred.map(function(g){
+  var transferredRows=transferredFiltered.map(function(g){
     return '<div style="padding:12px 0;border-bottom:1px solid #252c38">'
       +'<div style="display:flex;justify-content:space-between;align-items:start">'
         +'<div>'
@@ -6162,22 +6330,26 @@ function rCustodyReport(){
     +'</div>';
   }).join('');
 
-  return '<div class="panel" style="border-color:#e8c46a40">'
+  return bar+'<div class="panel" style="border-color:#e8c46a40">'
     +'<div class="sec-title">&#128275; Chain of Custody Summary</div>'
     +'<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px">'
       +'<div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#e8c46a">'+totalEvents+'</div><div style="font-size:11px;color:#8a95a8;text-transform:uppercase">Total Events</div></div>'
-      +'<div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#60e880">'+allWithCustody.length+'</div><div style="font-size:11px;color:#8a95a8;text-transform:uppercase">Active w/ Records</div></div>'
-      +'<div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#ff7070">'+transferred.length+'</div><div style="font-size:11px;color:#8a95a8;text-transform:uppercase">Transferred Out</div></div>'
+      +'<div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#60e880">'+activeFiltered.length+'</div><div style="font-size:11px;color:#8a95a8;text-transform:uppercase">Active w/ Records</div></div>'
+      +'<div style="text-align:center"><div style="font-size:24px;font-weight:800;color:#ff7070">'+transferredFiltered.length+'</div><div style="font-size:11px;color:#8a95a8;text-transform:uppercase">Transferred Out</div></div>'
     +'</div>'
-    +(allWithCustody.length?'<button onclick="printAllCustody()" style="width:100%;background:#1e2535;border:2px solid #a0b8ff40;color:#a0b8ff;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:14px">&#9113; Print All Custody Records</button>':'')
+    +((activeFiltered.length||transferredFiltered.length)?'<button onclick="printAllCustody()" style="width:100%;background:#1e2535;border:2px solid #a0b8ff40;color:#a0b8ff;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:14px">&#9113; Print All Custody Records</button>':'')
     +'</div>'
-    +(allWithCustody.length?'<div class="panel"><div class="sec-title">Active Firearms with Custody Records</div>'+activeRows+'</div>':'')
-    +(transferred.length?'<div class="panel" style="border-color:#ff707030"><div class="sec-title" style="color:#ff7070">Transferred Out Archive</div>'+transferredRows+'</div>':'');
+    +(activeFiltered.length?'<div class="panel"><div class="sec-title">Active Firearms with Custody Records</div>'+activeRows+'</div>':'')
+    +(transferredFiltered.length?'<div class="panel" style="border-color:#ff707030"><div class="sec-title" style="color:#ff7070">Transferred Out Archive</div>'+transferredRows+'</div>':'');
 }
 
 function printAllCustody(){
+  // REPORT-T12: filter to selection over the combined pool
+  var pool=guns.concat(transferredGuns||[]);
+  var allGuns=getSelectedGuns(pool).filter(function(g){return g.custody&&g.custody.length>0;});
+  if(!allGuns.length){ toast('No firearms with custody records selected','err'); return; }
+  var roster=_reportSelectionRoster(pool);
   var W=window.open('','_blank');
-  var allGuns=guns.concat(transferredGuns).filter(function(g){return g.custody&&g.custody.length>0;});
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>All Custody Records</title>'
     +'<style>body{font-family:Georgia,serif;padding:40px;max-width:800px;margin:0 auto;color:#000}'
     +'h1{margin:0;font-size:22px}h2{color:#666;font-size:14px;font-weight:400;margin:4px 0 20px}'
@@ -6189,8 +6361,9 @@ function printAllCustody(){
     +'.event-type{background:#000;color:#e8c46a;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase}'
     +'footer{margin-top:30px;font-size:11px;color:#999;text-align:center;border-top:1px solid #ccc;padding-top:10px}'
     +'</style></head><body>';
-  html+='<h1>Chain of Custody — All Records</h1>';
-  html+='<h2>ArsenalDB &mdash; '+new Date().toLocaleDateString()+' &mdash; '+allGuns.length+' firearms</h2>';
+  html+='<h1>Chain of Custody — '+(reportSelection===null?'All Records':'Selected Records')+'</h1>';
+  html+='<h2>ArsenalDB &mdash; '+new Date().toLocaleDateString()+' &mdash; '+allGuns.length+' firearm'+(allGuns.length!==1?'s':'')+(reportSelection!==null?' (selected from '+pool.length+')':'')+'</h2>';
+  html+=roster;
 
   allGuns.forEach(function(g){
     html+='<div class="gun-section">';
@@ -6216,7 +6389,7 @@ function printAllCustody(){
     html+='</div>';
   });
 
-  html+='<footer>ArsenalDB Chain of Custody &middot; All Records &middot; '+new Date().toLocaleDateString()+'</footer>';
+  html+='<footer>ArsenalDB Chain of Custody &middot; '+(reportSelection===null?'All Records':'Selected Records')+' &middot; '+new Date().toLocaleDateString()+'</footer>';
   html+='</body></html>';
   W.document.write(html);
   W.document.close();
@@ -8205,6 +8378,12 @@ function rDet(){
   '<div class="panel" style="border-color:#e8c46a40"><div style="display:flex;gap:18px;flex-wrap:wrap">'+ph+
   '<div style="flex:1;min-width:200px"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px"><div><div style="font-size:24px;font-weight:700;color:#f0f2f5">'+eh(g.make)+' '+eh(g.model)+'</div><div style="color:#a0aab8;font-size:14px;margin-top:4px">'+eh(g.type||'')+(g.type?' · ':'')+eh(g.caliber)+'</div><div style="color:#7a8598;font-size:13px;margin-top:3px">SN: '+(eh(g.serialNumber)||'N/A')+(g.year?' · '+eh(g.year):'')+'</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:700;color:#e8c46a">'+fm(g.currentValue)+'</div><div style="font-size:12px;color:#8a95a8">current value</div><div style="margin-top:6px">'+bj(g.condition,CC[g.condition]||'#8a95a8')+'</div></div></div>'+
   '<div style="margin-top:11px;display:flex;gap:18px;flex-wrap:wrap"><span style="color:'+(g.working?'#60e880':'#ff7070')+';font-size:14px;font-weight:700">'+(g.working?'✓ Operational':'✗ Needs Repair')+'</span>'+(g.purchasePrice?'<span style="color:#8a95a8;font-size:13px">Paid: '+fm(g.purchasePrice)+'</span>':'')+(gainStr?'<span style="color:'+(gain>=0?'#60e880':'#ff7070')+';font-size:13px;font-weight:600">'+gainStr+'</span>':'')+'</div>'+investedRow+'</div></div></div>'+
+  // REPORT-T12: per-firearm quick-report shortcuts
+  '<div style="display:flex;gap:6px;margin-bottom:14px">'
+    +'<button onclick="_reportFromDetail(\''+g.id+'\',\'ins\')" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #a0c0ff40;border-radius:8px;color:#a0c0ff;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">&#128196; Insurance</button>'
+    +'<button onclick="_reportFromDetail(\''+g.id+'\',\'theft\')" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #ff707040;border-radius:8px;color:#ff7070;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">&#128272; Theft</button>'
+    +'<button onclick="_reportFromDetail(\''+g.id+'\',\'custody\')" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #e8c46a40;border-radius:8px;color:#e8c46a;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">&#128275; Custody</button>'
+  +'</div>'+
   '<div class="tabs"><button class="tab'+(dTab==='mnt'?' on':'')+'" onclick="dTab=\'mnt\';rnd()"><span class="tab-icon">⚙</span>Maintenance</button><button class="tab'+(dTab==='info'?' on':'')+'" onclick="dTab=\'info\';rnd()"><span class="tab-icon">ⓘ</span>Info</button><button class="tab'+(dTab==='sch'?' on':'')+'" onclick="dTab=\'sch\';rnd()"><span class="tab-icon">🔩</span>Schematics</button><button class="tab'+(dTab==='range'?' on':'')+'" onclick="dTab=\'range\';rnd()"><span class="tab-icon">🎯</span>Range</button><button class="tab'+(dTab==='coc'?' on':'')+'" onclick="dTab=\'coc\';rnd()"><span class="tab-icon">&#128275;</span>Custody</button></div>'+tc;
 }
 
