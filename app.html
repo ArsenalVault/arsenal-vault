@@ -1771,6 +1771,50 @@ function _pushViewState(){
   if(VIEW==='reports'){st.reportTab=reportTab;}
   _viewHistory.push(st);
 }
+
+// ── DEVICE BACK BUTTON HANDLING (2026-04-25-A) ──────────────────────
+// Sentinel-state pattern: trap the OS back button via popstate, route
+// through handleBack() (which already covers modals/ham/views/unsaved),
+// and at dashboard root show an exit confirmation. STAY is the primary
+// action (gold), Exit App is secondary (red border) — accidental back
+// presses far outnumber intentional exits.
+//
+// Note: a prior implementation was removed in an earlier build. This
+// is the reinstated version with the new hierarchy-first design.
+var _arsenalExitInProgress = false;
+
+function _armBackSentinel(){
+  if(history.state && history.state.arsenalSentinel) return;
+  try{ history.pushState({arsenalSentinel:1}, '', location.href); }catch(e){}
+}
+
+function _showExitConfirm(){
+  if(document.getElementById('exit_modal')) return;
+  var m=document.createElement('div');
+  m.id='exit_modal';
+  m.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML='<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:24px;max-width:320px;width:100%;text-align:center">'
+    +'<div style="font-size:17px;font-weight:700;color:#e8c46a;margin-bottom:8px;letter-spacing:.02em">Exit ArsenalDB?</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:22px;line-height:1.6">You can always reopen from your home screen.</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+      +'<button onclick="document.getElementById(\'exit_modal\').remove()" style="background:#e8c46a;color:#1a1d24;border:none;padding:14px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.05em">STAY</button>'
+      +'<button onclick="_doExit()" style="background:#1a1d24;border:2px solid #ff707060;color:#ff7070;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Exit App</button>'
+    +'</div>'
+    +'</div>';
+  m.onclick=function(e){if(e.target===m)m.remove();};
+  document.body.appendChild(m);
+  if(typeof haptic==='function') haptic('light');
+}
+
+function _doExit(){
+  var m=document.getElementById('exit_modal'); if(m) m.remove();
+  _arsenalExitInProgress=true;
+  // Two pops: sentinel + entry. On standalone PWA Android this exhausts
+  // history and closes the activity. On browser tab, navigates back.
+  try{ history.go(-2); }catch(e){ try{ history.back(); }catch(e2){} }
+}
+// ── END DEVICE BACK BUTTON HANDLING ─────────────────────────────────
+
 function go(v){
   // REPORT-T12: clear ephemeral report selection when leaving Reports view
   if(VIEW==='reports' && v!=='reports'){ clearReportSelection(); }
@@ -4640,7 +4684,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-O';   // bump on every revision
+var BUILD_TAG   = '2026-04-25-A';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -5270,7 +5314,10 @@ function handleBack(){
   if(VIEW==='reports'){haptic('light');go('dashboard');return;}
   if(VIEW==='add'){haptic('light');go('list');return;}
   if(VIEW==='pic'){haptic('light');go('list');return;}
-  // dashboard and anything else: silent no-op — already at home
+  // dashboard root: device back button shows exit confirmation
+  // (in-app fab-back is hidden at dashboard, so this branch is reached
+  // almost exclusively via the popstate handler / OS back button)
+  if(typeof _showExitConfirm==='function') _showExitConfirm();
 }
 
 function _hasUnsavedChanges(){
@@ -5305,8 +5352,9 @@ function showUnsavedWarning(){
   haptic('error');
 }
 
-// (showExitConfirm, doExitApp, _exiting removed — no longer used once
-//  in-app Back button replaced the system-back interception.)
+// (Prior showExitConfirm/doExitApp removed in an earlier build; reinstated
+//  in 2026-04-25-A above with new hierarchy-first design — STAY is the
+//  prominent primary action, Exit App is the secondary deliberate tap.)
 
 
 // ── DUPLICATE FIREARM ─────────────────────────────────────────────────
@@ -13264,6 +13312,13 @@ initSwipeNav();
   document.addEventListener('touchstart', unlockAudio);
   document.addEventListener('click', unlockAudio);
   checkNFCScan();
+  // Device back button trap (2026-04-25-A) — see _showExitConfirm above
+  _armBackSentinel();
+  window.addEventListener('popstate', function(e){
+    if(_arsenalExitInProgress) return;
+    try{ if(typeof handleBack==='function') handleBack(); }catch(err){ console.warn('back handler error', err); }
+    _armBackSentinel();
+  });
   ld(); // rnd() called inside ld() after async DB load
 })();
 </script>
