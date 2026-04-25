@@ -1792,14 +1792,14 @@ function _showExitConfirm(){
   if(document.getElementById('exit_modal')) return;
   var m=document.createElement('div');
   m.id='exit_modal';
-  m.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-  m.innerHTML='<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:24px;max-width:320px;width:100%;text-align:center">'
-    +'<div style="font-size:17px;font-weight:700;color:#e8c46a;margin-bottom:8px;letter-spacing:.02em">Exit ArsenalDB?</div>'
-    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:22px;line-height:1.6">You can always reopen from your home screen.</div>'
-    +'<div style="display:flex;flex-direction:column;gap:8px">'
-      +'<button onclick="document.getElementById(\'exit_modal\').remove()" style="background:#e8c46a;color:#1a1d24;border:none;padding:14px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.05em">STAY</button>'
-      +'<button onclick="_doExit()" style="background:#1a1d24;border:2px solid #ff707060;color:#ff7070;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Exit App</button>'
-    +'</div>'
+  m.style.cssText='position:fixed;inset:0;background:#000000e6;z-index:10050;display:flex;align-items:center;justify-content:center;padding:20px';
+  var lockIcon=(typeof _iM==='function')?_iM('lock',34):'';
+  m.innerHTML='<div style="background:linear-gradient(135deg,#1a1d24,#222835);border:2px solid #e8c46a60;border-radius:18px;padding:30px 24px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 70px #000b">'
+    +'<div style="width:62px;height:62px;margin:0 auto 16px;border-radius:50%;border:2px solid #e8c46a60;display:flex;align-items:center;justify-content:center;color:#e8c46a;background:#e8c46a12">'+lockIcon+'</div>'
+    +'<div style="font-size:20px;font-weight:900;color:#e8c46a;margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase">Exit ArsenalDB?</div>'
+    +'<div style="font-size:13px;color:#aeb8c7;line-height:1.65;margin-bottom:22px">You are about to leave your private armory vault. Stay in the app if you pressed back by accident.</div>'
+    +'<button onclick="document.getElementById(\'exit_modal\').remove()" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;margin-bottom:9px;letter-spacing:.05em">STAY IN ARSENALDB</button>'
+    +'<button onclick="_doExit()" style="width:100%;background:#151a22;border:1px solid #ff707050;color:#ff9090;padding:12px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.03em">Exit App</button>'
     +'</div>';
   m.onclick=function(e){if(e.target===m)m.remove();};
   document.body.appendChild(m);
@@ -1809,9 +1809,20 @@ function _showExitConfirm(){
 function _doExit(){
   var m=document.getElementById('exit_modal'); if(m) m.remove();
   _arsenalExitInProgress=true;
-  // Two pops: sentinel + entry. On standalone PWA Android this exhausts
-  // history and closes the activity. On browser tab, navigates back.
-  try{ history.go(-2); }catch(e){ try{ history.back(); }catch(e2){} }
+  // Honest exit mechanic: try window.close (works in some installed PWA
+  // contexts), fall back to single history.back. If app is still alive
+  // ~400ms later, show toast guidance and reset the flag so the next
+  // back press behaves normally — fixes flag-stickiness from -A.
+  try{ window.close(); }catch(e){}
+  try{ history.back(); }catch(e){}
+  setTimeout(function(){
+    // Still here — programmatic exit didn't fire. Guide the user.
+    _arsenalExitInProgress=false;
+    _armBackSentinel();
+    if(typeof toast==='function'){
+      toast('Tap back once more to exit ArsenalDB','warn');
+    }
+  }, 400);
 }
 // ── END DEVICE BACK BUTTON HANDLING ─────────────────────────────────
 
@@ -4684,7 +4695,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-25-A';   // bump on every revision
+var BUILD_TAG   = '2026-04-25-B';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -5299,9 +5310,12 @@ var _swipeStartX=0;
 var _swipeStartY=0;
 
 function handleBack(){
-  // Close any open modal first
-  var modals=['qr_modal','label_modal','settings_modal','print_menu',
-    'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal','exit_modal'];
+  // Close any open modal first (audited 2026-04-25-B against actual modal IDs in the codebase)
+  var modals=['qr_modal','qrt_modal','label_modal','settings_modal','print_menu',
+    'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal',
+    'pin_forgot_modal','exit_modal','bos_modal','inv_cap_modal','magnifier_modal',
+    'merge_conflicts_modal','merge_preview_modal','pro_gate_modal','profile_modal',
+    'range_detail_modal','range_form_modal'];
   for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();return;}}
   // Close hamburger menu
   if(hamOpen){closeHam();return;}
@@ -13318,6 +13332,16 @@ initSwipeNav();
     if(_arsenalExitInProgress) return;
     try{ if(typeof handleBack==='function') handleBack(); }catch(err){ console.warn('back handler error', err); }
     _armBackSentinel();
+  });
+  // 2026-04-25-B: when the app comes back to focus (resume from background,
+  // tab refocus), reset any stuck exit flag and re-arm the sentinel — this
+  // fixes the case where _arsenalExitInProgress stayed true across the
+  // app being backgrounded and reopened, silently disabling the back guard.
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden){
+      _arsenalExitInProgress=false;
+      _armBackSentinel();
+    }
   });
   ld(); // rnd() called inside ld() after async DB load
 })();
