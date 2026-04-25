@@ -801,7 +801,7 @@ td{padding:13px 14px;font-size:15px;border-bottom:1px solid #252c38;vertical-ali
 .tab-h:active{transform:translateY(1px)}
 .tab-h.on{background:#e8c46a;border-color:#e8c46a;color:#1a1d24;font-weight:800;box-shadow:inset 0 1px 0 #ffffff30,0 2px 6px #e8c46a40}
 .empty{text-align:center;padding:50px 20px;color:#8a95a8}
-.toast{position:fixed;bottom:22px;right:22px;z-index:9999;padding:13px 22px;border-radius:8px;font-size:14px;display:none;font-weight:600}
+.toast{position:fixed;bottom:22px;right:22px;z-index:10000;padding:13px 22px;border-radius:8px;font-size:14px;display:none;font-weight:600}
 .toast.ok{background:#0d1f12;border:2px solid #60e880;color:#60e880}
 .toast.err{background:#1f0d0d;border:2px solid #ff7070;color:#ff7070}
 .wbtns{display:flex;gap:8px;margin-top:4px}
@@ -4154,7 +4154,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-24-I';   // bump on every revision
+var BUILD_TAG   = '2026-04-24-J';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -4453,8 +4453,8 @@ function openSettings(){
     + _BYO_renderSettingsSection()
     +'<div style="background:#0f1218;border:1px solid #2a3140;border-radius:10px;padding:16px;margin-bottom:12px">'
         +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8a95a8;margin-bottom:4px">Help</div>'
-        +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px">Replay the welcome tours next time you open the app.</div>'
-        +'<button onclick="_ONB_resetAll();toast(\'Tours reset \u2014 reload app to replay\');" style="width:100%;background:transparent;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Replay onboarding tours</button>'
+        +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px">Replay the welcome tours from the start. The app will reload.</div>'
+        +'<button onclick="this.disabled=true;this.textContent=\'\u2713 Tours reset \u2014 reloading\u2026\';this.style.opacity=\'0.7\';_ONB_resetAll();toast(\'Tours reset \u2014 reloading\u2026\');setTimeout(function(){location.reload();},800);" style="width:100%;background:transparent;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Replay onboarding tours</button>'
       +'</div>'
     +'<button onclick="document.getElementById(\'settings_modal\').remove()" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Done</button>'
     +'<div id="settings_ver" style="text-align:center;font-size:11px;color:#4a5568;margin-top:10px">ArsenalDB v'+APP_VERSION+' &middot; '+BUILD_TAG+'</div>'
