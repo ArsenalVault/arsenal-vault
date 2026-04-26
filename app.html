@@ -4712,7 +4712,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-25-E';   // bump on every revision
+var BUILD_TAG   = '2026-04-25-F';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -13465,12 +13465,17 @@ initSwipeNav();
     // Otherwise (null state or unknown) — let the navigation happen.
   });
   // 2026-04-25-B: when the app comes back to focus, reset any stuck exit
-  // flag from a prior _doExit attempt. Don't push a new sentinel here —
-  // existing browser history is preserved on resume in standalone PWA
-  // mode, so a sentinel from before backgrounding is still in place.
+  // flag from a prior _doExit attempt.
+  // 2026-04-25-F: ALSO re-arm the sentinel — Android camera intent and
+  // file pickers can consume the existing history entry during their
+  // navigation, so when we return to the app there's no sentinel left.
+  // The next back press would then navigate out of the current view
+  // (e.g. Add Firearm → Dashboard with the photo lost). Restoring the
+  // sentinel here keeps the back guard armed across these transitions.
   document.addEventListener('visibilitychange', function(){
     if(!document.hidden){
       _arsenalExitInProgress=false;
+      _armBackSentinel();
     }
   });
   ld(); // rnd() called inside ld() after async DB load
