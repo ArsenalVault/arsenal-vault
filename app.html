@@ -1747,7 +1747,15 @@ var _DBG_MAX = 40;
 var _DBG_lastView = null;
 
 function _DBG_init(){
-  try{ _DBG_PHOTO = localStorage.getItem('av_debug_photo')==='1'; }catch(e){}
+  // Enable via either localStorage flag OR ?debug=photo URL parameter.
+  // URL param sets the localStorage flag too, so it persists across reloads.
+  try{
+    var qs = new URLSearchParams(window.location.search || '');
+    if(qs.get('debug') === 'photo'){
+      try{ localStorage.setItem('av_debug_photo','1'); }catch(e){}
+    }
+    _DBG_PHOTO = localStorage.getItem('av_debug_photo')==='1';
+  }catch(e){}
   if(!_DBG_PHOTO) return;
   var p = document.createElement('div');
   p.id = '_dbg_panel';
@@ -1757,7 +1765,8 @@ function _DBG_init(){
     +   '<span style="font-weight:700">PHOTO TRACE</span>'
     +   '<span>'
     +     '<button onclick="_DBG_clear()" style="background:#222;color:#e8c46a;border:1px solid #e8c46a40;padding:1px 6px;font-size:10px;cursor:pointer;font-family:inherit;margin-right:2px">CLR</button>'
-    +     '<button onclick="_DBG_copy()" style="background:#222;color:#e8c46a;border:1px solid #e8c46a40;padding:1px 6px;font-size:10px;cursor:pointer;font-family:inherit">CPY</button>'
+    +     '<button onclick="_DBG_copy()" style="background:#222;color:#e8c46a;border:1px solid #e8c46a40;padding:1px 6px;font-size:10px;cursor:pointer;font-family:inherit;margin-right:2px">CPY</button>'
+    +     '<button onclick="_DBG_disable()" style="background:#222;color:#ff7070;border:1px solid #ff707040;padding:1px 6px;font-size:10px;cursor:pointer;font-family:inherit">OFF</button>'
     +   '</span>'
     + '</div>'
     + '<div id="_dbg_state" style="border-bottom:1px solid #e8c46a40;padding-bottom:4px;margin-bottom:4px;flex-shrink:0;font-size:9px;color:#a8b8c8;line-height:1.4"></div>'
@@ -1796,6 +1805,18 @@ function _DBG_renderState(){
 }
 
 function _DBG_clear(){ _DBG_LOG = []; var l=document.getElementById('_dbg_log'); if(l) l.textContent=''; }
+
+function _DBG_disable(){
+  try{ localStorage.removeItem('av_debug_photo'); }catch(e){}
+  // Strip ?debug=photo from URL if present, otherwise reload would re-enable.
+  try{
+    var u = new URL(window.location.href);
+    u.searchParams.delete('debug');
+    window.location.replace(u.toString());
+  }catch(e){
+    window.location.reload();
+  }
+}
 
 function _DBG_copy(){
   try{
@@ -4823,7 +4844,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-26-C';   // bump on every revision
+var BUILD_TAG   = '2026-04-26-D';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
