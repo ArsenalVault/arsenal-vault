@@ -267,7 +267,9 @@ nav .inner {
 }
 .feature-card:hover::before { opacity:1; }
 .feature-icon {
-  font-size:28px; margin-bottom:14px;
+  width:28px; height:28px;
+  color:var(--gold);
+  margin-bottom:14px;
   display:block;
 }
 .feature-name {
@@ -351,11 +353,19 @@ nav .inner {
   border-bottom:1px solid rgba(255,255,255,0.04);
   display:flex; align-items:center; gap:10px;
 }
-.price-list li::before {
-  content:'✓';
+.price-list li svg {
+  width:13px; height:13px;
   color:var(--green);
-  font-weight:700; font-size:13px;
   flex-shrink:0;
+}
+.price-badge {
+  font-size:10px;
+  font-weight:700;
+  color: var(--gold-dim);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  margin-top:-2px;
+  margin-bottom:10px;
 }
 
 /* ── COMING SOON ─────────────────────────────────────────── */
@@ -386,7 +396,7 @@ nav .inner {
   padding:4px 36px;
   transform:rotate(35deg);
 }
-.cs-icon { font-size:32px; margin-bottom:14px; }
+.cs-icon { width:32px; height:32px; color:var(--gold); margin-bottom:14px; display:block; }
 .cs-name {
   font-family:'Barlow Condensed', sans-serif;
   font-size:20px; font-weight:800;
@@ -433,7 +443,7 @@ nav .inner {
   display:flex; gap:24px;
   align-items:flex-start;
 }
-.privacy-icon { font-size:36px; flex-shrink:0; }
+.privacy-icon { width:36px; height:36px; color:var(--gold); flex-shrink:0; }
 .privacy-title {
   font-family:'Barlow Condensed', sans-serif;
   font-size:22px; font-weight:800;
@@ -499,6 +509,22 @@ footer {
 </head>
 <body>
 
+<!-- TACTICAL ICON SPRITE — synced from app.html M-* set -->
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg">
+<symbol id="M-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path d="m8 12 2.4 2.4L16 9" stroke-width="2.25"/></symbol>
+<symbol id="M-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" d="M8.5 11h7v5h-7z"/><path d="M10 11V9.5a2 2 0 0 1 4 0V11" stroke-width="2"/></symbol>
+<symbol id="M-document" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" fill-rule="evenodd" d="M8 6h6l3 3v8H8Zm6 0v3h3Zm-4 6h4v1h-4z"/></symbol>
+<symbol id="M-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><circle cx="12" cy="12" r="4.7"/><circle cx="12" cy="12" r="2.8"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="M-bolt-nut" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" fill-rule="evenodd" d="m12 6.9 4.5 2.6v5L12 17.1l-4.5-2.6v-5Zm0 3.1a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></symbol>
+<symbol id="M-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path d="M8 16.5h8" stroke-width="1.5"/><path fill="currentColor" d="M9.4 13h1.5v3H9.4zM11.25 10h1.5v6h-1.5zM13.1 11.5h1.5v4.5h-1.5z"/></symbol>
+<symbol id="M-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><rect x="7" y="9.5" width="6" height="3" rx="1.5" stroke-width="1.5"/><rect x="11" y="11.5" width="6" height="3" rx="1.5" stroke-width="1.5"/></symbol>
+<symbol id="M-mobile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><rect x="9" y="7" width="6" height="10" rx="1" stroke-width="1.5"/><path d="M11 8.5h2" stroke-width="1"/><circle cx="12" cy="15.4" r=".55" fill="currentColor" stroke="none"/></symbol>
+<symbol id="M-magnifier" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><circle cx="11" cy="11" r="2.7" stroke-width="1.5"/><path d="m13 13 2.5 2.5" stroke-width="1.8"/></symbol>
+<symbol id="M-ai" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><rect x="9" y="9" width="6" height="6" stroke-width="1.4"/><path fill="currentColor" d="M11 11h2v2h-2z"/><path d="M9 11.5H7.7M9 13H7.7M16.3 11.5H15M16.3 13H15M11.5 9V7.7M13 9V7.7M11.5 16.3V15M13 16.3V15" stroke-width="1.1"/></symbol>
+<symbol id="M-badge-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><polygon fill="currentColor" stroke="none" points="12,8 12.93,10.71 15.8,10.76 13.51,12.49 14.35,15.24 12,13.59 9.65,15.24 10.49,12.49 8.2,10.76 11.07,10.71"/></symbol>
+<symbol id="M-storefront" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" d="M7 9h10l-.7 2H7.7z"/><path d="M8 11v5.5h8V11" stroke-width="1.4"/><path fill="currentColor" d="M11 13h2v3.5h-2z"/></symbol>
+</svg>
+
 <!-- NAV -->
 <nav>
   <div class="inner">
@@ -547,55 +573,55 @@ footer {
     <div class="feature-grid">
 
       <div class="feature-card fade-up d1">
-        <span class="feature-icon">📋</span>
+        <svg class="feature-icon"><use href="#M-document"/></svg>
         <div class="feature-name">Full Inventory</div>
         <p class="feature-desc">Track make, model, caliber, serial, value, condition, photos, storage location, ammo, and 30+ fields per firearm.</p>
       </div>
 
       <div class="feature-card fade-up d2">
-        <span class="feature-icon">📊</span>
+        <svg class="feature-icon"><use href="#M-chart"/></svg>
         <div class="feature-name">Dashboard &amp; Reports</div>
         <p class="feature-desc">Total value, cost basis, gain/loss, maintenance status, insurance readiness, and theft reporting — all at a glance.</p>
       </div>
 
       <div class="feature-card fade-up d3">
-        <span class="feature-icon">🔩</span>
+        <svg class="feature-icon"><use href="#M-bolt-nut"/></svg>
         <div class="feature-name">Schematics &amp; Parts<span class="feature-pro">Pro</span></div>
         <p class="feature-desc">Built-in field strip guides for popular firearms. Disassembly steps, parts lists, diagrams, and safety warnings.</p>
       </div>
 
       <div class="feature-card fade-up d1">
-        <span class="feature-icon">📄</span>
+        <svg class="feature-icon"><use href="#M-document"/></svg>
         <div class="feature-name">Bill of Sale<span class="feature-pro">Pro</span></div>
         <p class="feature-desc">5-step transfer wizard with buyer/seller info, attestations, signatures, and PDF generation. Handles private and FFL transfers.</p>
       </div>
 
       <div class="feature-card fade-up d2">
-        <span class="feature-icon">🔗</span>
+        <svg class="feature-icon"><use href="#M-link"/></svg>
         <div class="feature-name">Chain of Custody</div>
         <p class="feature-desc">Full audit trail for every firearm. Log sales, loans, repairs, inheritance, storage changes — with timestamps and acknowledgment tracking.</p>
       </div>
 
       <div class="feature-card fade-up d3">
-        <span class="feature-icon">🎯</span>
+        <svg class="feature-icon"><use href="#M-target"/></svg>
         <div class="feature-name">Range Sessions</div>
         <p class="feature-desc">Log range visits with firearms used, rounds fired, distance, accuracy ratings, and photos. Track total round counts automatically.</p>
       </div>
 
       <div class="feature-card fade-up d1">
-        <span class="feature-icon">📱</span>
+        <svg class="feature-icon"><use href="#M-mobile"/></svg>
         <div class="feature-name">QR &amp; NFC Sharing</div>
         <p class="feature-desc">Generate QR codes for any firearm. Write NFC tags. Transfer firearm data between devices with a scan.</p>
       </div>
 
       <div class="feature-card fade-up d2">
-        <span class="feature-icon">🔍</span>
+        <svg class="feature-icon"><use href="#M-magnifier"/></svg>
         <div class="feature-name">Serial Magnifier</div>
         <p class="feature-desc">Use your phone camera as a lighted magnifier with zoom, freeze, and grid overlay to read worn serial numbers.</p>
       </div>
 
       <div class="feature-card fade-up d3">
-        <span class="feature-icon">🤖</span>
+        <svg class="feature-icon"><use href="#M-ai"/></svg>
         <div class="feature-name">
           AI Features
           <span class="feature-pro">Pro+</span>
@@ -619,46 +645,48 @@ footer {
         <div class="price-amount">$0</div>
         <div class="price-period">Forever</div>
         <ul class="price-list">
-          <li>Up to 5 firearms</li>
-          <li>Single collection</li>
-          <li>Full inventory tracking</li>
-          <li>Dashboard &amp; reports</li>
-          <li>Range session logging</li>
-          <li>QR codes &amp; NFC sharing</li>
-          <li>Serial magnifier</li>
-          <li>Chain of custody</li>
-          <li>Backup &amp; restore</li>
+          <li><svg><use href="#M-check"/></svg>Up to 5 firearms</li>
+          <li><svg><use href="#M-check"/></svg>Single collection</li>
+          <li><svg><use href="#M-check"/></svg>Full inventory tracking</li>
+          <li><svg><use href="#M-check"/></svg>Dashboard &amp; reports</li>
+          <li><svg><use href="#M-check"/></svg>Range session logging</li>
+          <li><svg><use href="#M-check"/></svg>QR codes &amp; NFC sharing</li>
+          <li><svg><use href="#M-check"/></svg>Serial magnifier</li>
+          <li><svg><use href="#M-check"/></svg>Chain of custody</li>
+          <li><svg><use href="#M-check"/></svg>Backup &amp; restore</li>
         </ul>
         <a href="app.html" class="btn-secondary" style="display:block; text-align:center;">Get Started</a>
       </div>
 
       <div class="price-card featured fade-up d2">
         <div class="price-tier gold">Pro</div>
+        <div class="price-badge">No Subscriptions · No Surprise Bills</div>
         <div class="price-amount">$9.99</div>
         <div class="price-period">One-time purchase</div>
         <ul class="price-list">
-          <li>Unlimited firearms</li>
-          <li>Single collection</li>
-          <li>Everything in Free</li>
-          <li>Built-in schematics &amp; parts</li>
-          <li>Bill of Sale wizard &amp; PDF</li>
-          <li>Print sheets &amp; CSV export</li>
+          <li><svg><use href="#M-check"/></svg>Unlimited firearms</li>
+          <li><svg><use href="#M-check"/></svg>Single collection</li>
+          <li><svg><use href="#M-check"/></svg>Everything in Free</li>
+          <li><svg><use href="#M-check"/></svg>Built-in schematics &amp; parts</li>
+          <li><svg><use href="#M-check"/></svg>Bill of Sale wizard &amp; PDF</li>
+          <li><svg><use href="#M-check"/></svg>Print sheets &amp; CSV export</li>
         </ul>
         <a href="app.html" class="btn-primary" style="display:block; text-align:center;">Upgrade to Pro</a>
       </div>
 
       <div class="price-card fade-up d3">
         <div class="price-tier gold">Pro+</div>
-        <div class="price-amount" style="font-size:32px">$9.99 <span style="font-size:18px;color:var(--text-sec);font-weight:600">+</span> <span style="font-size:28px">$3.99</span><span style="font-size:14px;color:var(--text-sec);font-weight:500">/mo</span></div>
-        <div class="price-period">One-time + optional monthly AI</div>
+        <div class="price-badge">No Subscriptions · No Surprise Bills</div>
+        <div class="price-amount">$19.99</div>
+        <div class="price-period">One-time purchase</div>
         <ul class="price-list">
-          <li>Everything in Pro</li>
-          <li>Multiple collections</li>
-          <li>Merge inventories from multiple users</li>
-          <li>AI Gun Identifier</li>
-          <li>AI Repair Diagnosis</li>
-          <li>AI Schematics — any firearm</li>
-          <li>Toggle AI on/off — pay only when you need it</li>
+          <li><svg><use href="#M-check"/></svg>Everything in Pro</li>
+          <li><svg><use href="#M-check"/></svg>Multiple collections</li>
+          <li><svg><use href="#M-check"/></svg>Merge inventories from multiple users</li>
+          <li><svg><use href="#M-check"/></svg>AI Gun Identifier</li>
+          <li><svg><use href="#M-check"/></svg>AI Repair Diagnosis</li>
+          <li><svg><use href="#M-check"/></svg>AI Schematics — any firearm</li>
+          <li><svg><use href="#M-check"/></svg>Install on 2 devices</li>
         </ul>
         <a href="app.html" class="btn-primary" style="display:block; text-align:center;">Upgrade to Pro+</a>
       </div>
@@ -675,7 +703,7 @@ footer {
     <div class="cs-grid">
 
       <div class="cs-card fade-up d1">
-        <div class="cs-icon">🏪</div>
+        <svg class="cs-icon"><use href="#M-storefront"/></svg>
         <div class="cs-name">FFL Dealer Solutions</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--gold);margin-bottom:2px">$29.99<span style="font-size:14px;color:var(--text-sec);font-weight:500">/mo</span></div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Everything in Pro+ included</div>
@@ -684,7 +712,7 @@ footer {
       </div>
 
       <div class="cs-card fade-up d2">
-        <div class="cs-icon">🛡️</div>
+        <svg class="cs-icon"><use href="#M-badge-star"/></svg>
         <div class="cs-name">Law Enforcement &amp; Agency</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--text-sec);margin-bottom:2px">Custom Pricing</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Tailored to your department's needs</div>
@@ -699,7 +727,7 @@ footer {
 <!-- PRIVACY -->
 <section class="privacy-block">
   <div class="privacy-inner fade-up">
-    <div class="privacy-icon">🔒</div>
+    <svg class="privacy-icon"><use href="#M-lock"/></svg>
     <div>
       <div class="privacy-title">Your Data Never Leaves Your Device</div>
       <p class="privacy-text">
