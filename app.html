@@ -4158,7 +4158,7 @@ function rAdd(){
     +'<div><span style="font-size:11px;color:#8a95a8">DIY FRIENDLY: </span><span style="font-size:14px;font-weight:700;color:'+(aiDiag.diyFriendly?'#60e880':'#ff7070')+'">'+(aiDiag.diyFriendly?'Yes':'No — See a gunsmith')+'</span></div></div>':'';
 
   var rep=(!f.working)?'<div class="form-group" style="margin-top:16px"><label class="lbl">Describe the Issue</label>'
-    +'<textarea id="f_rep" placeholder="What is wrong with this firearm?">'+eh(f.repairNotes)+'</textarea></div>'
+    +'<textarea id="f_rep" placeholder="What is wrong with this firearm?" oninput="FORM.repairNotes=this.value">'+eh(f.repairNotes)+'</textarea></div>'
     +'<button class="btn-ai" style="margin-top:11px" onclick="doDiag()"'+(aiLoad==='diag'?' disabled':'')+'>'+( aiLoad==='diag'?'<span class="spinning">&#8635;</span> Diagnosing...':'✦ AI Gunsmith Diagnosis')+'</button>'+adb:'';
 
   // Photo grid
@@ -4184,7 +4184,7 @@ function rAdd(){
       +'<div class="panel"><div class="sec-title">⚡ Quick Add — Essential Fields Only</div>'
       +'<div class="form-grid">'
       +'<div class="form-group"><label class="lbl">Make *</label><div class="ac-wrap"><input type="text" id="f_make" value="'+eh(f.make)+'" placeholder="e.g. Smith &amp; Wesson" autocomplete="off" oninput="acInput(this.value)" onkeydown="acKey(event)" onblur="acBlur()"/><div id="ac_list" class="ac-list"></div></div></div>'
-      +'<div class="form-group"><label class="lbl">Model *</label><input type="text" id="f_model" value="'+eh(f.model)+'" placeholder="e.g. 686, G19"/></div>'
+      +'<div class="form-group"><label class="lbl">Model *</label><input type="text" id="f_model" value="'+eh(f.model)+'" placeholder="e.g. 686, G19" oninput="FORM.model=this.value"/></div>'
       +'<div class="form-group"><label class="lbl">Type</label><select id="f_type" onchange="FORM.type=this.value"><option value="">Select...</option>'+typeOpts+'</select></div>'
       +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange="FORM.caliber=this.value;onCalChange(this)"><option value="">Select...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
       +'<div class="form-group"><label class="lbl">Condition</label><select id="f_cond" onchange="FORM.condition=this.value">'+condOpts+'</select></div>'
@@ -4206,14 +4206,14 @@ function rAdd(){
 
   var basicHtml='<div class="form-grid">'
     +'<div class="form-group"><label class="lbl">Make *</label><div class="ac-wrap"><input type="text" id="f_make" value="'+eh(f.make)+'" placeholder="e.g. Smith &amp; Wesson" autocomplete="off" oninput="acInput(this.value)" onkeydown="acKey(event)" onblur="acBlur()"/><div id="ac_list" class="ac-list"></div></div></div>'
-    +'<div class="form-group"><label class="lbl">Model *</label><input type="text" id="f_model" value="'+eh(f.model)+'" placeholder="e.g. 686, G17, 1911"/></div>'
+    +'<div class="form-group"><label class="lbl">Model *</label><input type="text" id="f_model" value="'+eh(f.model)+'" placeholder="e.g. 686, G17, 1911" oninput="FORM.model=this.value"/></div>'
     +'<div class="form-group"><label class="lbl">Type</label><select id="f_type" onchange="FORM.type=this.value"><option value="">Select type...</option>'+typeOpts+'</select></div>'
     +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange="FORM.caliber=this.value;onCalChange(this)"><option value="">Select caliber...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
-    +'<div class="form-group"><label class="lbl">Serial Number</label><div style="display:flex;gap:8px"><input type="text" id="f_sn" value="'+eh(f.serialNumber)+'" placeholder="Enter serial number" style="flex:1"/><button id="sn_btn" class="btn-ai" onclick="doSnLookup()" style="white-space:nowrap;flex-shrink:0">&#128269; Look Up Year</button></div></div>'
-    +'<div class="form-group"><label class="lbl">Year</label><input type="text" id="f_yr" value="'+eh(f.year)+'" placeholder="Auto-filled or enter manually"/><div id="yr_st" style="font-size:12px;margin-top:5px;display:none"></div></div>'
-    +'<div class="form-group"><label class="lbl">Storage Location</label><input type="text" id="f_storage" list="stor_list" value="'+eh(f.storageLocation)+'" placeholder="e.g. Gun safe #1, Bedroom cabinet"/></div>'
-    +'<div class="form-group"><label class="lbl">Last Cleaned</label><input type="date" id="f_cleaned" value="'+eh(f.lastCleaned)+'" style="color-scheme:dark"/></div>'
-    +'<div class="form-group"><label class="lbl">Service Interval (rounds) <span style="font-size:11px;color:#8a95a8;font-weight:400">— Alert after this many rounds</span></label><input type="number" id="f_interval" value="'+eh(f.serviceInterval||'')+'" placeholder="e.g. 500 for cleaning, 3000 for spring replacement" min="0"/></div>'
+    +'<div class="form-group"><label class="lbl">Serial Number</label><div style="display:flex;gap:8px"><input type="text" id="f_sn" value="'+eh(f.serialNumber)+'" placeholder="Enter serial number" style="flex:1" oninput="FORM.serialNumber=this.value"/><button id="sn_btn" class="btn-ai" onclick="doSnLookup()" style="white-space:nowrap;flex-shrink:0">&#128269; Look Up Year</button></div></div>'
+    +'<div class="form-group"><label class="lbl">Year</label><input type="text" id="f_yr" value="'+eh(f.year)+'" placeholder="Auto-filled or enter manually" oninput="FORM.year=this.value"/><div id="yr_st" style="font-size:12px;margin-top:5px;display:none"></div></div>'
+    +'<div class="form-group"><label class="lbl">Storage Location</label><input type="text" id="f_storage" list="stor_list" value="'+eh(f.storageLocation)+'" placeholder="e.g. Gun safe #1, Bedroom cabinet" oninput="FORM.storageLocation=this.value"/></div>'
+    +'<div class="form-group"><label class="lbl">Last Cleaned</label><input type="date" id="f_cleaned" value="'+eh(f.lastCleaned)+'" style="color-scheme:dark" onchange="FORM.lastCleaned=this.value"/></div>'
+    +'<div class="form-group"><label class="lbl">Service Interval (rounds) <span style="font-size:11px;color:#8a95a8;font-weight:400">— Alert after this many rounds</span></label><input type="number" id="f_interval" value="'+eh(f.serviceInterval||'')+'" placeholder="e.g. 500 for cleaning, 3000 for spring replacement" min="0" oninput="FORM.serviceInterval=this.value"/></div>'
     +'</div>';
 
   var condHtml='<div class="form-grid">'
@@ -4234,15 +4234,15 @@ function rAdd(){
     +'</div>';
 
   var valueHtml='<div class="form-grid">'
-    +'<div class="form-group"><label class="lbl">Purchase Price ($)</label><input type="number" id="f_pp" value="'+eh(f.purchasePrice)+'" placeholder="0.00"/></div>'
-    +'<div class="form-group"><label class="lbl">Current Value ($)</label><div style="display:flex;gap:8px"><input type="number" id="f_cv" value="'+eh(f.currentValue)+'" placeholder="0.00" style="flex:1"/><button id="val_btn" class="btn-ai" onclick="doVal()">&#10022; '+(((appSettings.tier||'free')==='proplus' && _BYO_hasKey())?'AI Est.':'Est. Value')+'</button></div></div>'
-    +'<div class="form-group"><label class="lbl">Insurance Value ($)</label><input type="number" id="f_ins" value="'+eh(f.insuranceValue)+'" placeholder="For coverage records"/></div>'
+    +'<div class="form-group"><label class="lbl">Purchase Price ($)</label><input type="number" id="f_pp" value="'+eh(f.purchasePrice)+'" placeholder="0.00" oninput="FORM.purchasePrice=this.value"/></div>'
+    +'<div class="form-group"><label class="lbl">Current Value ($)</label><div style="display:flex;gap:8px"><input type="number" id="f_cv" value="'+eh(f.currentValue)+'" placeholder="0.00" style="flex:1" oninput="FORM.currentValue=this.value"/><button id="val_btn" class="btn-ai" onclick="doVal()">&#10022; '+(((appSettings.tier||'free')==='proplus' && _BYO_hasKey())?'AI Est.':'Est. Value')+'</button></div></div>'
+    +'<div class="form-group"><label class="lbl">Insurance Value ($)</label><input type="number" id="f_ins" value="'+eh(f.insuranceValue)+'" placeholder="For coverage records" oninput="FORM.insuranceValue=this.value"/></div>'
     +'</div>'+avb;
 
   var ammoHtml='<div class="form-grid">'
-    +'<div class="form-group"><label class="lbl">Ammo Type Loaded</label><input type="text" id="f_ammotype" value="'+eh(f.ammoType)+'" placeholder="e.g. Federal HST 147gr 9mm"/></div>'
-    +'<div class="form-group"><label class="lbl">Rounds on Hand</label><input type="number" id="f_ammocount" value="'+eh(f.ammoCount)+'" placeholder="e.g. 200"/></div>'
-    +'<div class="form-group" style="grid-column:span 2"><label class="lbl">Ammo Storage Location</label><input type="text" id="f_ammoloc" value="'+eh(f.ammoLocation)+'" placeholder="e.g. Safe shelf 2, Ammo cabinet"/></div>'
+    +'<div class="form-group"><label class="lbl">Ammo Type Loaded</label><input type="text" id="f_ammotype" value="'+eh(f.ammoType)+'" placeholder="e.g. Federal HST 147gr 9mm" oninput="FORM.ammoType=this.value"/></div>'
+    +'<div class="form-group"><label class="lbl">Rounds on Hand</label><input type="number" id="f_ammocount" value="'+eh(f.ammoCount)+'" placeholder="e.g. 200" oninput="FORM.ammoCount=this.value"/></div>'
+    +'<div class="form-group" style="grid-column:span 2"><label class="lbl">Ammo Storage Location</label><input type="text" id="f_ammoloc" value="'+eh(f.ammoLocation)+'" placeholder="e.g. Safe shelf 2, Ammo cabinet" oninput="FORM.ammoLocation=this.value"/></div>'
     +'</div>';
 
   return header+modeToggle
@@ -4844,7 +4844,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-26-D';   // bump on every revision
+var BUILD_TAG   = '2026-04-26-E';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
