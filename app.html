@@ -4316,15 +4316,18 @@ function doSave(){
     var newId=gid();
     var initCoc=[{
       id:'coc_'+Date.now(),
-      type:'Created in Inventory',
+      type:'Acquisition',
       date:new Date().toISOString().split('T')[0],
-      notes:'Firearm added to ArsenalDB',
+      notes:'Origin not yet specified — tap to add acquisition details',
       autoLogged:true
     }];
     var newGun=Object.assign({},FORM,{id:newId,custody:initCoc});
     guns.push(newGun);
     if(window._arsenal&&window._arsenal.createFirearm){window._arsenal.createFirearm(newGun);}
     toast('Added to inventory');haptic('save');
+    // Fire acquisition prompt after a short delay so the toast is visible first.
+    // User can dismiss the modal in one tap if they don't want to log details now.
+    setTimeout(function(){ try{ openAcquisitionPrompt(newId); }catch(e){} }, 400);
   }
   sv();checkMilestones('save');FORM=ef();editId=null;aiVal=null;aiDiag=null;VIEW='list';rnd();
 }
@@ -4844,7 +4847,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-26-F';   // bump on every revision
+var BUILD_TAG   = '2026-04-26-G';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -6050,7 +6053,133 @@ function checkNFCScan(){
 
 
 // ── CHAIN OF CUSTODY ─────────────────────────────────────────────────
-var CUSTODY_TYPES=['Sale','Gift','Loan','Consignment','Repair','Return','Inheritance','Storage Change','Location Change','Other'];
+var CUSTODY_TYPES=['Sale','Gift','Loan','Consignment','Repair','Appraisal','Return','Inheritance','Storage Change','Location Change','Other'];
+
+// Helper: detect a firearm whose custody log contains only the auto-generated
+// inventory anchor. Matches both the new 'Acquisition' type and the legacy
+// 'Created in Inventory' type for backward compatibility with firearms added
+// before BUILD_TAG 2026-04-26-G.
+function _isAnchorOnly(g){
+  if(!g) return false;
+  var c=g.custody||[];
+  if(c.length!==1) return false;
+  var e=c[0];
+  return e.autoLogged===true && (e.type==='Acquisition' || e.type==='Created in Inventory');
+}
+
+// Source dropdown options for the acquisition prompt
+var _ACQ_SOURCES=['Dealer (FFL)','Private Sale','Gift','Inheritance','Auction','Trade','Other'];
+
+// Open the post-creation acquisition prompt. Skippable in one tap.
+function openAcquisitionPrompt(gunId){
+  var existing=document.getElementById('acq_modal');
+  if(existing) existing.remove();
+  var g=guns.find(function(x){return x.id===gunId;});
+  if(!g) return;
+
+  var srcOpts=_ACQ_SOURCES.map(function(s){
+    return '<option value="'+s+'">'+s+'</option>';
+  }).join('');
+
+  var modal=document.createElement('div');
+  modal.id='acq_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  modal.innerHTML='<div style="background:linear-gradient(135deg,#1a1d24,#222835);border:2px solid #e8c46a40;border-radius:14px;padding:22px 20px;max-width:380px;width:100%;margin:auto;max-height:calc(100vh - 40px);overflow-y:auto">'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:6px">Optional &middot; Skippable</div>'
+    +'<div style="font-size:18px;font-weight:800;color:#f0f2f5;margin-bottom:6px">Log Acquisition Details</div>'
+    +'<div style="font-size:12px;color:#8a95a8;margin-bottom:18px;line-height:1.5">Capture how this firearm came into your possession. This enriches the chain-of-custody record for insurance, estate planning, and future transfers.</div>'
+
+    +'<div style="margin-bottom:12px">'
+      +'<label style="display:block;font-size:11px;font-weight:700;color:#8a95a8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Source Type</label>'
+      +'<select id="acq_src" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:10px;font-size:14px;outline:none;font-family:inherit">'
+      +'<option value="">Select source...</option>'+srcOpts
+      +'</select>'
+    +'</div>'
+
+    +'<div style="margin-bottom:12px">'
+      +'<label style="display:block;font-size:11px;font-weight:700;color:#8a95a8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Acquired From (Name)</label>'
+      +'<input type="text" id="acq_name" placeholder="Dealer, seller, or person name" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:10px;font-size:14px;outline:none;font-family:inherit"/>'
+    +'</div>'
+
+    +'<div style="display:flex;gap:8px;margin-bottom:12px">'
+      +'<div style="flex:1">'
+        +'<label style="display:block;font-size:11px;font-weight:700;color:#8a95a8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Date Acquired</label>'
+        +'<input type="date" id="acq_date" value="'+new Date().toISOString().split('T')[0]+'" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:10px;font-size:14px;outline:none;font-family:inherit;color-scheme:dark"/>'
+      +'</div>'
+      +'<div style="flex:1">'
+        +'<label style="display:block;font-size:11px;font-weight:700;color:#8a95a8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Price Paid</label>'
+        +'<input type="number" id="acq_price" placeholder="0.00" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:10px;font-size:14px;outline:none;font-family:inherit"/>'
+      +'</div>'
+    +'</div>'
+
+    +'<div style="margin-bottom:12px">'
+      +'<label style="display:block;font-size:11px;font-weight:700;color:#8a95a8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">FFL Dealer Name (if applicable)</label>'
+      +'<input type="text" id="acq_ffl" placeholder="Dealer business name" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:10px;font-size:14px;outline:none;font-family:inherit"/>'
+    +'</div>'
+
+    +'<div style="margin-bottom:12px">'
+      +'<label style="display:block;font-size:11px;font-weight:700;color:#8a95a8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">FFL License #</label>'
+      +'<input type="text" id="acq_ffln" placeholder="License number" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:10px;font-size:14px;outline:none;font-family:inherit"/>'
+    +'</div>'
+
+    +'<div style="margin-bottom:18px">'
+      +'<label style="display:block;font-size:11px;font-weight:700;color:#8a95a8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Notes</label>'
+      +'<textarea id="acq_notes" placeholder="Additional context..." style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:10px;font-size:14px;outline:none;font-family:inherit;min-height:60px;resize:vertical"></textarea>'
+    +'</div>'
+
+    +'<div style="display:flex;gap:8px">'
+      +'<button onclick="saveAcquisitionDetails(\''+gunId+'\')" style="flex:2;background:#e8c46a;color:#1a1d24;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Save Details</button>'
+      +'<button onclick="document.getElementById(\'acq_modal\').remove()" style="flex:1;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:12px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Skip</button>'
+    +'</div>'
+
+    +'<div style="font-size:11px;color:#4a5568;margin-top:14px;text-align:center">You can always add this later from Chain of Custody</div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+// Save the acquisition details into the firearm's existing auto-event,
+// upgrading it from a placeholder anchor into a real custody record.
+function saveAcquisitionDetails(gunId){
+  var g=guns.find(function(x){return x.id===gunId;});
+  if(!g){toast('Firearm not found','err');return;}
+  var src=document.getElementById('acq_src').value;
+  var name=document.getElementById('acq_name').value.trim();
+  var date=document.getElementById('acq_date').value;
+  var price=document.getElementById('acq_price').value;
+  var ffl=document.getElementById('acq_ffl').value.trim();
+  var ffln=document.getElementById('acq_ffln').value.trim();
+  var notes=document.getElementById('acq_notes').value.trim();
+
+  // Require at least source OR name OR notes — otherwise nothing useful was added
+  if(!src && !name && !notes){
+    toast('Add at least source, name, or notes','err');
+    return;
+  }
+
+  // Update the auto-event in place
+  var anchor=(g.custody||[])[0];
+  if(!anchor){toast('Custody anchor missing','err');return;}
+
+  // Compose the notes field with source prefix if present
+  var combinedNotes='';
+  if(src) combinedNotes='Source: '+src;
+  if(notes) combinedNotes+=(combinedNotes?'. ':'')+notes;
+
+  anchor.recipientName=name||anchor.recipientName||'';
+  anchor.date=date||anchor.date;
+  anchor.price=price||anchor.price||'';
+  anchor.fflDealer=ffl||anchor.fflDealer||'';
+  anchor.fflLicense=ffln||anchor.fflLicense||'';
+  anchor.notes=combinedNotes||anchor.notes||'';
+  anchor.autoLogged=false;
+  anchor.editedAt=new Date().toISOString();
+
+  sv();
+  haptic('save');
+  toast('Acquisition details saved');
+  document.getElementById('acq_modal').remove();
+  rnd();
+}
 
 function loadTransferred(){
   try{
@@ -6155,6 +6284,16 @@ function rCustodyTab(gunId){
     +'</div>':'';
 
   return txBadge
+    // -G: Anchor-only advisory. Shown when custody log contains only the
+    //   auto-generated inventory anchor — prompts user to enrich with real
+    //   acquisition details, or to log other custody events.
+    +(_isAnchorOnly(g)
+      ?'<div style="background:#1a1d24;border:1px solid #e8c46a40;border-left:3px solid #e8c46a;border-radius:8px;padding:12px 14px;margin-bottom:14px">'
+        +'<div style="font-size:12px;font-weight:700;color:#e8c46a;margin-bottom:4px">Anchor-Only Record</div>'
+        +'<div style="font-size:12px;color:#a0aab8;line-height:1.5;margin-bottom:8px">This record only contains the inventory anchor. Add acquisition details to capture origin, or add custody events to document loans, transfers, repairs, and appraisals.</div>'
+        +'<button onclick="openAcquisitionPrompt(\''+gunId+'\')" style="background:transparent;border:1px solid #e8c46a60;color:#e8c46a;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">+ Add Acquisition Details</button>'
+      +'</div>'
+      :'')
     // -N: Add (primary) + Print (secondary) live in a split row at the top.
     //   Add takes ~70% width, Print ~30%. Same vertical space as before.
     +(g.transferred?''
@@ -6877,7 +7016,7 @@ function rCustodyReport(){
         +'<div onclick="event.stopPropagation();_toggleReportSelection(\''+g.id+'\')" style="padding:4px;margin:-4px;cursor:pointer;-webkit-tap-highlight-color:rgba(232,196,106,0.1)">'+_reportRowCheckbox(checked)+'</div>'
         +'<div style="flex:1;min-width:0">'
           +'<div style="font-weight:700;color:#f0f2f5;font-size:14px">'+eh(g.make)+' '+eh(g.model)+'</div>'
-          +'<div style="font-size:12px;color:#8a95a8;margin-top:2px">'+(g.custody||[]).length+' event'+(g.custody.length!==1?'s':'')+'</div>'
+          +'<div style="font-size:12px;color:#8a95a8;margin-top:2px">'+(g.custody||[]).length+' event'+(g.custody.length!==1?'s':'')+(_isAnchorOnly(g)?' <span style="color:#6a7280;font-style:italic">(anchor only)</span>':'')+'</div>'
           +(latest?'<div style="font-size:11px;color:#4a5568;margin-top:2px">Last: '+latest.type+' on '+new Date(latest.date).toLocaleDateString()+'</div>':'')
         +'</div>'
         +'<div style="color:#8a95a8;font-size:18px;flex-shrink:0">&#62;</div>'
