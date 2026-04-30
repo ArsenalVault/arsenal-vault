@@ -1614,7 +1614,187 @@ function openDB(cb){
   };
 }
 
+// ── SV INSTRUMENTATION (BUILD_TAG 2026-04-26-J) ──────────────────────
+// Diagnostic ring buffer logging every sv() call. Goal: catch the bug
+// where guns array gets wiped to [] in storage. Each suspicious call
+// (drop from >0 to 0, or drop of 2+) is flagged so we can identify the
+// caller from its stack trace. Log persists in localStorage so it survives
+// page reloads. Capped at 50 entries (ring buffer) to bound size.
+var _SV_LOG_KEY = 'av_sv_log';
+var _SV_LOG_MAX = 50;
+var _svLastCount = null; // tracks last seen count to compute deltas
+
+function _svLog(curCount){
+  try {
+    var prev = _svLastCount;
+    var delta = (prev===null) ? 0 : (curCount - prev);
+    var suspicious = false;
+    // Suspicious: dropped from >0 to 0, OR dropped by 2+
+    if(prev!==null && prev > 0 && curCount === 0) suspicious = true;
+    else if(delta <= -2) suspicious = true;
+
+    // Capture stack trace (skip the first 2 frames which are this logger + sv itself)
+    var stack = '';
+    try {
+      var e = new Error();
+      var lines = (e.stack || '').split('\n').slice(2, 8); // first 6 useful frames
+      stack = lines.join(' | ').replace(/\s{2,}/g,' ').trim();
+    } catch(_) {}
+
+    var entry = {
+      t: new Date().toISOString(),
+      type: 'sv',
+      cur: curCount,
+      prev: prev,
+      delta: delta,
+      sus: suspicious,
+      view: (typeof VIEW !== 'undefined') ? VIEW : '?',
+      build: (typeof BUILD_TAG !== 'undefined') ? BUILD_TAG : '?',
+      stack: stack
+    };
+
+    // Read existing log, push, trim, write back
+    var arr = [];
+    try { var raw = localStorage.getItem(_SV_LOG_KEY); if(raw) arr = JSON.parse(raw) || []; } catch(_) {}
+    if(!Array.isArray(arr)) arr = [];
+    arr.push(entry);
+    if(arr.length > _SV_LOG_MAX) arr = arr.slice(arr.length - _SV_LOG_MAX);
+    try { localStorage.setItem(_SV_LOG_KEY, JSON.stringify(arr)); } catch(_) {}
+
+    _svLastCount = curCount;
+  } catch(_) {
+    // Never let logging break sv()
+  }
+}
+
+// -K: Logger for direct guns array assignments. Same ring buffer as _svLog
+// but tagged 'set' so we can distinguish save events from assignment events.
+// Called at every site where `guns = ...` happens directly.
+function _logSetGuns(source, newLen, prevLen){
+  try {
+    var sus = (typeof prevLen === 'number' && prevLen > 0 && newLen === 0);
+    var stack = '';
+    try {
+      var e = new Error();
+      var lines = (e.stack || '').split('\n').slice(2, 7);
+      stack = lines.join(' | ').replace(/\s{2,}/g,' ').trim();
+    } catch(_) {}
+    var entry = {
+      t: new Date().toISOString(),
+      type: 'set',
+      source: source,
+      cur: newLen,
+      prev: (typeof prevLen === 'number') ? prevLen : null,
+      delta: (typeof prevLen === 'number') ? (newLen - prevLen) : null,
+      sus: sus,
+      view: (typeof VIEW !== 'undefined') ? VIEW : '?',
+      build: (typeof BUILD_TAG !== 'undefined') ? BUILD_TAG : '?',
+      stack: stack
+    };
+    var arr = [];
+    try { var raw = localStorage.getItem(_SV_LOG_KEY); if(raw) arr = JSON.parse(raw) || []; } catch(_) {}
+    if(!Array.isArray(arr)) arr = [];
+    arr.push(entry);
+    if(arr.length > _SV_LOG_MAX) arr = arr.slice(arr.length - _SV_LOG_MAX);
+    try { localStorage.setItem(_SV_LOG_KEY, JSON.stringify(arr)); } catch(_) {}
+  } catch(_) {}
+}
+
+// -L: Logger for boot-time diagnostic events. Uses the same ring buffer
+// as _svLog/_logSetGuns. Tagged 'init' so we can distinguish boot
+// telemetry (storage grants, quota) from runtime saves.
+function _logInit(data){
+  try {
+    var entry = {
+      t: new Date().toISOString(),
+      type: 'init',
+      build: (typeof BUILD_TAG !== 'undefined') ? BUILD_TAG : '?'
+    };
+    if(data && typeof data === 'object'){
+      for(var k in data){ if(Object.prototype.hasOwnProperty.call(data,k)) entry[k] = data[k]; }
+    }
+    var arr = [];
+    try { var raw = localStorage.getItem(_SV_LOG_KEY); if(raw) arr = JSON.parse(raw) || []; } catch(_) {}
+    if(!Array.isArray(arr)) arr = [];
+    arr.push(entry);
+    if(arr.length > _SV_LOG_MAX) arr = arr.slice(arr.length - _SV_LOG_MAX);
+    try { localStorage.setItem(_SV_LOG_KEY, JSON.stringify(arr)); } catch(_) {}
+  } catch(_) {}
+}
+
+// -L: Request persistent storage from the browser. Granted browsers
+// exempt this origin from automatic eviction — the most likely cause
+// of the inventory-loss bug. Browsers grant based on engagement
+// signals (PWA installed, frequent visits) — typically no permission
+// prompt for established PWAs. Safe no-op on browsers that don't
+// support the API. Logs result to diagnostic ring buffer + console.
+function _requestPersistentStorage(){
+  try {
+    if(!navigator.storage || typeof navigator.storage.persist !== 'function'){
+      console.log('[ArsenalDB] Persistent storage API unavailable on this browser');
+      _logInit({persistent: 'unavailable'});
+      return;
+    }
+    // Check current state first — calling persisted() is non-destructive
+    var checkExisting = (typeof navigator.storage.persisted === 'function')
+      ? navigator.storage.persisted()
+      : Promise.resolve(false);
+
+    checkExisting.then(function(already){
+      if(already){
+        console.log('[ArsenalDB] Persistent storage already granted');
+        _captureStorageEstimate(true);
+        return;
+      }
+      navigator.storage.persist().then(function(granted){
+        console.log('[ArsenalDB] Persistent storage:', granted ? 'GRANTED' : 'NOT GRANTED');
+        _captureStorageEstimate(granted);
+      }).catch(function(err){
+        console.warn('[ArsenalDB] persist() rejected:', err);
+        _logInit({persistent: 'error', error: String(err && err.message || err)});
+      });
+    }).catch(function(err){
+      console.warn('[ArsenalDB] persisted() check failed:', err);
+      _logInit({persistent: 'check-error', error: String(err && err.message || err)});
+    });
+  } catch(e) {
+    console.warn('[ArsenalDB] _requestPersistentStorage threw:', e);
+    try { _logInit({persistent: 'throw', error: String(e && e.message || e)}); } catch(_) {}
+  }
+}
+
+// -L: Capture current storage usage / quota for the diagnostic log.
+// Helps correlate inventory-loss events with quota pressure when
+// reviewing the log later.
+function _captureStorageEstimate(persistentGranted){
+  try {
+    if(!navigator.storage || typeof navigator.storage.estimate !== 'function'){
+      _logInit({persistent: persistentGranted, estimate: 'unavailable'});
+      return;
+    }
+    navigator.storage.estimate().then(function(est){
+      var usageMB = est.usage  != null ? (est.usage  / 1048576).toFixed(2) : '?';
+      var quotaMB = est.quota  != null ? (est.quota  / 1048576).toFixed(2) : '?';
+      var pct     = (est.usage && est.quota) ? ((est.usage / est.quota) * 100).toFixed(2) : '?';
+      console.log('[ArsenalDB] Storage: ' + usageMB + ' MB / ' + quotaMB + ' MB (' + pct + '%)');
+      _logInit({
+        persistent: persistentGranted,
+        usageMB: usageMB,
+        quotaMB: quotaMB,
+        usagePct: pct
+      });
+    }).catch(function(err){
+      _logInit({persistent: persistentGranted, estimate: 'error', error: String(err && err.message || err)});
+    });
+  } catch(e) {
+    try { _logInit({persistent: persistentGranted, estimate: 'throw'}); } catch(_) {}
+  }
+}
+
 function sv(){
+  // -J: instrument first, before any state changes
+  _svLog((guns||[]).length);
+
   saveGunsToCollection(activeCollection);
   var data=guns;
   // Always keep in-memory backup
@@ -1660,7 +1840,9 @@ function ld(){
         req.onsuccess=function(e){
           var result=e.target.result;
           if(result&&result.length>0){
+            var _prevLn=(guns||[]).length;
             guns=result;
+            _logSetGuns('ld:idb-success', guns.length, _prevLn);
           } else {
             // Nothing in IndexedDB - try localStorage migration
             ldFallback();
@@ -1696,11 +1878,17 @@ function ldFallback(){
     try{
       var parsed=JSON.parse(s);
       if(parsed&&parsed.length>0){
+        var _prevLn=(guns||[]).length;
         guns=parsed;
+        _logSetGuns('ldFallback:parsed', guns.length, _prevLn);
         // Migrate to IndexedDB
         sv();
       }
-    }catch(e){guns=[];}
+    }catch(e){
+      var _prevLn2=(guns||[]).length;
+      guns=[];
+      _logSetGuns('ldFallback:parse-error', 0, _prevLn2);
+    }
   }
 }
 
@@ -4848,7 +5036,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-26-H';   // bump on every revision
+var BUILD_TAG   = '2026-04-26-L';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -5150,18 +5338,14 @@ function openSettings(){
         +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px">Replay the welcome tours from the start. The app will reload.</div>'
         +'<button onclick="this.disabled=true;this.textContent=\'\u2713 Tours reset \u2014 reloading\u2026\';this.style.opacity=\'0.7\';_ONB_resetAll();toast(\'Tours reset \u2014 reloading\u2026\');setTimeout(function(){location.reload();},800);" style="width:100%;background:transparent;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Replay onboarding tours</button>'
       +'</div>'
-    +'<div style="background:#1a0d0d;border:2px dashed #c44;border-radius:10px;padding:14px;margin-bottom:12px">'
-        +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#ff6464;margin-bottom:6px">&#9888; Dev Only &middot; Remove Before Launch</div>'
-        +'<div style="font-size:12px;color:#c89090;margin-bottom:10px">Override your tier for testing. Does not generate a real license. Resets if you wipe app data.</div>'
-        +'<div style="display:flex;gap:6px">'
-          +'<button onclick="_devSetTier(\'free\')" style="flex:1;background:'+(appSettings.tier==='free'?'#c44':'transparent')+';border:1px solid #c44;color:'+(appSettings.tier==='free'?'#fff':'#c89090')+';padding:8px 4px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Free</button>'
-          +'<button onclick="_devSetTier(\'pro\')" style="flex:1;background:'+(appSettings.tier==='pro'?'#c44':'transparent')+';border:1px solid #c44;color:'+(appSettings.tier==='pro'?'#fff':'#c89090')+';padding:8px 4px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Pro</button>'
-          +'<button onclick="_devSetTier(\'proplus\')" style="flex:1;background:'+(appSettings.tier==='proplus'?'#c44':'transparent')+';border:1px solid #c44;color:'+(appSettings.tier==='proplus'?'#fff':'#c89090')+';padding:8px 4px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Pro+</button>'
-        +'</div>'
-        +'<div style="font-size:11px;color:#8a6060;margin-top:8px;text-align:center">Current: <strong style="color:#ff9090">'+(appSettings.tier==='proplus'?'Pro+':appSettings.tier==='pro'?'Pro':'Free')+'</strong></div>'
+    +'<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
+        +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">Inventory Recovery</div>'
+        +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px;line-height:1.5">Scan all storage locations for backed-up firearms. Use this if your inventory ever appears missing.</div>'
+        +'<button onclick="document.getElementById(\'settings_modal\').remove();_openRecoveryScanner()" style="width:100%;background:transparent;border:1px solid #e8c46a60;color:#e8c46a;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:8px">Scan Storage for Backups</button>'
+        +'<button onclick="document.getElementById(\'settings_modal\').remove();_openSvLog()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#a0aab8;padding:10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">View Save Log (diagnostic)</button>'
       +'</div>'
     +'<button onclick="document.getElementById(\'settings_modal\').remove()" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Done</button>'
-    +'<div id="settings_ver" style="text-align:center;font-size:11px;color:#4a5568;margin-top:10px">ArsenalDB v'+APP_VERSION+' &middot; '+BUILD_TAG+'</div>'
+    +'<div id="settings_ver" onclick="_devTap()" style="text-align:center;font-size:11px;color:#4a5568;margin-top:10px;cursor:default;-webkit-tap-highlight-color:transparent;user-select:none">ArsenalDB v'+APP_VERSION+' &middot; '+BUILD_TAG+'</div>'
     +'</div>';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
   document.body.appendChild(modal);
@@ -5180,22 +5364,406 @@ function avToggle(key){
 }
 
 
-// ── DEV TIER SWITCHER (restored at BUILD_TAG 2026-04-26-F for pre-launch testing) ──
-// REMOVE BEFORE PUBLIC LAUNCH. Allows manual tier override without LemonSqueezy.
-// Originally removed at -I; restored to support friend-assisted multi-collection
-// merge testing prior to LS merchant approval.
+// ── SAVE LOG VIEWER (BUILD_TAG 2026-04-26-J) ──────────────────────────
+// Displays the sv() instrumentation log in a modal. Suspicious entries
+// (where guns dropped to 0 or fell by 2+) are highlighted in red. Includes
+// a copy-to-clipboard button so the log can be sent to support / pasted
+// into Claude for diagnosis. Cleared via the Clear button.
+function _openSvLog(){
+  var existing = document.getElementById('svlog_modal');
+  if(existing) existing.remove();
+
+  var arr = [];
+  try { var raw = localStorage.getItem(_SV_LOG_KEY); if(raw) arr = JSON.parse(raw) || []; } catch(_) {}
+  if(!Array.isArray(arr)) arr = [];
+  // Newest first
+  var rev = arr.slice().reverse();
+
+  var rows = rev.length ? rev.map(function(e,idx){
+    var border = e.sus ? '#ff707080' : '#2a3140';
+    var bg = e.sus ? '#1a0d0d' : '#0f1218';
+    var deltaStr = (e.delta!==null && e.delta!==undefined) ? ((e.delta>0?'+':'') + e.delta) : '';
+    var deltaColor = e.delta < 0 ? '#ff7070' : (e.delta > 0 ? '#60e880' : '#6a7280');
+    var when = '';
+    try { when = new Date(e.t).toLocaleString(); } catch(_) { when = e.t; }
+    var typeBadge;
+    if(e.type==='init'){
+      typeBadge = '<span style="background:#5a4a2a;color:#e8c46a;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-right:6px">INIT</span>';
+    } else if(e.type==='set'){
+      typeBadge = '<span style="background:#3a4a6a;color:#a0b8e0;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-right:6px">SET</span>';
+    } else {
+      typeBadge = '<span style="background:#3a4a3a;color:#a0e0a0;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-right:6px">SAVE</span>';
+    }
+    var sourceLine = e.source ? '<div style="color:#a0aab8;font-size:11px;margin-top:2px;word-break:break-all">source: <strong style="color:#e8c46a">'+e.source+'</strong></div>' : '';
+    // INIT entries have boot-time telemetry (storage grant, quota usage),
+    // not save counts. Render them with their own body line.
+    if(e.type==='init'){
+      var initBits = [];
+      if(e.persistent !== undefined) initBits.push('persistent: <strong>'+e.persistent+'</strong>');
+      if(e.usageMB) initBits.push('usage: <strong>'+e.usageMB+' MB</strong>');
+      if(e.quotaMB) initBits.push('quota: <strong>'+e.quotaMB+' MB</strong>');
+      if(e.usagePct) initBits.push('('+e.usagePct+'%)');
+      if(e.error) initBits.push('<span style="color:#ff7070">error: '+e.error+'</span>');
+      var initBody = initBits.length ? initBits.join(' &middot; ') : '(no detail)';
+      return '<div style="background:#15170d;border:1px solid #5a4a2a80;border-radius:6px;padding:10px;margin-bottom:6px;font-size:11px;line-height:1.5">'
+        +'<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">'
+          +'<div style="color:#e8c46a">'+typeBadge+when+'</div>'
+          +'<div style="color:#6a7280">#'+(rev.length-idx)+'</div>'
+        +'</div>'
+        +'<div style="color:#d8e0f0">'+initBody+'</div>'
+        +'<div style="color:#6a7280;font-size:10px;margin-top:2px">build: '+(e.build||'?')+'</div>'
+        +'</div>';
+    }
+    return '<div style="background:'+bg+';border:1px solid '+border+';border-radius:6px;padding:10px;margin-bottom:6px;font-size:11px;line-height:1.5">'
+      +'<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">'
+        +'<div style="color:'+(e.sus?'#ff7070':'#a0aab8')+';font-weight:'+(e.sus?'700':'500')+'">'+(e.sus?'\u26a0 ':'')+typeBadge+when+'</div>'
+        +'<div style="color:#6a7280">#'+(rev.length-idx)+'</div>'
+      +'</div>'
+      +'<div style="color:#d8e0f0">guns: <strong>'+(e.prev===null||e.prev===undefined?'?':e.prev)+'</strong> &rarr; <strong>'+e.cur+'</strong> '
+        +(deltaStr?'<span style="color:'+deltaColor+';margin-left:6px">('+deltaStr+')</span>':'')
+        +'<span style="color:#6a7280;margin-left:8px">view: '+(e.view||'?')+'</span>'
+      +'</div>'
+      +sourceLine
+      +(e.stack ? '<div style="color:#7a8090;margin-top:4px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;word-break:break-all;white-space:pre-wrap">'+e.stack.replace(/</g,'&lt;')+'</div>' : '')
+      +'</div>';
+  }).join('') : '<div style="color:#6a7280;font-size:13px;text-align:center;padding:24px">No save events logged yet.<br/><br/>The log starts populating after the next sv() call (usually triggered by adding/editing/deleting a firearm).</div>';
+
+  var modal = document.createElement('div');
+  modal.id = 'svlog_modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  modal.innerHTML = '<div style="background:#1a1d24;border:2px solid #3a4455;border-radius:14px;padding:18px;max-width:480px;width:100%;margin:auto;max-height:calc(100vh - 40px);overflow-y:auto">'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#a0aab8;margin-bottom:6px">Save Log &middot; Diagnostic</div>'
+    +'<div style="font-size:11px;color:#6a7280;line-height:1.5;margin-bottom:12px">Last '+_SV_LOG_MAX+' calls to sv() (the function that persists inventory). Suspicious entries (red border) flag drops from &gt;0 to 0, or drops of 2+. Use the Copy button to send the log for diagnosis.</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:12px">'
+      +'<button onclick="_copySvLog()" style="flex:1;background:transparent;border:1px solid #e8c46a60;color:#e8c46a;padding:8px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Copy to Clipboard</button>'
+      +'<button onclick="_clearSvLog()" style="background:transparent;border:1px solid #ff707060;color:#ff7070;padding:8px 14px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Clear</button>'
+    +'</div>'
+    +rows
+    +'<button onclick="document.getElementById(\'svlog_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:10px">Close</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+function _copySvLog(){
+  var raw = '';
+  try { raw = localStorage.getItem(_SV_LOG_KEY) || '[]'; } catch(_) { raw='[]'; }
+  // Pretty-print for human readability
+  var pretty = raw;
+  try { pretty = JSON.stringify(JSON.parse(raw), null, 2); } catch(_) {}
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(pretty).then(function(){
+      toast('Save log copied to clipboard');
+    }, function(){
+      _fallbackCopy(pretty);
+    });
+  } else {
+    _fallbackCopy(pretty);
+  }
+}
+
+function _fallbackCopy(txt){
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.position='fixed'; ta.style.left='-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('Save log copied to clipboard');
+  } catch(_) {
+    toast('Copy failed — long-press and screenshot instead','err');
+  }
+}
+
+function _clearSvLog(){
+  if(!confirm('Clear the save log? This deletes diagnostic entries — only do this if you have already copied them or if you want a fresh start.')) return;
+  try { localStorage.removeItem(_SV_LOG_KEY); } catch(_) {}
+  _svLastCount = null;
+  toast('Save log cleared');
+  // Refresh the modal
+  var existing = document.getElementById('svlog_modal');
+  if(existing){ existing.remove(); _openSvLog(); }
+}
+
+
+// ── INVENTORY RECOVERY SCANNER (added at BUILD_TAG 2026-04-26-I) ──────
+// Scans every known storage location for firearm data, presents counts,
+// and offers one-tap restore. Designed for use if inventory ever appears
+// to be wiped — covers the av_guns_predevtier_<timestamp> snapshots created
+// by _devSetTier(), the per-collection storage, the main IndexedDB STORE,
+// localStorage and sessionStorage fallbacks, and the in-memory backup.
+function _openRecoveryScanner(){
+  var existing = document.getElementById('rec_modal');
+  if(existing) existing.remove();
+
+  // Build modal shell with loading state
+  var modal = document.createElement('div');
+  modal.id = 'rec_modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  modal.innerHTML = '<div style="background:#1a1d24;border:2px solid #e8c46a40;border-radius:14px;padding:22px;max-width:380px;width:100%;margin:auto;max-height:calc(100vh - 40px);overflow-y:auto">'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:8px">Inventory Recovery Scanner</div>'
+    +'<div style="font-size:12px;color:#8a95a8;line-height:1.5;margin-bottom:16px">Checking every storage location. Each row shows the location, its label, and how many firearms it contains.</div>'
+    +'<div id="rec_results" style="font-size:13px;color:#a0aab8;margin-bottom:16px">Scanning&hellip;</div>'
+    +'<button onclick="document.getElementById(\'rec_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Close</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+
+  // Scan in parallel: sync sources first (localStorage/sessionStorage),
+  // then async (IndexedDB). When all complete, render the table.
+  var sources = []; // {key, label, count, data}
+  var snapshotKeys = []; // av_guns_predevtier_*
+
+  // -- Sync scans --
+  function tryParse(s){ try { var p = JSON.parse(s); return Array.isArray(p) ? p : null; } catch(e) { return null; } }
+
+  // localStorage
+  try {
+    var lsArsenal = localStorage.getItem('arsenal_v6');
+    var p = lsArsenal ? tryParse(lsArsenal) : null;
+    sources.push({key:'ls:arsenal_v6', label:'localStorage / arsenal_v6 (legacy fallback)', count: p?p.length:0, data: p});
+  } catch(e) {}
+  try {
+    var lsCol = localStorage.getItem('av_guns_default');
+    var p = lsCol ? tryParse(lsCol) : null;
+    sources.push({key:'ls:av_guns_default', label:'localStorage / av_guns_default (default collection)', count: p?p.length:0, data: p});
+  } catch(e) {}
+
+  // localStorage tier-snapshots (created by _devSetTier)
+  try {
+    for(var i=0; i<localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && k.indexOf('av_guns_predevtier_')===0){
+        var p = tryParse(localStorage.getItem(k));
+        var ts = parseInt(k.replace('av_guns_predevtier_',''),10);
+        var when = isNaN(ts) ? '' : new Date(ts).toLocaleString();
+        snapshotKeys.push({key:'ls:'+k, label:'Pre-tier-change snapshot · '+when, count: p?p.length:0, data: p});
+      }
+    }
+  } catch(e) {}
+
+  // sessionStorage
+  try {
+    var ssArsenal = sessionStorage.getItem('arsenal_v6');
+    var p = ssArsenal ? tryParse(ssArsenal) : null;
+    sources.push({key:'ss:arsenal_v6', label:'sessionStorage / arsenal_v6', count: p?p.length:0, data: p});
+  } catch(e) {}
+  try {
+    var ssCol = sessionStorage.getItem('av_guns_default');
+    var p = ssCol ? tryParse(ssCol) : null;
+    sources.push({key:'ss:av_guns_default', label:'sessionStorage / av_guns_default', count: p?p.length:0, data: p});
+  } catch(e) {}
+
+  // In-memory backup (window._gunBackup)
+  try {
+    if(window._gunBackup){
+      var p = tryParse(window._gunBackup);
+      sources.push({key:'mem:_gunBackup', label:'In-memory backup (this session only)', count: p?p.length:0, data: p});
+    }
+  } catch(e) {}
+
+  // Current in-memory guns array
+  sources.push({key:'mem:current', label:'Current in-memory inventory (guns)', count: (guns||[]).length, data: guns});
+
+  // -- Async IndexedDB scan --
+  var idbDone = false;
+  function renderResults(){
+    if(!idbDone) return;
+    var all = sources.concat(snapshotKeys);
+    // Sort: current first, then snapshots by date desc, then by count desc
+    all.sort(function(a,b){
+      if(a.key==='mem:current') return -1;
+      if(b.key==='mem:current') return 1;
+      var aSnap = a.key.indexOf('predevtier')>=0;
+      var bSnap = b.key.indexOf('predevtier')>=0;
+      if(aSnap && !bSnap) return -1;
+      if(bSnap && !aSnap) return 1;
+      return (b.count||0)-(a.count||0);
+    });
+
+    var maxCount = 0;
+    all.forEach(function(s){ if(s.count>maxCount) maxCount=s.count; });
+
+    var rows = all.map(function(s){
+      var canRestore = s.count>0 && s.key!=='mem:current';
+      var isHighest = s.count===maxCount && s.count>0;
+      return '<div style="background:#0f1218;border:1px solid '+(isHighest?'#60e88040':'#2a3140')+';border-radius:8px;padding:10px 12px;margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:'+(canRestore?'8':'0')+'px">'
+          +'<div style="flex:1;min-width:0">'
+            +'<div style="font-size:11px;color:#8a95a8;line-height:1.4;word-break:break-word">'+s.label+'</div>'
+          +'</div>'
+          +'<div style="font-size:14px;font-weight:800;color:'+(s.count>0?(isHighest?'#60e880':'#e8c46a'):'#4a5568')+';flex-shrink:0">'+s.count+'</div>'
+        +'</div>'
+        +(canRestore
+          ? '<button onclick="_recoveryRestore(\''+s.key+'\')" style="width:100%;background:transparent;border:1px solid #e8c46a60;color:#e8c46a;padding:7px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Restore from this source</button>'
+          : '')
+        +'</div>';
+    }).join('');
+
+    var legend = '<div style="font-size:11px;color:#4a5568;margin-bottom:12px;line-height:1.5">'
+      +'Green border = highest count. Compare against your current inventory (top row). If a backup has more firearms than current, you can restore it. <strong style="color:#ff9090">Restoring overwrites current inventory</strong> &mdash; you will be asked to confirm.'
+      +'</div>';
+
+    document.getElementById('rec_results').innerHTML = legend + rows;
+
+    // Stash data for restore handler
+    window._recoverySources = {};
+    all.forEach(function(s){ window._recoverySources[s.key] = s.data; });
+  }
+
+  // Try to read IndexedDB
+  try {
+    var openReq = indexedDB.open('ArsenalVaultDB');
+    openReq.onsuccess = function(e){
+      var db = e.target.result;
+      try {
+        // Read STORE 'firearms'
+        var tx1 = db.transaction(['firearms'],'readonly');
+        var sReq = tx1.objectStore('firearms').getAll();
+        sReq.onsuccess = function(ev){
+          var arr = ev.target.result || [];
+          sources.push({key:'idb:firearms', label:'IndexedDB / firearms (main store)', count: arr.length, data: arr});
+
+          // Now read meta keys
+          try {
+            var tx2 = db.transaction(['meta'],'readonly');
+            var meta = tx2.objectStore('meta');
+            var defReq = meta.get('guns_default');
+            defReq.onsuccess = function(ev2){
+              var arr2 = ev2.target.result || null;
+              sources.push({key:'idb:guns_default', label:'IndexedDB meta / guns_default (default collection)', count: arr2?arr2.length:0, data: arr2});
+              idbDone = true;
+              renderResults();
+            };
+            defReq.onerror = function(){ idbDone=true; renderResults(); };
+          } catch(e2) { idbDone=true; renderResults(); }
+        };
+        sReq.onerror = function(){ idbDone=true; renderResults(); };
+      } catch(e1) { idbDone=true; renderResults(); }
+    };
+    openReq.onerror = function(){ idbDone=true; renderResults(); };
+  } catch(e) { idbDone=true; renderResults(); }
+}
+
+// Restore inventory from a chosen source. Confirms with user, then writes
+// the data to the current in-memory guns array and persists via sv().
+function _recoveryRestore(sourceKey){
+  if(!window._recoverySources || !window._recoverySources[sourceKey]){
+    toast('Recovery source not available','err');
+    return;
+  }
+  var data = window._recoverySources[sourceKey];
+  if(!data || !data.length){
+    toast('That source is empty','err');
+    return;
+  }
+  var currentCount = (guns||[]).length;
+  var msg = 'Restore '+data.length+' firearm'+(data.length!==1?'s':'')+' from this backup?';
+  if(currentCount > 0){
+    msg += '\n\nThis will REPLACE your current inventory of '+currentCount+' firearm'+(currentCount!==1?'s':'')+'.';
+    msg += '\n\nA snapshot of your current inventory will be saved to localStorage as a safety net before the restore.';
+  }
+  if(!confirm(msg)) return;
+
+  // Safety net: snapshot current before overwriting
+  try {
+    if(currentCount > 0){
+      var snapKey = 'av_guns_prerestore_' + Date.now();
+      localStorage.setItem(snapKey, JSON.stringify(guns));
+    }
+  } catch(e) {}
+
+  // Replace and persist
+  guns = data.slice();
+  try { sv(); } catch(e) {}
+  toast('Restored '+data.length+' firearm'+(data.length!==1?'s':''));
+  haptic('save');
+  // Close modal and reload to fully refresh the UI
+  var m = document.getElementById('rec_modal');
+  if(m) m.remove();
+  setTimeout(function(){ location.reload(); }, 600);
+}
+
+
+// ── DEV TIER SWITCHER (7-tap pattern, restored at BUILD_TAG 2026-04-26-I) ──
+// REMOVE BEFORE PUBLIC LAUNCH. Hidden behind 7 taps on the version line in
+// Settings. Replaces visible-buttons approach from -F/-G/-H which correlated
+// with reports of inventory loss. The new flow snapshots guns to a recovery
+// key BEFORE any tier change so any data loss is recoverable.
+//
+// To trigger: open Settings → tap the "ArsenalDB v… · 2026-04-26-…" line
+// at the bottom 7 times within 5 seconds.
+
+var _devTapCount = 0;
+var _devTapTimer = null;
+
+function _devTap(){
+  _devTapCount++;
+  if(_devTapTimer) clearTimeout(_devTapTimer);
+  _devTapTimer = setTimeout(function(){ _devTapCount = 0; _devTapTimer = null; }, 5000);
+  if(_devTapCount >= 7){
+    _devTapCount = 0;
+    if(_devTapTimer){ clearTimeout(_devTapTimer); _devTapTimer = null; }
+    _devOpenTierModal();
+  }
+}
+
+function _devOpenTierModal(){
+  // Close settings modal if open so dev modal isn't behind it
+  var s = document.getElementById('settings_modal');
+  if(s) s.remove();
+  var existing = document.getElementById('dev_tier_modal');
+  if(existing) existing.remove();
+
+  var currentLabel = appSettings.tier==='proplus' ? 'Pro+' : appSettings.tier==='pro' ? 'Pro' : 'Free';
+
+  var modal = document.createElement('div');
+  modal.id = 'dev_tier_modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a0d0d,#221515);border:2px dashed #c44;border-radius:14px;padding:22px;max-width:340px;width:100%">'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#ff6464;margin-bottom:8px">&#9888; Dev Tier Override</div>'
+    +'<div style="font-size:12px;color:#c89090;line-height:1.5;margin-bottom:16px">Hidden via 7-tap on version line. Does not generate a real license. Inventory is auto-snapshotted before every change.</div>'
+    +'<div style="font-size:12px;color:#a0aab8;margin-bottom:14px;text-align:center">Current: <strong style="color:#ff9090">'+currentLabel+'</strong></div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:14px">'
+      +'<button onclick="_devSetTier(\'free\')" style="flex:1;background:'+(appSettings.tier==='free'?'#c44':'transparent')+';border:1px solid #c44;color:'+(appSettings.tier==='free'?'#fff':'#c89090')+';padding:10px 4px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Free</button>'
+      +'<button onclick="_devSetTier(\'pro\')" style="flex:1;background:'+(appSettings.tier==='pro'?'#c44':'transparent')+';border:1px solid #c44;color:'+(appSettings.tier==='pro'?'#fff':'#c89090')+';padding:10px 4px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Pro</button>'
+      +'<button onclick="_devSetTier(\'proplus\')" style="flex:1;background:'+(appSettings.tier==='proplus'?'#c44':'transparent')+';border:1px solid #c44;color:'+(appSettings.tier==='proplus'?'#fff':'#c89090')+';padding:10px 4px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Pro+</button>'
+    +'</div>'
+    +'<button onclick="document.getElementById(\'dev_tier_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Close</button>'
+    +'</div>';
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  document.body.appendChild(modal);
+}
+
 function _devSetTier(t){
   if(t!=='free' && t!=='pro' && t!=='proplus') return;
+
+  // -I: Inventory safety net. Snapshot current guns to a timestamped recovery
+  // key BEFORE making any tier change. If anything downstream wipes guns,
+  // the snapshot survives in localStorage and can be inspected/restored
+  // manually via the av_guns_predevtier_<timestamp> keys.
+  try {
+    if (guns && guns.length > 0) {
+      var snapKey = 'av_guns_predevtier_' + Date.now();
+      localStorage.setItem(snapKey, JSON.stringify(guns));
+    }
+  } catch(e) { /* localStorage might be full; don't block tier change */ }
+
   appSettings.tier = t;
   saveSettings();
   haptic('light');
   var label = t==='proplus' ? 'Pro+' : t==='pro' ? 'Pro' : 'Free';
   toast('Tier set to '+label+' (DEV override)');
+
   // Re-render so any tier-gated UI updates immediately
   try { rnd(); } catch(e) {}
-  // Refresh the settings modal so the active button highlight updates
-  var existing = document.getElementById('settings_modal');
-  if(existing){ existing.remove(); openSettings(); }
+
+  // -I: No longer reopens the Settings modal (the visible switcher inside it
+  // was removed). The dev tier modal stays visible so user can flip again
+  // without re-tapping; closing it is explicit via the Close button.
+  // Refresh the dev tier modal so the active button highlight updates.
+  var existing = document.getElementById('dev_tier_modal');
+  if(existing){ existing.remove(); _devOpenTierModal(); }
 }
 
 
@@ -7394,6 +7962,7 @@ function saveGunsToCollection(collId){
 }
 
 function loadGunsFromCollection(collId){
+  var _prevLn=(guns||[]).length;
   // Try IndexedDB first
   openDB(function(db){
     if(db){
@@ -7403,11 +7972,13 @@ function loadGunsFromCollection(collId){
         req.onsuccess=function(e){
           if(e.target.result&&e.target.result.length>0){
             guns=e.target.result;
+            _logSetGuns('loadGunsFromCollection:idb-success:'+collId, guns.length, _prevLn);
           } else {
             // Try localStorage
             var s=localStorage.getItem(getCollKey(collId));
             if(s){try{guns=JSON.parse(s);}catch(ex){guns=[];}}
             else guns=[];
+            _logSetGuns('loadGunsFromCollection:idb-empty-fallback-ls:'+collId, guns.length, _prevLn);
           }
           rnd();
         };
@@ -7415,13 +7986,19 @@ function loadGunsFromCollection(collId){
           var s=localStorage.getItem(getCollKey(collId));
           if(s){try{guns=JSON.parse(s);}catch(ex){guns=[];}}
           else guns=[];
+          _logSetGuns('loadGunsFromCollection:idb-error-fallback-ls:'+collId, guns.length, _prevLn);
           rnd();
         };
-      }catch(e){guns=[];rnd();}
+      }catch(e){
+        guns=[];
+        _logSetGuns('loadGunsFromCollection:idb-throw:'+collId, 0, _prevLn);
+        rnd();
+      }
     } else {
       var s=localStorage.getItem(getCollKey(collId));
       if(s){try{guns=JSON.parse(s);}catch(ex){guns=[];}}
       else guns=[];
+      _logSetGuns('loadGunsFromCollection:no-db-ls:'+collId, guns.length, _prevLn);
       rnd();
     }
   });
@@ -7443,7 +8020,9 @@ function createCollection(){
   saveGunsToCollection(activeCollection);
   activeCollection=id;
   try{localStorage.setItem('av_active_coll',id);}catch(e){}
+  var _prevLnCC=(guns||[]).length;
   guns=[];
+  _logSetGuns('createCollection:reset-to-empty:'+id, 0, _prevLnCC);
   milestones={};totalCleanings=0;transferredGuns=[];
   VIEW='dashboard';
   FORM=ef();
@@ -12042,7 +12621,9 @@ document.addEventListener('keydown', function(e){
 
 function clearAllData(){
   if(!confirm('Delete ALL firearms from inventory? This cannot be undone.\n\nTip: tap Backup first to save your data.'))return;
+  var _prevLnClr=(guns||[]).length;
   guns=[];
+  _logSetGuns('clearAllData:user-initiated', 0, _prevLnClr);
   // Clear IndexedDB
   openDB(function(db){
     if(db){
@@ -13724,6 +14305,10 @@ function _applyMergeResolutions(newOnes, resolved, data){
   console.log('ArsenalDB', APP_VERSION, '·', BUILD_TAG);
   _DBG_init();
   _DBG_log('boot', {build: BUILD_TAG});
+  // -L: Request persistent storage and capture quota estimate.
+  // Async (fire-and-forget) — does not block boot. Logs result to
+  // _SV_LOG_KEY ring buffer for diagnosis if inventory-loss recurs.
+  _requestPersistentStorage();
   loadSettings();
   initPINLock();
 loadCollections();
