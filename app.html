@@ -4844,7 +4844,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-26-E';   // bump on every revision
+var BUILD_TAG   = '2026-04-26-F';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -5022,7 +5022,7 @@ function requireTier(minTier, featureName){
   };
   var desc=features[featureName]||'This feature requires ArsenalDB '+(isProPlus?'Pro+':'Pro')+'.';
   var tierLabel=isProPlus?'Pro+':'Pro';
-  var tierPrice=isProPlus?'$9.99 + $3.99/mo':'$9.99 one-time';
+  var tierPrice=isProPlus?'$19.99 one-time':'$9.99 one-time';
   var tierDetails=isProPlus
     ?'AI Gun Identifier &bull; AI Diagnosis &bull; AI Schematics &bull; Early access to new features'
     :'Unlimited firearms &bull; Schematics &amp; parts &bull; Bill of Sale &bull; Print &amp; export';
@@ -5146,6 +5146,16 @@ function openSettings(){
         +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px">Replay the welcome tours from the start. The app will reload.</div>'
         +'<button onclick="this.disabled=true;this.textContent=\'\u2713 Tours reset \u2014 reloading\u2026\';this.style.opacity=\'0.7\';_ONB_resetAll();toast(\'Tours reset \u2014 reloading\u2026\');setTimeout(function(){location.reload();},800);" style="width:100%;background:transparent;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Replay onboarding tours</button>'
       +'</div>'
+    +'<div style="background:#1a0d0d;border:2px dashed #c44;border-radius:10px;padding:14px;margin-bottom:12px">'
+        +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#ff6464;margin-bottom:6px">&#9888; Dev Only &middot; Remove Before Launch</div>'
+        +'<div style="font-size:12px;color:#c89090;margin-bottom:10px">Override your tier for testing. Does not generate a real license. Resets if you wipe app data.</div>'
+        +'<div style="display:flex;gap:6px">'
+          +'<button onclick="_devSetTier(\'free\')" style="flex:1;background:'+(appSettings.tier==='free'?'#c44':'transparent')+';border:1px solid #c44;color:'+(appSettings.tier==='free'?'#fff':'#c89090')+';padding:8px 4px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Free</button>'
+          +'<button onclick="_devSetTier(\'pro\')" style="flex:1;background:'+(appSettings.tier==='pro'?'#c44':'transparent')+';border:1px solid #c44;color:'+(appSettings.tier==='pro'?'#fff':'#c89090')+';padding:8px 4px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Pro</button>'
+          +'<button onclick="_devSetTier(\'proplus\')" style="flex:1;background:'+(appSettings.tier==='proplus'?'#c44':'transparent')+';border:1px solid #c44;color:'+(appSettings.tier==='proplus'?'#fff':'#c89090')+';padding:8px 4px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Pro+</button>'
+        +'</div>'
+        +'<div style="font-size:11px;color:#8a6060;margin-top:8px;text-align:center">Current: <strong style="color:#ff9090">'+(appSettings.tier==='proplus'?'Pro+':appSettings.tier==='pro'?'Pro':'Free')+'</strong></div>'
+      +'</div>'
     +'<button onclick="document.getElementById(\'settings_modal\').remove()" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Done</button>'
     +'<div id="settings_ver" style="text-align:center;font-size:11px;color:#4a5568;margin-top:10px">ArsenalDB v'+APP_VERSION+' &middot; '+BUILD_TAG+'</div>'
     +'</div>';
@@ -5166,7 +5176,23 @@ function avToggle(key){
 }
 
 
-// Dev tier switcher removed at BUILD_TAG 2026-04-24-I (was in -H and prior).
+// ── DEV TIER SWITCHER (restored at BUILD_TAG 2026-04-26-F for pre-launch testing) ──
+// REMOVE BEFORE PUBLIC LAUNCH. Allows manual tier override without LemonSqueezy.
+// Originally removed at -I; restored to support friend-assisted multi-collection
+// merge testing prior to LS merchant approval.
+function _devSetTier(t){
+  if(t!=='free' && t!=='pro' && t!=='proplus') return;
+  appSettings.tier = t;
+  saveSettings();
+  haptic('light');
+  var label = t==='proplus' ? 'Pro+' : t==='pro' ? 'Pro' : 'Free';
+  toast('Tier set to '+label+' (DEV override)');
+  // Re-render so any tier-gated UI updates immediately
+  try { rnd(); } catch(e) {}
+  // Refresh the settings modal so the active button highlight updates
+  var existing = document.getElementById('settings_modal');
+  if(existing){ existing.remove(); openSettings(); }
+}
 
 
 // ── OWNER / SELLER PROFILE ────────────────────────────────────────────
