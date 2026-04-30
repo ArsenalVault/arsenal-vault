@@ -1528,6 +1528,7 @@ var quickAdd=false;
 var transferredGuns=[];
 var editingCustodyId=null;
 var showCustodyForm=false;
+var _cocFflOpen=false;  // -H: collapsed FFL section state in Add Custody Event form
 var reportTab='worth';
 // REPORT-T12: selection state for filterable reports (Insurance/Theft/Custody).
 // null = "all firearms" (default; auto-includes newly added). A Set of gun IDs = explicit selection.
@@ -4847,7 +4848,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-26-G';   // bump on every revision
+var BUILD_TAG   = '2026-04-26-H';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -6221,28 +6222,85 @@ function rCustodyTab(gunId){
 
     var editing=editingCustodyId?(g.custody||[]).find(function(e){return e.id===editingCustodyId;}):null;
 
-    form='<div class="custody-form">'
-      +'<div style="font-size:14px;font-weight:700;color:#e8c46a;margin-bottom:14px">'+(editing?'Edit Custody Event':'Add Custody Event')+'</div>'
-      +'<div class="form-grid">'
-      +'<div class="form-group"><label class="lbl">Transfer Type *</label>'
-      +'<select id="coc_type" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:11px 12px;font-size:14px;outline:none;font-family:inherit"><option value="">Select type...</option>'+typeOpts+'</select></div>'
-      +'<div class="form-group"><label class="lbl">Date *</label><input type="date" id="coc_date" value="'+(editing?editing.date:new Date().toISOString().split('T')[0])+'" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:11px 12px;font-size:14px;outline:none;font-family:inherit;color-scheme:dark"/></div>'
-      +'<div class="form-group"><label class="lbl">Recipient Full Legal Name</label><input type="text" id="coc_name" value="'+(editing?eh(editing.recipientName||''):'')+'" placeholder="Full legal name" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:11px 12px;font-size:14px;outline:none;font-family:inherit"/></div>'
-      +'<div class="form-group"><label class="lbl">Recipient State of Residence</label><input type="text" id="coc_state" value="'+(editing?eh(editing.recipientState||''):'')+'" placeholder="e.g. Texas" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:11px 12px;font-size:14px;outline:none;font-family:inherit"/></div>'
-      +'<div class="form-group"><label class="lbl">Price / Value</label><input type="number" id="coc_price" value="'+(editing?eh(editing.price||''):'')+'" placeholder="0.00" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:11px 12px;font-size:14px;outline:none;font-family:inherit"/></div>'
-      +'<div class="form-group"><label class="lbl">FFL Dealer Name (if applicable)</label><input type="text" id="coc_ffl" value="'+(editing?eh(editing.fflDealer||''):'')+'" placeholder="Dealer name" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:11px 12px;font-size:14px;outline:none;font-family:inherit"/></div>'
-      +'<div class="form-group"><label class="lbl">FFL License Number</label><input type="text" id="coc_ffln" value="'+(editing?eh(editing.fflLicense||''):'')+'" placeholder="License #" style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:11px 12px;font-size:14px;outline:none;font-family:inherit"/></div>'
-      +'<div class="form-group" style="grid-column:span 2"><label class="lbl">Notes</label><textarea id="coc_notes" placeholder="Additional details..." style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:11px 12px;font-size:14px;outline:none;font-family:inherit;min-height:80px;resize:vertical">'+(editing?eh(editing.notes||''):'')+'</textarea></div>'
-      +'</div>'
-      +'<div style="background:#1a2e1a;border:1px solid #60e88040;border-radius:8px;padding:12px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">'
-      +'<input type="checkbox" id="coc_ack" '+(editing&&editing.acknowledged?'checked':'')+' style="width:18px;height:18px;accent-color:#60e880;flex-shrink:0;margin-top:2px"/>'
-      +'<label for="coc_ack" style="font-size:12px;color:#c0c8d8;line-height:1.6;cursor:pointer">I confirm the recipient is legally eligible to receive this firearm, OR this transfer is being conducted through a licensed FFL dealer where required by applicable law.</label>'
-      +'</div>'
-      +'<div style="display:flex;gap:8px">'
-      +'<button onclick="saveCustodyEvent(\'+gunId+\')" style="flex:1;background:#e8c46a;color:#1a1d24;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">'+(editing?'Save Changes':'Add Event')+'</button>'
-      +'<button onclick="showCustodyForm=false;editingCustodyId=null;rnd()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:12px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
-      +'</div>'
+    // -H: Section header style — small caps, gold, with optional subtitle line
+    var hdr=function(title,sub){
+      return '<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">'+title+'</div>'
+        +(sub?'<div style="font-size:11px;color:#6a7280;margin-bottom:14px">'+sub+'</div>':'<div style="margin-bottom:14px"></div>');
+    };
+    // -H: Field label style — sentence-case, larger, easier to read
+    var fld=function(labelText,inputHtml,bottomGap){
+      var gap=bottomGap||14;
+      return '<div style="margin-bottom:'+gap+'px">'
+        +'<label style="display:block;font-size:13px;color:#d8e0f0;margin-bottom:6px;font-weight:600">'+labelText+'</label>'
+        +inputHtml
       +'</div>';
+    };
+    // -H: Standard input/select style
+    var inpStyle='width:100%;background:#13161d;border:2px solid #3a4455;border-radius:6px;color:#f0f2f5;padding:12px;font-size:14px;outline:none;font-family:inherit';
+    var dateStyle=inpStyle+';color-scheme:dark';
+    var taStyle=inpStyle+';min-height:90px;resize:vertical';
+
+    // Default state to "OK" for new events; preserve existing value for edits
+    var stateVal=editing?eh(editing.recipientState||''):'OK';
+
+    form='<div class="custody-form">'
+      +'<div style="font-size:16px;font-weight:800;color:#e8c46a;margin-bottom:18px">'+(editing?'Edit Custody Event':'Add Custody Event')+'</div>'
+
+      // ── SECTION 1: TRANSFER ───────────────────────────────────
+      +hdr('Transfer','What\'s happening with this firearm?')
+      +fld('Transfer type *',
+        '<select id="coc_type" style="'+inpStyle+'"><option value="">Select type...</option>'+typeOpts+'</select>')
+      +fld('Date *',
+        '<input type="date" id="coc_date" value="'+(editing?editing.date:new Date().toISOString().split('T')[0])+'" style="'+dateStyle+'"/>',
+        18)
+
+      // ── SECTION 2: OTHER PARTY ────────────────────────────────
+      +hdr('Other Party','Person, dealer, or recipient details')
+      +fld('Name',
+        '<input type="text" id="coc_name" value="'+(editing?eh(editing.recipientName||''):'')+'" placeholder="Full legal name" style="'+inpStyle+'"/>')
+      +fld('State',
+        '<input type="text" id="coc_state" value="'+stateVal+'" placeholder="OK" style="'+inpStyle+'"/>')
+      +fld('Price / Value',
+        '<input type="number" id="coc_price" value="'+(editing?eh(editing.price||''):'')+'" placeholder="0.00 (optional)" style="'+inpStyle+'"/>',
+        18)
+
+      // ── SECTION 3: FFL TRANSFER DETAILS (collapsible) ─────────
+      +'<div onclick="_toggleCocFfl()" style="background:#13161d;border:1px solid #3a4455;border-radius:8px;padding:12px 14px;margin-bottom:'+(_cocFflOpen?'14':'18')+'px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;-webkit-tap-highlight-color:rgba(232,196,106,0.1)">'
+        +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#a0aab8">FFL Transfer Details</div>'
+          +'<div style="font-size:11px;color:#6a7280;margin-top:3px">'+(_cocFflOpen?'Tap to collapse':'Tap to expand if this is an FFL-required transfer')+'</div>'
+        +'</div>'
+        +'<div style="color:#a0aab8;font-size:13px;flex-shrink:0;margin-left:10px">'+(_cocFflOpen?'&#9662;':'&#9656;')+'</div>'
+      +'</div>'
+      +(_cocFflOpen?
+        fld('FFL Dealer Name',
+          '<input type="text" id="coc_ffl" value="'+(editing?eh(editing.fflDealer||''):'')+'" placeholder="Dealer business name" style="'+inpStyle+'"/>')
+        +fld('FFL License #',
+          '<input type="text" id="coc_ffln" value="'+(editing?eh(editing.fflLicense||''):'')+'" placeholder="License number" style="'+inpStyle+'"/>',
+          18)
+        :
+        // Hidden inputs preserve values when section is collapsed (for edit mode)
+        '<input type="hidden" id="coc_ffl" value="'+(editing?eh(editing.fflDealer||''):'')+'"/>'
+        +'<input type="hidden" id="coc_ffln" value="'+(editing?eh(editing.fflLicense||''):'')+'"/>')
+
+      // ── SECTION 4: NOTES ──────────────────────────────────────
+      +hdr('Notes','Additional context, conditions, or observations')
+      +'<div style="margin-bottom:18px">'
+        +'<textarea id="coc_notes" placeholder="Any details that matter..." style="'+taStyle+'">'+(editing?eh(editing.notes||''):'')+'</textarea>'
+      +'</div>'
+
+      // ── LEGAL ACKNOWLEDGMENT (compact) ────────────────────────
+      +'<div style="background:#13161d;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:18px;display:flex;gap:10px;align-items:flex-start">'
+        +'<input type="checkbox" id="coc_ack" '+(editing&&editing.acknowledged?'checked':'')+' style="width:18px;height:18px;accent-color:#60e880;flex-shrink:0;margin-top:2px"/>'
+        +'<label for="coc_ack" style="font-size:12px;color:#a0aab8;line-height:1.5;cursor:pointer">I confirm the recipient is legally eligible to receive this firearm, OR this transfer is being conducted through a licensed FFL dealer where required by applicable law.</label>'
+      +'</div>'
+
+      // ── BUTTONS ───────────────────────────────────────────────
+      +'<div style="display:flex;gap:8px">'
+        +'<button onclick="saveCustodyEvent(\''+gunId+'\')" style="flex:1;background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">'+(editing?'Save Changes':'Add Event')+'</button>'
+        +'<button onclick="showCustodyForm=false;editingCustodyId=null;_cocFflOpen=false;rnd()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:13px 18px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
+      +'</div>'
+    +'</div>';
   }
 
   // Custody events list
@@ -6298,7 +6356,7 @@ function rCustodyTab(gunId){
     //   Add takes ~70% width, Print ~30%. Same vertical space as before.
     +(g.transferred?''
       :'<div style="display:flex;gap:8px;margin-bottom:14px">'
-        +'<button onclick="showCustodyForm=true;editingCustodyId=null;rnd()" style="flex:2.3;background:#1e2535;border:2px solid #e8c46a40;color:#e8c46a;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">+ Add Custody Event</button>'
+        +'<button onclick="showCustodyForm=true;editingCustodyId=null;_cocFflOpen=false;rnd()" style="flex:2.3;background:#1e2535;border:2px solid #e8c46a40;color:#e8c46a;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">+ Add Custody Event</button>'
         +'<button onclick="printCustodyRecord(\''+gunId+'\')" style="flex:1;background:transparent;border:1px solid #3a4455;color:#c0c8d8;padding:8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:5px">'+_iM('printer', 14)+' Print</button>'
       +'</div>')
     +form
@@ -6361,7 +6419,36 @@ function saveCustodyEvent(gunId){
 function editCustodyEvent(gunId, evtId){
   editingCustodyId=evtId;
   showCustodyForm=true;
+  // -H: auto-expand FFL section if the event being edited has FFL data
+  var g=guns.find(function(x){return x.id===gunId;});
+  var evt=g&&(g.custody||[]).find(function(e){return e.id===evtId;});
+  _cocFflOpen=!!(evt&&(evt.fflDealer||evt.fflLicense));
   rnd();
+}
+
+// -H: Toggle FFL section open/closed in the Add Custody Event form.
+// Preserves any text the user has already typed in the visible fields by
+// reading them out before re-render and writing them back via DOM update.
+function _toggleCocFfl(){
+  // Snapshot current field values so they survive the re-render
+  var snapshot={};
+  ['coc_type','coc_date','coc_name','coc_state','coc_price','coc_ffl','coc_ffln','coc_notes'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) snapshot[id]=el.value;
+  });
+  var ack=document.getElementById('coc_ack');
+  var ackChecked=ack?ack.checked:false;
+  _cocFflOpen=!_cocFflOpen;
+  rnd();
+  // Restore values after render
+  setTimeout(function(){
+    Object.keys(snapshot).forEach(function(id){
+      var el=document.getElementById(id);
+      if(el && snapshot[id]!==undefined) el.value=snapshot[id];
+    });
+    var ackEl=document.getElementById('coc_ack');
+    if(ackEl) ackEl.checked=ackChecked;
+  }, 0);
 }
 
 function deleteCustodyEvent(gunId, evtId){
