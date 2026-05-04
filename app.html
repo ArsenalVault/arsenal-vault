@@ -1467,8 +1467,25 @@ var QRGen = (function(){
 
 
 var SK='arsenal_v6';
-var CONDITIONS=['Excellent','Good','Fair','Poor','Needs Repair'];
-var CC={Excellent:'#60e880',Good:'#a0e0a0',Fair:'#ffd060',Poor:'#ff9040','Needs Repair':'#ff7070'};
+// -P: Conditions follow industry-standard NRA grading. "Needs Repair"
+// removed from the list — that concept is now solely tracked by the
+// `working` boolean (✗ Needs Repair toggle in form). A firearm can be
+// any condition AND not working; the two axes are independent.
+var CONDITIONS=['New / NIB','Perfect / As New','Excellent','Very Good','Good','Fair','Poor'];
+// Color map for condition badges across the app. New grades sit above
+// Good in the "good" green family; below Good in warning/danger family.
+var CC={
+  'New / NIB':'#80f0a0',
+  'Perfect / As New':'#70e890',
+  'Excellent':'#60e880',
+  'Very Good':'#a0e0a0',
+  'Good':'#c0e0c0',
+  'Fair':'#ffd060',
+  'Poor':'#ff7070',
+  // Backward-compat: legacy "Needs Repair" entries from pre-P data still
+  // get a color if they appear in any user's saved guns. Treated as Poor.
+  'Needs Repair':'#ff7070'
+};
 var CALIBERS=[
   // Rimfire
   '.17 HMR','.17 WSM','.22 LR','.22 WMR','.22 Short',
@@ -4332,13 +4349,27 @@ function rAdd(){
     +'<button class="quick-btn '+(quickAdd?'active':'inactive')+'" onclick="quickAdd=true;rnd()">⚡ Quick Add</button>'
     +'</div>';
 
-  // AI value box
-  var avb=aiVal?'<div class="ai-box"><div style="font-size:12px;color:#a0b8ff;letter-spacing:.1em;margin-bottom:10px;font-weight:700">✦ AI MARKET ESTIMATE</div>'
-    +'<div style="display:flex;gap:24px;margin-bottom:9px">'
-    +'<div><div style="font-size:11px;color:#8a95a8;margin-bottom:2px">LOW</div><div style="font-size:16px;color:#d0d8e8;font-weight:600">'+fm(aiVal.low)+'</div></div>'
-    +'<div><div style="font-size:11px;color:#8a95a8;margin-bottom:2px">MID</div><div style="font-size:18px;color:#e8c46a;font-weight:700">'+fm(aiVal.mid)+'</div></div>'
-    +'<div><div style="font-size:11px;color:#8a95a8;margin-bottom:2px">HIGH</div><div style="font-size:16px;color:#d0d8e8;font-weight:600">'+fm(aiVal.high)+'</div></div>'
-    +'</div><div style="font-size:13px;color:#b0bac8;line-height:1.5">'+eh(aiVal.notes||'')+'</div></div>':'';
+  // -P: Estimate box now includes an explicit "Use $X" apply button.
+  // The button copies the mid value into FORM.currentValue when the user
+  // chooses to. Tapping the estimate button itself no longer overwrites
+  // the user's typed value silently (see doVal()).
+  var avb='';
+  if(aiVal){
+    var _midVal = aiVal.mid;
+    var _applyBtn = (_midVal != null)
+      ? '<button class="estimate-apply-btn" onclick="FORM.currentValue=String('+Number(_midVal)+');rnd();" style="background:transparent;border:1px solid #a0c0ff60;color:#a0c0ff;padding:5px 11px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">&#8593; Use '+fm(_midVal)+'</button>'
+      : '';
+    avb='<div class="ai-box">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap">'
+        +'<div style="font-size:12px;color:#a0b8ff;letter-spacing:.1em;font-weight:700">&#10022; MARKET ESTIMATE</div>'
+        +_applyBtn
+      +'</div>'
+      +'<div style="display:flex;gap:24px;margin-bottom:9px">'
+      +'<div><div style="font-size:11px;color:#8a95a8;margin-bottom:2px">LOW</div><div style="font-size:16px;color:#d0d8e8;font-weight:600">'+fm(aiVal.low)+'</div></div>'
+      +'<div><div style="font-size:11px;color:#8a95a8;margin-bottom:2px">MID</div><div style="font-size:18px;color:#e8c46a;font-weight:700">'+fm(aiVal.mid)+'</div></div>'
+      +'<div><div style="font-size:11px;color:#8a95a8;margin-bottom:2px">HIGH</div><div style="font-size:16px;color:#d0d8e8;font-weight:600">'+fm(aiVal.high)+'</div></div>'
+      +'</div><div style="font-size:13px;color:#b0bac8;line-height:1.5">'+eh(aiVal.notes||'')+'</div></div>';
+  }
 
   var adb=aiDiag?'<div class="ai-box"><div style="font-size:12px;color:#a0b8ff;letter-spacing:.1em;margin-bottom:10px;font-weight:700">✦ AI GUNSMITH DIAGNOSIS</div>'
     +'<div style="margin-bottom:7px"><span style="font-size:11px;color:#8a95a8">DIAGNOSIS: </span><span style="color:#f0f2f5;font-size:14px">'+eh(aiDiag.diagnosis||'')+'</span></div>'
@@ -4376,7 +4407,7 @@ function rAdd(){
       +'<div class="form-group"><label class="lbl">Model *</label><input type="text" id="f_model" value="'+eh(f.model)+'" placeholder="e.g. 686, G19" oninput="FORM.model=this.value"/></div>'
       +'<div class="form-group"><label class="lbl">Type</label><select id="f_type" onchange="FORM.type=this.value"><option value="">Select...</option>'+typeOpts+'</select></div>'
       +'<div class="form-group"><label class="lbl">Caliber</label><select id="f_cal" onchange="FORM.caliber=this.value;onCalChange(this)"><option value="">Select...</option>'+calOpts+'</select>'+calCustomHtml+'</div>'
-      +'<div class="form-group"><label class="lbl">Condition</label><select id="f_cond" onchange="FORM.condition=this.value">'+condOpts+'</select></div>'
+      +'<div class="form-group"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span class="lbl" style="margin:0">Condition</span><button type="button" onclick="_showConditionHelpModal()" title="What do these grades mean?" style="background:transparent;border:1px solid #3a4455;color:#e8c46a;width:18px;height:18px;border-radius:50%;font-size:11px;line-height:14px;cursor:pointer;padding:0;font-family:inherit;text-align:center">?</button></div><select id="f_cond" onchange="FORM.condition=this.value">'+condOpts+'</select></div>'
       +'<div class="form-group"><label class="lbl">Status</label><div class="wbtns">'
       +'<button class="wbtn '+(f.working?'wy':'')+'" onclick="FORM.working=true;rnd()">✓ Working</button>'
       +'<button class="wbtn '+(!f.working?'wn':'')+'" onclick="FORM.working=false;rnd()">✗ Repair</button>'
@@ -4406,7 +4437,7 @@ function rAdd(){
     +'</div>';
 
   var condHtml='<div class="form-grid">'
-    +'<div class="form-group"><label class="lbl">Condition</label><select id="f_cond" onchange="FORM.condition=this.value">'+condOpts+'</select></div>'
+    +'<div class="form-group"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span class="lbl" style="margin:0">Condition</span><button type="button" onclick="_showConditionHelpModal()" title="What do these grades mean?" style="background:transparent;border:1px solid #3a4455;color:#e8c46a;width:18px;height:18px;border-radius:50%;font-size:11px;line-height:14px;cursor:pointer;padding:0;font-family:inherit;text-align:center">?</button></div><select id="f_cond" onchange="FORM.condition=this.value">'+condOpts+'</select></div>'
     +'<div class="form-group"><label class="lbl">Operational Status</label><div class="wbtns">'
     +'<button class="wbtn '+(f.working?'wy':'')+'" onclick="FORM.working=true;rnd()">✓ Working</button>'
     +'<button class="wbtn '+(!f.working?'wn':'')+'" onclick="FORM.working=false;rnd()">✗ Needs Repair</button>'
@@ -5036,7 +5067,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-26-O';   // bump on every revision
+var BUILD_TAG   = '2026-04-26-P';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -5253,6 +5284,38 @@ function requireTier(minTier, featureName){
 // Convenience wrappers
 function requirePro(f){ return requireTier('pro',f); }
 function requireProPlus(f){ return requireTier('proplus',f); }
+
+// -P: Help modal for the new NRA condition grading standards. Opened
+// via the "?" icon next to the Condition dropdown label in both the
+// Quick Add and Full Form views. Static content; no state needed.
+function _showConditionHelpModal(){
+  var existing=document.getElementById('cond_help_modal');
+  if(existing) existing.remove();
+  var modal=document.createElement('div');
+  modal.id='cond_help_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  var grades=[
+    ['NEW / NIB (New in Box)','Unfired, in original box with all literature and accessories.'],
+    ['PERFECT / AS NEW','Used but indistinguishable from new condition.'],
+    ['EXCELLENT','Used but little, with minimal wear on finish or stock and perfect mechanical condition.'],
+    ['VERY GOOD','Perfect working order, minor surface scratches or wear, no corrosion.'],
+    ['GOOD','Safe working condition, minor wear, no broken parts, light pitting/corrosion may be present.'],
+    ['FAIR','Well-worn, safe working condition, possible missing parts that do not impact function.'],
+    ['POOR','Inoperable or unsafe, suitable only for parts.']
+  ];
+  var rows=grades.map(function(g){
+    return '<div style="padding:10px 0;border-bottom:1px solid #2e3545;font-size:13px;color:#c0c8d8;line-height:1.5">'
+      +'<strong style="color:#e8c46a;font-weight:700;letter-spacing:.02em">'+g[0]+':</strong> '+g[1]
+    +'</div>';
+  }).join('');
+  modal.innerHTML='<div style="background:#1a1d24;border:2px solid #e8c46a40;border-radius:12px;padding:22px;max-width:460px;width:100%;margin:auto">'
+    +'<div style="font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:#e8c46a;font-weight:700;margin-bottom:14px">Condition Standards</div>'
+    +'<div style="margin-bottom:14px">'+rows+'</div>'
+    +'<button onclick="document.getElementById(\'cond_help_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Close</button>'
+  +'</div>';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  document.body.appendChild(modal);
+}
 
 function _showInventoryCapModal(){
   var existing=document.getElementById('inv_cap_modal');
@@ -9817,7 +9880,7 @@ function showQRView(g){
   var gainColor=gain>=0?'#60e880':'#ff7070';
 
   // Condition color
-  var condColors={'Excellent':'#60e880','Good':'#a0e0a0','Fair':'#ffd060','Poor':'#ff9040','Needs Repair':'#ff7070'};
+  var condColors=CC;  // -P: reuse single source of truth for condition colors
   var condColor=condColors[g.condition]||'#8a95a8';
 
   document.body.innerHTML =
@@ -11207,7 +11270,8 @@ function doVal(){
         }
         aiLoad=null;
         aiVal=result;
-        if(result.mid) FORM.currentValue=String(result.mid);
+        // -P: do NOT overwrite FORM.currentValue. User applies via the
+        // explicit "Use $X" button in the estimate box (see avb).
         if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
         rnd();
       })
@@ -11218,7 +11282,7 @@ function doVal(){
         result.notes = (result.notes||'') + ' (AI failed — using local estimate)';
         aiLoad=null;
         aiVal=result;
-        if(result.mid) FORM.currentValue=String(result.mid);
+        // -P: do NOT overwrite FORM.currentValue. User applies via "Use $X".
         if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
         rnd();
       });
@@ -11228,7 +11292,7 @@ function doVal(){
       var result=valLookup(FORM.make,FORM.model,FORM.caliber,FORM.condition,FORM.year);
       aiLoad=null;
       aiVal=result;
-      if(result.mid) FORM.currentValue=String(result.mid);
+      // -P: do NOT overwrite FORM.currentValue. User applies via "Use $X".
       // Honest label for non-AI path
       if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; Est. Value';}
       rnd();
@@ -11241,7 +11305,20 @@ function valLookup(make,model,caliber,condition,year){
   var _cpKey=(make+'|'+model).toLowerCase();
   if(customPrices[_cpKey]){
     var _cp=customPrices[_cpKey];
-    var _cpMult={'Excellent':1.15,'Good':1.0,'Fair':0.75,'Poor':0.5,'Needs Repair':0.35};
+    // -P: Compressed multipliers anchored to "Good = 1.00× baseline" since
+    // the price database (and customPrices) is calibrated to Good-condition
+    // values. New grades scale up gently from Excellent; Fair/Poor scale
+    // down. "Needs Repair" preserved for backward-compat with legacy data.
+    var _cpMult={
+      'New / NIB':1.30,
+      'Perfect / As New':1.25,
+      'Excellent':1.15,
+      'Very Good':1.08,
+      'Good':1.0,
+      'Fair':0.75,
+      'Poor':0.5,
+      'Needs Repair':0.35
+    };
     var _cpM=_cpMult[condition]||1.0;
     return{low:Math.round(_cp.low*_cpM),mid:Math.round(_cp.mid*_cpM),high:Math.round(_cp.high*_cpM),
       notes:_cp.notes+' — Updated '+_cp.updated+' ('+(condition||'Good')+' condition)'};
@@ -11250,7 +11327,17 @@ function valLookup(make,model,caliber,condition,year){
   var md=model.toLowerCase();
   var cond=condition||'Good';
   // Condition multipliers
-  var mult={Excellent:1.15,Good:1.0,Fair:0.75,Poor:0.5,'Needs Repair':0.35};
+  // -P: Same multipliers as customPrices path. See valLookup top.
+  var mult={
+    'New / NIB':1.30,
+    'Perfect / As New':1.25,
+    'Excellent':1.15,
+    'Very Good':1.08,
+    'Good':1.0,
+    'Fair':0.75,
+    'Poor':0.5,
+    'Needs Repair':0.35
+  };
   var cm=mult[cond]||1.0;
 
   function price(low,mid,high,src){
@@ -13207,7 +13294,9 @@ function _buildExportMeta(stats, includePhotos){
 // ─────────────────────────────────────────────────────────────────────
 
 // Ordered condition scale (best → worst). Used for threshold filtering.
-var _T9_CONDITION_ORDER = ['Excellent','Good','Fair','Poor','Needs Repair'];
+// -P: Sort order for T9 export — best to worst. "Needs Repair" preserved
+// at the end for backward-compat with any legacy data that still has it.
+var _T9_CONDITION_ORDER = ['New / NIB','Perfect / As New','Excellent','Very Good','Good','Fair','Poor','Needs Repair'];
 
 // Returns sorted, deduplicated, non-empty string values for a given field.
 // Used to populate filter dropdowns from actual inventory (not canonical lists).
