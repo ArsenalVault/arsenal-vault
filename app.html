@@ -5036,7 +5036,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-26-M';   // bump on every revision
+var BUILD_TAG   = '2026-04-26-O';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -5208,6 +5208,7 @@ function requireTier(minTier, featureName){
     'AI Schematics':'Generate detailed field strip instructions, assembly guides, and full parts lists for any firearm.',
     'Schematics & Parts':'Built-in field strip guides, assembly instructions, and full parts lists for popular firearms.',
     'Bill of Sale':'Generate professional bills of sale with buyer/seller info, attestations, signatures, and PDF export.',
+    'Drop-Off Receipt':'Generate a signed two-copy receipt when handing firearms to a dealer for valuation, consignment, or inspection. Protects you with a paper trail.',
     'Print & Export':'Print detail sheets and export your inventory to CSV.',
     'Multiple Collections':'Organize your firearms into separate collections for different owners, purposes, or categories.',
     'Merge Collections':'Combine inventories from multiple sources into one collection. Handle duplicate serials intelligently.'
@@ -5215,9 +5216,21 @@ function requireTier(minTier, featureName){
   var desc=features[featureName]||'This feature requires ArsenalDB '+(isProPlus?'Pro+':'Pro')+'.';
   var tierLabel=isProPlus?'Pro+':'Pro';
   var tierPrice=isProPlus?'$19.99 one-time':'$9.99 one-time';
+  // -N: Pro+ inherits everything from Pro. Make that explicit so users
+  // don't have to wonder whether the higher tier loses Pro features.
   var tierDetails=isProPlus
-    ?'AI Gun Identifier &bull; AI Diagnosis &bull; AI Schematics &bull; Early access to new features'
+    ?'Everything in Pro, plus: AI Gun Identifier &bull; AI Diagnosis &bull; AI Schematics &bull; 2-device installs &bull; Early access'
     :'Unlimited firearms &bull; Schematics &amp; parts &bull; Bill of Sale &bull; Print &amp; export';
+  // -N: "Get launch updates" via mailto. No backend; user's email client
+  // handles delivery; Gmail vacation responder handles auto-reply. The
+  // subject is tier-tagged so inbox sorting/counts are easy.
+  var mailSubject=encodeURIComponent('Notify me when ArsenalDB '+tierLabel+' launches');
+  var mailBody=encodeURIComponent(
+    'Please notify me when ArsenalDB '+tierLabel+' launches.\n\n'+
+    'Feature I was looking at: '+featureName+'\n'+
+    'Sent from the ArsenalDB app on '+new Date().toLocaleDateString()+'.'
+  );
+  var mailHref='mailto:hello@arsenaldb.com?subject='+mailSubject+'&body='+mailBody;
   var modal=document.createElement('div');
   modal.id='pro_gate_modal';
   modal.style.cssText='position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -5227,10 +5240,10 @@ function requireTier(minTier, featureName){
     +'<div style="font-size:15px;font-weight:700;color:#f0f2f5;margin-bottom:10px">'+eh(featureName)+'</div>'
     +'<div style="font-size:13px;color:#8a95a8;margin-bottom:20px;line-height:1.7">'+desc+'</div>'
     +'<div style="background:#e8c46a10;border:1px solid #e8c46a30;border-radius:10px;padding:14px;margin-bottom:20px">'
-      +'<div style="font-size:13px;font-weight:700;color:#e8c46a;margin-bottom:6px">ArsenalDB '+tierLabel+' — '+tierPrice+'</div>'
+      +'<div style="font-size:13px;font-weight:700;color:#e8c46a;margin-bottom:6px">ArsenalDB '+tierLabel+' &mdash; '+tierPrice+'</div>'
       +'<div style="font-size:12px;color:#8a95a8;line-height:1.6">'+tierDetails+'</div>'
     +'</div>'
-    +'<button onclick="toast(\'Coming soon — '+tierLabel+' launch in progress\');document.getElementById(\'pro_gate_modal\').remove()" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Upgrade to '+tierLabel+'</button>'
+    +'<a href="'+mailHref+'" onclick="setTimeout(function(){var m=document.getElementById(\'pro_gate_modal\');if(m)m.remove();},150)" style="display:block;width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px;text-decoration:none;box-sizing:border-box">Get Launch Updates</a>'
     +'<button onclick="document.getElementById(\'pro_gate_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Maybe Later</button>'
   +'</div>';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
@@ -5244,6 +5257,15 @@ function requireProPlus(f){ return requireTier('proplus',f); }
 function _showInventoryCapModal(){
   var existing=document.getElementById('inv_cap_modal');
   if(existing) existing.remove();
+  // -N: Same mailto launch-updates pattern as requireTier(). Tier-tagged
+  // subject and pre-filled body so inbox sorting works and we can tell
+  // an in-app capture from a cold email.
+  var mailSubject=encodeURIComponent('Notify me when ArsenalDB Pro launches');
+  var mailBody=encodeURIComponent(
+    'Please notify me when ArsenalDB Pro launches.\n\n'+
+    'I hit the 5-firearm free-tier cap on '+new Date().toLocaleDateString()+'.'
+  );
+  var mailHref='mailto:hello@arsenaldb.com?subject='+mailSubject+'&body='+mailBody;
   var modal=document.createElement('div');
   modal.id='inv_cap_modal';
   modal.style.cssText='position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -5253,10 +5275,10 @@ function _showInventoryCapModal(){
     +'<div style="font-size:15px;font-weight:700;color:#f0f2f5;margin-bottom:10px">'+guns.length+' of 5 firearms</div>'
     +'<div style="font-size:13px;color:#8a95a8;margin-bottom:20px;line-height:1.7">Free tier is limited to 5 firearms. Upgrade to Pro for unlimited firearms, plus schematics, Bill of Sale, and export tools.</div>'
     +'<div style="background:#e8c46a10;border:1px solid #e8c46a30;border-radius:10px;padding:14px;margin-bottom:20px">'
-      +'<div style="font-size:13px;font-weight:700;color:#e8c46a;margin-bottom:6px">ArsenalDB Pro — $9.99 one-time</div>'
+      +'<div style="font-size:13px;font-weight:700;color:#e8c46a;margin-bottom:6px">ArsenalDB Pro &mdash; $9.99 one-time</div>'
       +'<div style="font-size:12px;color:#8a95a8;line-height:1.6">Unlimited firearms &bull; Schematics &amp; parts &bull; Bill of Sale &bull; Print &amp; export</div>'
     +'</div>'
-    +'<button onclick="toast(\'Coming soon — Pro launch in progress\');document.getElementById(\'inv_cap_modal\').remove()" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Upgrade to Pro</button>'
+    +'<a href="'+mailHref+'" onclick="setTimeout(function(){var m=document.getElementById(\'inv_cap_modal\');if(m)m.remove();},150)" style="display:block;width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px;text-decoration:none;box-sizing:border-box">Get Launch Updates</a>'
     +'<button onclick="document.getElementById(\'inv_cap_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Maybe Later</button>'
   +'</div>';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
@@ -7400,6 +7422,320 @@ function bosStepContent(){
 }
 
 
+// ─── DROP-OFF RECEIPT (-O) ─────────────────────────────────────────
+// For temporary custody handoff to a dealer/gunsmith — valuation,
+// inspection, consignment intake. NOT a transfer document. Firearms
+// remain the legal property of the owner. The receipt creates a
+// signed paper trail proving exactly which guns were in the dealer's
+// possession on which date.
+//
+// Pro feature, hamburger-menu entry. Multi-firearm by design (typical
+// scenario: 5–15 firearms at once for valuation).
+//
+// State for the picker modal — module-scoped so the checkboxes
+// can mutate it without rebuilding the modal each time.
+var _dorState = null;
+
+function openDropOffReceipt(){
+  if(!requirePro('Drop-Off Receipt')) return;
+  if(!guns || guns.length === 0){
+    toast('No firearms in inventory yet','err');
+    return;
+  }
+  // Default: select active (non-transferred-out) firearms.
+  // User can adjust per-row before generating.
+  var selectedSet = {};
+  guns.forEach(function(g){
+    if(g.transferred !== true) selectedSet[g.id] = true;
+  });
+
+  var p = appSettings.ownerProfile || {};
+  _dorState = {
+    selected: selectedSet,
+    ownerName: p.name || '',
+    dealerName: '',
+    dealerAddress: '',
+    dropOffDate: new Date().toISOString().slice(0,10),
+    expectedReturn: ''
+  };
+  _renderDropOffReceiptModal();
+}
+
+function _renderDropOffReceiptModal(){
+  var existing = document.getElementById('dor_modal');
+  if(existing) existing.remove();
+
+  var st = _dorState;
+  var rows = guns.map(function(g){
+    var checked = !!st.selected[g.id];
+    var nm = (g.make || '') + ' ' + (g.model || '');
+    nm = nm.trim() || '(unnamed)';
+    var sub = [g.caliber, g.type, g.serialNumber ? 'SN: '+g.serialNumber : ''].filter(function(x){return x;}).join(' \u00b7 ');
+    return '<label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:'+(checked?'#1f2530':'#15181f')+';border:1px solid '+(checked?'#e8c46a40':'#2a3140')+';border-radius:8px;margin-bottom:6px;cursor:pointer">'
+      +'<input type="checkbox"'+(checked?' checked':'')+' onchange="_dorToggle(\''+g.id+'\')" style="margin-top:2px;flex-shrink:0;width:18px;height:18px;accent-color:#e8c46a;cursor:pointer">'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:600;color:#f0f2f5;line-height:1.3">'+eh(nm)+'</div>'
+        +(sub?'<div style="font-size:11px;color:#8a95a8;margin-top:2px;line-height:1.4">'+eh(sub)+'</div>':'')
+      +'</div>'
+    +'</label>';
+  }).join('');
+
+  var selCount = 0;
+  Object.keys(st.selected).forEach(function(k){ if(st.selected[k]) selCount++; });
+
+  var modal = document.createElement('div');
+  modal.id = 'dor_modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto';
+  modal.innerHTML =
+    '<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:20px;max-width:480px;width:100%;margin:auto">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+        +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#e8c46a;font-weight:700">DROP-OFF RECEIPT</div>'
+        +'<button onclick="document.getElementById(\'dor_modal\').remove()" style="background:transparent;border:none;color:#8a95a8;font-size:20px;cursor:pointer;padding:0 6px;line-height:1;font-family:inherit">&times;</button>'
+      +'</div>'
+      +'<div style="font-size:13px;color:#8a95a8;margin-bottom:14px;line-height:1.5">Generate a signed receipt for firearms you\'re temporarily handing over for valuation, consignment intake, or inspection. Not a transfer.</div>'
+
+      // Owner / dealer block
+      +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:14px;margin-bottom:12px">'
+        +'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#8a95a8;font-weight:700;margin-bottom:8px">Parties</div>'
+        +_dorField('Your Name', 'ownerName', st.ownerName, 'Jane Doe')
+        +_dorField('Dealer / Receiver Name', 'dealerName', st.dealerName, 'GunWorx')
+        +_dorField('Dealer Address (optional)', 'dealerAddress', st.dealerAddress, '9201 N. Council Rd. Suite B, Oklahoma City, OK')
+      +'</div>'
+
+      // Dates block
+      +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:14px;margin-bottom:12px">'
+        +'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#8a95a8;font-weight:700;margin-bottom:8px">Dates</div>'
+        +_dorField('Drop-Off Date', 'dropOffDate', st.dropOffDate, '', 'date')
+        +_dorField('Expected Return / Pickup', 'expectedReturn', st.expectedReturn, 'TBD or specific date')
+      +'</div>'
+
+      // Firearm picker
+      +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:14px;margin-bottom:14px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+          +'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#8a95a8;font-weight:700">Firearms ('+selCount+' selected)</div>'
+          +'<div style="display:flex;gap:6px">'
+            +'<button onclick="_dorSelectAll(true)" style="background:transparent;border:1px solid #3a4455;color:#a0c0ff;padding:4px 10px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit">All</button>'
+            +'<button onclick="_dorSelectAll(false)" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:4px 10px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit">None</button>'
+          +'</div>'
+        +'</div>'
+        +'<div style="max-height:280px;overflow-y:auto">'+rows+'</div>'
+      +'</div>'
+
+      +'<button onclick="_dorGenerate()" '+(selCount===0?'disabled ':'')+'style="width:100%;background:'+(selCount===0?'#3a4455':'linear-gradient(135deg,#e8c46a,#c8a040)')+';color:'+(selCount===0?'#8a95a8':'#1a1d24')+';border:none;padding:14px;border-radius:10px;font-size:14px;font-weight:800;cursor:'+(selCount===0?'default':'pointer')+';font-family:inherit;margin-bottom:8px">Generate Receipt</button>'
+      +'<button onclick="document.getElementById(\'dor_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+function _dorField(label, key, value, placeholder, type){
+  type = type || 'text';
+  return '<div style="margin-bottom:10px">'
+    +'<label style="display:block;font-size:11px;color:#8a95a8;margin-bottom:4px">'+eh(label)+'</label>'
+    +'<input type="'+type+'" value="'+eh(value||'')+'" placeholder="'+eh(placeholder||'')+'" oninput="_dorSetField(\''+key+'\',this.value)" style="width:100%;background:#0f1218;border:1px solid #2e3545;color:#f0f2f5;padding:9px 11px;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box">'
+  +'</div>';
+}
+
+function _dorSetField(key, value){
+  if(!_dorState) return;
+  _dorState[key] = value;
+  // Don't re-render — input keeps focus this way, user keeps typing.
+}
+
+function _dorToggle(gunId){
+  if(!_dorState) return;
+  _dorState.selected[gunId] = !_dorState.selected[gunId];
+  _renderDropOffReceiptModal();
+}
+
+function _dorSelectAll(on){
+  if(!_dorState) return;
+  guns.forEach(function(g){ _dorState.selected[g.id] = !!on; });
+  _renderDropOffReceiptModal();
+}
+
+function _dorGenerate(){
+  if(!_dorState) return;
+  var st = _dorState;
+  var picked = guns.filter(function(g){ return st.selected[g.id]; });
+  if(picked.length === 0){ toast('Select at least one firearm','err'); return; }
+  if(!(st.ownerName||'').trim()){ toast('Enter your name','err'); return; }
+  if(!(st.dealerName||'').trim()){ toast('Enter the dealer name','err'); return; }
+
+  var html = _dorBuildHtml(picked, st);
+  var existing = document.getElementById('dor_modal');
+  if(existing) existing.remove();
+  _dorState = null;
+
+  var win = window.open('', '_blank');
+  if(!win){
+    toast('Popup blocked. Allow popups to print receipts.','err');
+    return;
+  }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(function(){ try{ win.focus(); }catch(e){} }, 100);
+}
+
+// Format a YYYY-MM-DD date string as "Mon DD, YYYY" for display.
+// Avoids timezone-shift display errors on date-only inputs.
+function _dorFmtDate(iso){
+  if(!iso) return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+    try {
+      var d = new Date(iso + 'T00:00:00Z');
+      if(!isNaN(d.getTime())){
+        return d.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric', timeZone:'UTC' });
+      }
+    } catch(e){}
+  }
+  return iso;
+}
+
+function _dorBuildHtml(pickedGuns, st){
+  var esc = eh;
+  var dateStr = _dorFmtDate(st.dropOffDate) || _dorFmtDate(new Date().toISOString().slice(0,10));
+  var totalEst = 0;
+  pickedGuns.forEach(function(g){ totalEst += parseFloat(g.currentValue) || 0; });
+
+  // Build the firearm rows. Match 4473 column order so the dealer's eyes
+  // travel left-to-right in the same sequence as their official form:
+  // Manufacturer | Model | Type | Caliber | Serial Number | Condition | Appraised Value (blank)
+  var rows = pickedGuns.map(function(g, idx){
+    return '<tr>'
+      +'<td class="num">'+(idx+1)+'</td>'
+      +'<td>'+esc(g.make||'')+'</td>'
+      +'<td>'+esc(g.model||'')+'</td>'
+      +'<td>'+esc(g.type||'')+'</td>'
+      +'<td>'+esc(g.caliber||'')+'</td>'
+      +'<td class="sn">'+esc(g.serialNumber||'')+'</td>'
+      +'<td>'+esc(g.condition||'')+'</td>'
+      +'<td class="val"></td>'
+    +'</tr>';
+  }).join('');
+
+  // Build a single-page receipt. Two copies stacked when 5 or fewer
+  // firearms; otherwise one full page per copy with a page-break between.
+  var twoOnOne = pickedGuns.length <= 5;
+
+  function copyBlock(label){
+    return '<div class="copy-block">'
+      +'<div class="copy-label">'+esc(label)+'</div>'
+      +'<div class="brand-row">'
+        +'<div class="brand">ArsenalDB</div>'
+        +'<div class="doc-id">'+esc(dateStr)+'</div>'
+      +'</div>'
+      +'<div class="title">Firearm Drop-Off Receipt</div>'
+      +'<div class="subtitle">For Valuation / Inspection / Consignment Intake &mdash; Not a Transfer</div>'
+
+      +'<div class="parties">'
+        +'<div class="party">'
+          +'<div class="party-lbl">Owner</div>'
+          +'<div class="party-name">'+esc(st.ownerName)+'</div>'
+        +'</div>'
+        +'<div class="party">'
+          +'<div class="party-lbl">Dealer / Receiver</div>'
+          +'<div class="party-name">'+esc(st.dealerName)+'</div>'
+          +(st.dealerAddress?'<div class="party-addr">'+esc(st.dealerAddress)+'</div>':'')
+        +'</div>'
+      +'</div>'
+
+      +'<div class="dates">'
+        +'<div><span class="d-lbl">Drop-Off Date:</span> <strong>'+esc(dateStr)+'</strong></div>'
+        +'<div><span class="d-lbl">Expected Return:</span> <strong>'+esc(st.expectedReturn || 'TBD')+'</strong></div>'
+      +'</div>'
+
+      +'<table class="firearms">'
+        +'<thead><tr>'
+          +'<th class="num">#</th>'
+          +'<th>Manufacturer</th>'
+          +'<th>Model</th>'
+          +'<th>Type</th>'
+          +'<th>Caliber</th>'
+          +'<th>Serial Number</th>'
+          +'<th>Condition</th>'
+          +'<th>Appraised Value</th>'
+        +'</tr></thead>'
+        +'<tbody>'+rows+'</tbody>'
+      +'</table>'
+      +'<div class="count">'+pickedGuns.length+' firearm'+(pickedGuns.length!==1?'s':'')+' total</div>'
+
+      +'<div class="terms">'
+        +'This receipt confirms temporary custody only. Firearms listed remain the legal '
+        +'property of the owner named above. Dealer agrees to safeguard the firearms and '
+        +'return them on the agreed date or as otherwise arranged in writing.'
+      +'</div>'
+
+      +'<div class="sigs">'
+        +'<div class="sig">'
+          +'<div class="sig-line"></div>'
+          +'<div class="sig-lbl">Owner Signature</div>'
+          +'<div class="sig-date"></div>'
+          +'<div class="sig-date-lbl">Date</div>'
+        +'</div>'
+        +'<div class="sig">'
+          +'<div class="sig-line"></div>'
+          +'<div class="sig-lbl">Dealer / Receiver Signature</div>'
+          +'<div class="sig-date"></div>'
+          +'<div class="sig-date-lbl">Date</div>'
+        +'</div>'
+      +'</div>'
+
+      +'<div class="footer">Generated by ArsenalDB &middot; arsenaldb.com</div>'
+    +'</div>';
+  }
+
+  var body = twoOnOne
+    ? copyBlock('Copy 1 of 2 — Owner') + '<hr class="cut"/>' + copyBlock('Copy 2 of 2 — Dealer')
+    : copyBlock('Copy 1 of 2 — Owner') + '<div class="pagebreak"></div>' + copyBlock('Copy 2 of 2 — Dealer');
+
+  return '<!DOCTYPE html>'
+    +'<html lang="en"><head><meta charset="UTF-8">'
+    +'<meta name="viewport" content="width=device-width,initial-scale=1">'
+    +'<title>Drop-Off Receipt &middot; '+esc(dateStr)+'</title>'
+    +'<style>'
+      +'*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}'
+      +'body{font-family:Georgia,"Times New Roman",serif;font-size:10pt;line-height:1.45;color:#111;background:#fff;padding:1.2cm 1.4cm;max-width:21cm;margin:0 auto}'
+      +'.print-btn{display:block;margin:0 auto 16pt;padding:8pt 28pt;background:#111;color:#fff;border:none;cursor:pointer;font-size:10pt;font-family:inherit;letter-spacing:.05em}'
+      +'.copy-block{padding-bottom:8pt}'
+      +'.copy-label{font-size:8pt;letter-spacing:.15em;text-transform:uppercase;color:#888;font-weight:700;margin-bottom:6pt}'
+      +'.brand-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2pt}'
+      +'.brand{font-size:11pt;letter-spacing:.2em;text-transform:uppercase;color:#8a7440;font-weight:800}'
+      +'.doc-id{font-size:9pt;color:#777}'
+      +'.title{font-size:18pt;font-weight:800;letter-spacing:.04em;text-transform:uppercase;text-align:center;margin:6pt 0 2pt}'
+      +'.subtitle{font-size:8.5pt;text-align:center;color:#666;margin-bottom:14pt;font-style:italic}'
+      +'.parties{display:flex;gap:24pt;margin-bottom:10pt}'
+      +'.party{flex:1;border:1pt solid #ccc;border-radius:4pt;padding:8pt 10pt}'
+      +'.party-lbl{font-size:7.5pt;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:3pt}'
+      +'.party-name{font-size:11pt;font-weight:700;color:#111}'
+      +'.party-addr{font-size:9pt;color:#555;margin-top:2pt;line-height:1.3}'
+      +'.dates{display:flex;gap:24pt;font-size:9.5pt;margin-bottom:10pt;color:#333}'
+      +'.d-lbl{color:#888;text-transform:uppercase;letter-spacing:.05em;font-size:8pt}'
+      +'table.firearms{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:6pt}'
+      +'table.firearms th{background:#f0ede4;border:0.5pt solid #999;padding:4pt 5pt;text-align:left;font-size:7.5pt;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#555}'
+      +'table.firearms td{border:0.5pt solid #aaa;padding:5pt 6pt;vertical-align:top}'
+      +'table.firearms td.num{width:18pt;text-align:center;color:#888;font-weight:700}'
+      +'table.firearms td.sn{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em}'
+      +'table.firearms td.val{min-width:60pt}'
+      +'table.firearms th.num{width:18pt;text-align:center}'
+      +'.count{font-size:9pt;color:#666;text-align:right;margin-bottom:12pt;font-style:italic}'
+      +'.terms{font-size:8.5pt;color:#444;line-height:1.5;border-top:0.5pt solid #ccc;border-bottom:0.5pt solid #ccc;padding:8pt 0;margin-bottom:14pt}'
+      +'.sigs{display:flex;gap:32pt;margin-top:18pt}'
+      +'.sig{flex:1}'
+      +'.sig-line{border-bottom:1pt solid #111;height:30pt;margin-bottom:3pt}'
+      +'.sig-lbl{font-size:9pt;font-weight:700}'
+      +'.sig-date{margin-top:8pt;border-bottom:0.75pt solid #999;height:16pt}'
+      +'.sig-date-lbl{font-size:7.5pt;color:#888;margin-top:2pt}'
+      +'.footer{margin-top:14pt;padding-top:6pt;border-top:0.5pt solid #ccc;font-size:7.5pt;color:#999;text-align:center;letter-spacing:.04em}'
+      +'hr.cut{border:none;border-top:1pt dashed #999;margin:14pt 0;height:0}'
+      +'.pagebreak{page-break-before:always;height:0}'
+      +'@media print{.print-btn{display:none}body{padding:0.8cm}}'
+    +'</style>'
+    +'</head><body>'
+    +'<button class="print-btn" onclick="window.print()">Print / Save as PDF</button>'
+    +body
+    +'</body></html>';
+}
+
 function printBOS(bosId){
   var b=billsOfSale.find(function(x){return x.id===bosId;});
   if(!b){
@@ -8573,6 +8909,9 @@ function buildHamMenu(){
     +'<div class="ham-section">Print &amp; Export</div>'
     +'<div class="ham-item" onclick="hamAction(function(){pAll()})">'
       +'<span class="ham-item-icon">'+_iM('printer')+'</span><span>Print Full Inventory</span>'
+    +'</div>'
+    +'<div class="ham-item" onclick="hamAction(function(){openDropOffReceipt()})">'
+      +'<span class="ham-item-icon">&#128221;</span><span>Drop-Off Receipt</span>'
     +'</div>'
     +'<div class="ham-item" onclick="hamAction(function(){expCSV()})">'
       +'<span class="ham-item-icon">&#8595;</span><span>Export CSV</span>'
