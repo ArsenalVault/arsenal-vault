@@ -4523,6 +4523,9 @@ function collect(){
 }
 
 function doSave(){
+  // -Q Phase 1: refuse Save while a just-captured photo is still being
+  // processed. Prevents the "OK too quick" bounce-to-dashboard bug.
+  if(!_guardPhotoProcessing()) return;
   collect();
   if(!FORM.photos||!FORM.photos.length)FORM.photos=FORM.photo?[FORM.photo]:[];
   if(!FORM.make||!FORM.model){toast('Make and Model are required','err');return;}
@@ -5067,7 +5070,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-26-P';   // bump on every revision
+var BUILD_TAG   = '2026-04-26-Q';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -6142,6 +6145,12 @@ var _swipeStartX=0;
 var _swipeStartY=0;
 
 function handleBack(){
+  // -Q Phase 1: if a photo is currently being processed during firearm
+  // entry, refuse back navigation. Modal closes are still allowed.
+  if(VIEW==='add' && _photoProcessing){
+    toast('Wait — finishing photo&hellip;');
+    return;
+  }
   // Close any open modal first
   var modals=['qr_modal','label_modal','settings_modal','print_menu',
     'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal','exit_modal'];
@@ -12002,6 +12011,55 @@ function loadSch(id){
 }
 
 // ── FILE UPLOADS ──────────────────────────────────────────────────────
+// -Q Phase 1: Post-capture processing lock. Samsung's camera intent
+// returns control to Chrome with the file BEFORE the FileReader has
+// finished decoding. If the user hits OK / Save / Back during that
+// 1-2 second window, the half-processed state can navigate them out
+// of the form unexpectedly (project memory: "OK too quick bounces to
+// dashboard"). This lock disables nav buttons and shows a "Processing
+// photo..." status until the read finishes plus a 2.5-sec safety pad.
+var _photoProcessing = false;
+var _photoProcessingTimer = null;
+
+function _setPhotoProcessing(on){
+  _photoProcessing = !!on;
+  // Clear any prior timer so back-to-back photos don't compound
+  if(_photoProcessingTimer){ clearTimeout(_photoProcessingTimer); _photoProcessingTimer = null; }
+  // Visual: disable Save and FAB Back buttons while processing.
+  // We don't disable per-button onclicks (those are inline), we set
+  // a global gate that the existing handlers check via _photoProcessing.
+  var ind = document.getElementById('_photo_processing_indicator');
+  if(on){
+    if(!ind){
+      ind = document.createElement('div');
+      ind.id = '_photo_processing_indicator';
+      ind.style.cssText = 'position:fixed;left:50%;bottom:78px;transform:translateX(-50%);background:#1a1d24;border:1px solid #e8c46a60;color:#e8c46a;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,.4);letter-spacing:.04em;display:flex;align-items:center;gap:8px';
+      ind.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border:2px solid #e8c46a;border-top-color:transparent;border-radius:50%;animation:_pproc 0.8s linear infinite"></span><span>Processing photo&hellip;</span>';
+      // Inject keyframes once
+      if(!document.getElementById('_pproc_keyframes')){
+        var st = document.createElement('style');
+        st.id = '_pproc_keyframes';
+        st.textContent = '@keyframes _pproc{to{transform:rotate(360deg)}}';
+        document.head.appendChild(st);
+      }
+      document.body.appendChild(ind);
+    }
+    ind.style.display = 'flex';
+  } else {
+    if(ind) ind.style.display = 'none';
+  }
+}
+
+// Guard helper used by Save and Back actions to refuse during processing.
+// Returns true if action should proceed, false if blocked (with toast).
+function _guardPhotoProcessing(){
+  if(_photoProcessing){
+    toast('Wait — finishing photo&hellip;');
+    return false;
+  }
+  return true;
+}
+
 function onPhoto(){
   _DBG_log('onPhoto:entry', {files: this.files ? this.files.length : null, view: typeof VIEW!=='undefined'?VIEW:'?', editId: !!editId});
   var files=Array.from(this.files);if(!files.length){ _DBG_log('onPhoto:no-files'); return; }
@@ -12009,19 +12067,115 @@ function onPhoto(){
   var remaining=10-FORM.photos.length;
   if(remaining<=0){toast('Maximum 10 photos reached','err');this.value='';return;}
   files=files.slice(0,remaining);
-  var loaded=0;
-  files.forEach(function(file){
-    var r=new FileReader();
-    r.onload=function(e){
-      FORM.photos.push(e.target.result);
-      if(FORM.photos.length>0)FORM.photo=FORM.photos[0];
-      loaded++;
-      _DBG_log('onPhoto:read', {idx: loaded, total: files.length, view: typeof VIEW!=='undefined'?VIEW:'?'});
-      if(loaded===files.length){ _DBG_log('onPhoto:done', {photos: FORM.photos.length, view: typeof VIEW!=='undefined'?VIEW:'?'}); rnd(); }
+  // -Q Phase 1: lock immediately on entry so user can't tap Save while
+  // FileReader is still decoding the just-captured photo.
+  _setPhotoProcessing(true);
+
+  // -Q Phase 2: process files SEQUENTIALLY (not parallel forEach).
+  // Each photo: read → compress → release original → next.
+  // Keeps heap to one photo's worth of data at a time, even if user
+  // selects multiple photos from the gallery.
+  var idx = 0;
+  function processNext(){
+    if(idx >= files.length){
+      _DBG_log('onPhoto:all-done', {photos: FORM.photos.length, view: typeof VIEW!=='undefined'?VIEW:'?'});
+      rnd();
+      // -Q Phase 1: hold the lock for 2.5 sec AFTER everything finishes.
+      _photoProcessingTimer = setTimeout(function(){
+        _setPhotoProcessing(false);
+        _photoProcessingTimer = null;
+      }, 2500);
+      return;
+    }
+    var file = files[idx];
+    var fileSize = file.size;
+    idx++;
+    var r = new FileReader();
+    r.onload = function(e){
+      var rawDataUrl = e.target.result;
+      // Compress before storing. Sequential — only one in flight.
+      _compressPhoto(rawDataUrl, 1800, 0.85).then(function(compressed){
+        FORM.photos.push(compressed);
+        if(FORM.photos.length>0) FORM.photo = FORM.photos[0];
+        // Log size reduction for diagnostic visibility
+        try {
+          var origKB = Math.round((rawDataUrl.length * 0.75) / 1024);  // base64 -> bytes
+          var newKB  = Math.round((compressed.length * 0.75) / 1024);
+          _DBG_log('onPhoto:compressed', {idx: idx, of: files.length, origKB: origKB, newKB: newKB, reductionPct: Math.round((1 - newKB/origKB) * 100)});
+        } catch(_){}
+        // CRITICAL: drop reference to raw original. Garbage collector
+        // can now reclaim the 4MB string before next photo loads.
+        rawDataUrl = null;
+        rnd();
+        processNext();
+      }).catch(function(err){
+        _DBG_log('onPhoto:compress-fail', {msg: err && err.message});
+        // Fall back: store the original uncompressed. Better to have
+        // the photo than to lose it because compression hiccupped.
+        FORM.photos.push(rawDataUrl);
+        if(FORM.photos.length>0) FORM.photo = FORM.photos[0];
+        rawDataUrl = null;
+        rnd();
+        processNext();
+      });
+    };
+    r.onerror = function(){
+      _DBG_log('onPhoto:read-error', {msg: r.error && r.error.message});
+      processNext();
     };
     r.readAsDataURL(file);
-  });
+  }
+  processNext();
   this.value='';
+}
+
+// -Q Phase 2: Compress a photo data URL to fit Chrome PWA heap limits.
+// Samsung S22 photos are ~3-4 MB each at full resolution; storing 60+
+// such photos in IndexedDB blows the heap during sv() serialization.
+// Target: max 1800px on the longest edge, JPEG quality 0.85 — gives
+// ~300-500 KB per photo (10x reduction) while keeping enough detail
+// to read serial numbers when zoomed.
+//
+// Returns a Promise<string> resolving to the compressed data URL.
+// Always returns a JPEG, even if input was PNG. EXIF is stripped (a
+// privacy benefit — original camera GPS/device data does not survive
+// the canvas round-trip).
+//
+// Heap discipline: this function only holds ONE Image and ONE Canvas
+// at a time, both released when the Promise resolves. Callers should
+// queue compressions sequentially rather than parallel to avoid
+// stacking heap pressure.
+function _compressPhoto(dataUrl, maxEdge, quality){
+  maxEdge = maxEdge || 1800;
+  quality = quality != null ? quality : 0.85;
+  return new Promise(function(resolve, reject){
+    if(!dataUrl){ reject(new Error('empty dataUrl')); return; }
+    var img = new Image();
+    img.onload = function(){
+      try {
+        var w = img.width, h = img.height;
+        // If already smaller than target, still re-encode as JPEG to
+        // strip EXIF and normalize format. Skip the resize math.
+        var scale = (Math.max(w, h) > maxEdge) ? (maxEdge / Math.max(w, h)) : 1;
+        var newW = Math.round(w * scale);
+        var newH = Math.round(h * scale);
+        var canvas = document.createElement('canvas');
+        canvas.width = newW;
+        canvas.height = newH;
+        var ctx = canvas.getContext('2d');
+        // Higher-quality smoothing for downscale
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, newW, newH);
+        var out = canvas.toDataURL('image/jpeg', quality);
+        // Help GC release the canvas + img references promptly
+        canvas.width = 0; canvas.height = 0;
+        resolve(out);
+      } catch(e){ reject(e); }
+    };
+    img.onerror = function(){ reject(new Error('image decode failed')); };
+    img.src = dataUrl;
+  });
 }
 
 // T1.9: rotate a single dataURL 90° clockwise via canvas.
