@@ -5427,6 +5427,11 @@ function openSettings(){
         +'<button onclick="this.disabled=true;this.textContent=\'\u2713 Tours reset \u2014 reloading\u2026\';this.style.opacity=\'0.7\';_ONB_resetAll();toast(\'Tours reset \u2014 reloading\u2026\');setTimeout(function(){location.reload();},800);" style="width:100%;background:transparent;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Replay onboarding tours</button>'
       +'</div>'
     +'<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
+        +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">Photo Compression</div>'
+        +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px;line-height:1.5">Reduces existing photo sizes (typically 10x smaller) to prevent low-memory crashes. Run this once after upgrading. Safe — creates per-firearm backups during the process.</div>'
+        +'<button onclick="document.getElementById(\'settings_modal\').remove();_openCompressionUtil()" style="width:100%;background:transparent;border:1px solid #e8c46a60;color:#e8c46a;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Compress All Photos</button>'
+      +'</div>'
+    +'<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
         +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">Inventory Recovery</div>'
         +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px;line-height:1.5">Scan all storage locations for backed-up firearms. Use this if your inventory ever appears missing.</div>'
         +'<button onclick="document.getElementById(\'settings_modal\').remove();_openRecoveryScanner()" style="width:100%;background:transparent;border:1px solid #e8c46a60;color:#e8c46a;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:8px">Scan Storage for Backups</button>'
@@ -12178,6 +12183,356 @@ function _compressPhoto(dataUrl, maxEdge, quality){
   });
 }
 
+// -Q Phase 3: Retroactive photo compression utility.
+// Walks the inventory firearm-by-firearm, photo-by-photo. For each
+// firearm: writes a backup to localStorage, compresses all its photos,
+// saves the firearm, then deletes that firearm's backup.
+// Worst-case storage overhead at any moment: 2x ONE firearm's data.
+// Heap discipline: only ONE photo decoded into Image+Canvas at a time.
+// If the OS kills the tab mid-process, on next boot we detect lingering
+// backup keys and offer to resume or roll back.
+//
+// Backup key format: av_pcomp_backup__<gunId>
+// Stores the full original gun record as JSON. Deleted after that
+// firearm's photos are successfully compressed and saved.
+
+var _PCOMP_BACKUP_PREFIX = 'av_pcomp_backup__';
+
+function _pcompBackupKey(gunId){ return _PCOMP_BACKUP_PREFIX + gunId; }
+
+function _pcompFindLingeringBackups(){
+  var keys = [];
+  try {
+    for(var i=0; i<localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && k.indexOf(_PCOMP_BACKUP_PREFIX) === 0) keys.push(k);
+    }
+  } catch(_){}
+  return keys;
+}
+
+function _openCompressionUtil(){
+  if(!requirePro('Photo Compression')) return;
+  var existing = document.getElementById('pcomp_modal');
+  if(existing) existing.remove();
+
+  // Count photos and estimate total size for the preview
+  var photoCount = 0;
+  var estBytes = 0;
+  guns.forEach(function(g){
+    var ps = g.photos || (g.photo ? [g.photo] : []);
+    ps.forEach(function(p){
+      if(typeof p === 'string'){
+        photoCount++;
+        // base64 string length × 0.75 ≈ raw bytes
+        estBytes += Math.round(p.length * 0.75);
+      }
+    });
+  });
+  var estMB = (estBytes / 1048576).toFixed(1);
+
+  var lingering = _pcompFindLingeringBackups();
+  var lingerNote = '';
+  if(lingering.length > 0){
+    lingerNote = '<div style="background:#3a2a15;border:1px solid #e8c46a60;color:#e8c46a;padding:10px;border-radius:6px;margin-bottom:14px;font-size:12px;line-height:1.5">'
+      +'<strong>Recovery needed:</strong> A previous compression run was interrupted. '+lingering.length+' firearm backup(s) are still in storage. Resume to finish, or roll back to restore originals.'
+      +'</div>';
+  }
+
+  var modal = document.createElement('div');
+  modal.id = 'pcomp_modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto';
+  modal.innerHTML =
+    '<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:22px;max-width:460px;width:100%;margin:auto" id="pcomp_inner">'
+      +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#e8c46a;font-weight:700;margin-bottom:8px">PHOTO COMPRESSION</div>'
+      +lingerNote
+      +'<div style="font-size:14px;color:#f0f2f5;margin-bottom:6px">Will compress <strong>'+photoCount+' photos</strong> across <strong>'+guns.length+' firearms</strong>.</div>'
+      +'<div style="font-size:12px;color:#8a95a8;margin-bottom:14px;line-height:1.5">Current photo storage: ~<strong>'+estMB+' MB</strong>. After: typically ~10x smaller. Safe to interrupt — each firearm is backed up before its photos are touched, and the backup is deleted only after that firearm saves successfully.</div>'
+      +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:#a0aab8;line-height:1.6">'
+        +'<strong style="color:#e8c46a">Important:</strong> Don\'t close this window or use the app during compression. Each photo takes 1-2 seconds. Estimated time: ~<strong>'+Math.ceil(photoCount * 1.5)+' seconds</strong>.'
+      +'</div>'
+      +'<div id="pcomp_progress" style="display:none">'
+        +'<div style="font-size:13px;color:#e8c46a;font-weight:700;margin-bottom:8px" id="pcomp_status">Preparing&hellip;</div>'
+        +'<div style="background:#0f1218;border:1px solid #2e3545;height:14px;border-radius:7px;overflow:hidden;margin-bottom:8px"><div id="pcomp_bar" style="background:linear-gradient(90deg,#e8c46a,#c8a040);height:100%;width:0%;transition:width .3s ease"></div></div>'
+        +'<div style="font-size:11px;color:#8a95a8" id="pcomp_substatus">&nbsp;</div>'
+      +'</div>'
+      +'<div id="pcomp_buttons">'
+        +(lingering.length > 0
+          ? '<button onclick="_pcompResume()" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Resume Compression</button>'
+            +'<button onclick="_pcompRollback()" style="width:100%;background:transparent;border:1px solid #ff707060;color:#ff7070;padding:11px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;margin-bottom:8px">Roll Back to Originals</button>'
+          : '<button onclick="_pcompStart()" '+(photoCount===0?'disabled ':'')+'style="width:100%;background:'+(photoCount===0?'#3a4455':'linear-gradient(135deg,#e8c46a,#c8a040)')+';color:'+(photoCount===0?'#8a95a8':'#1a1d24')+';border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:'+(photoCount===0?'default':'pointer')+';font-family:inherit;margin-bottom:8px">Start Compression</button>')
+        +'<button onclick="document.getElementById(\'pcomp_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
+      +'</div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+function _pcompUpdateProgress(pct, status, sub){
+  var bar = document.getElementById('pcomp_bar');
+  var statEl = document.getElementById('pcomp_status');
+  var subEl = document.getElementById('pcomp_substatus');
+  if(bar) bar.style.width = pct + '%';
+  if(statEl && status) statEl.textContent = status;
+  if(subEl && sub != null) subEl.innerHTML = sub;
+}
+
+function _pcompShowProgress(){
+  var p = document.getElementById('pcomp_progress');
+  var b = document.getElementById('pcomp_buttons');
+  if(p) p.style.display = 'block';
+  if(b) b.style.display = 'none';
+}
+
+// Compress all photos for one firearm. Sequential — one photo at a time.
+// Returns Promise<{compressed: int, failed: int, originalKB, newKB}>.
+function _pcompCompressOneFirearm(gunRecord, onPhotoProgress){
+  return new Promise(function(resolve){
+    var photos = (gunRecord.photos && gunRecord.photos.length) ? gunRecord.photos.slice()
+                : (gunRecord.photo ? [gunRecord.photo] : []);
+    if(photos.length === 0){ resolve({compressed:0, failed:0, originalKB:0, newKB:0}); return; }
+
+    var newPhotos = [];
+    var idx = 0;
+    var stats = {compressed:0, failed:0, originalKB:0, newKB:0};
+
+    function processNext(){
+      if(idx >= photos.length){
+        // All photos done. Update the gun record in place.
+        gunRecord.photos = newPhotos;
+        gunRecord.photo = newPhotos[0] || '';
+        resolve(stats);
+        return;
+      }
+      var p = photos[idx];
+      idx++;
+      if(typeof p !== 'string' || p.length === 0){
+        // Skip empty/invalid entries entirely
+        processNext();
+        return;
+      }
+      var origKB = Math.round(p.length * 0.75 / 1024);
+      stats.originalKB += origKB;
+      // Already small? Skip recompression — store as-is.
+      // Threshold: photos under 600KB (~likely already compressed)
+      if(p.length * 0.75 < 600 * 1024){
+        newPhotos.push(p);
+        stats.newKB += origKB;
+        if(onPhotoProgress) onPhotoProgress(idx, photos.length, 'kept');
+        // Yield to event loop so UI can repaint
+        setTimeout(processNext, 0);
+        return;
+      }
+      _compressPhoto(p, 1800, 0.85).then(function(compressed){
+        newPhotos.push(compressed);
+        var newKB = Math.round(compressed.length * 0.75 / 1024);
+        stats.newKB += newKB;
+        stats.compressed++;
+        if(onPhotoProgress) onPhotoProgress(idx, photos.length, 'compressed');
+        // Release reference to original BEFORE next photo loads.
+        // GC can now reclaim the 4MB string.
+        p = null;
+        setTimeout(processNext, 50);  // small breathing room for GC
+      }).catch(function(err){
+        // Compression failed — keep the original. Better than data loss.
+        newPhotos.push(p);
+        stats.newKB += origKB;
+        stats.failed++;
+        if(onPhotoProgress) onPhotoProgress(idx, photos.length, 'failed');
+        setTimeout(processNext, 0);
+      });
+    }
+    processNext();
+  });
+}
+
+// Save the gun record to IndexedDB directly via openDB — bypasses
+// sv() entirely so we don't serialize the full guns[] array (which
+// would defeat the heap-pressure-relief purpose of the operation).
+function _pcompSaveOneFirearm(gunRecord){
+  return new Promise(function(resolve, reject){
+    openDB(function(db){
+      if(!db){ reject(new Error('DB unavailable')); return; }
+      try {
+        var tx = db.transaction([STORE], 'readwrite');
+        var store = tx.objectStore(STORE);
+        store.put(gunRecord);
+        tx.oncomplete = function(){ resolve(); };
+        tx.onerror = function(){ reject(tx.error || new Error('save failed')); };
+        tx.onabort = function(){ reject(tx.error || new Error('save aborted')); };
+      } catch(e){ reject(e); }
+    });
+  });
+}
+
+// Walk the work queue. Resumable: reads queue from `_pcompQueue` and
+// processes them one by one. The queue is built from `guns` at start.
+var _pcompQueue = null;
+var _pcompResults = null;
+var _pcompCancel = false;
+
+function _pcompStart(){
+  // Build queue from current guns. Each entry = gun id.
+  _pcompQueue = guns.map(function(g){ return g.id; });
+  _pcompResults = {totalPhotos:0, compressedPhotos:0, failedPhotos:0, originalKB:0, newKB:0, firearmsProcessed:0, firearmsFailed:0};
+  _pcompCancel = false;
+  _pcompShowProgress();
+  _pcompProcessNext();
+}
+
+function _pcompResume(){
+  // Resume mode: queue is the gun IDs that still have backup keys.
+  var keys = _pcompFindLingeringBackups();
+  _pcompQueue = keys.map(function(k){ return k.replace(_PCOMP_BACKUP_PREFIX, ''); });
+  _pcompResults = {totalPhotos:0, compressedPhotos:0, failedPhotos:0, originalKB:0, newKB:0, firearmsProcessed:0, firearmsFailed:0};
+  _pcompCancel = false;
+  _pcompShowProgress();
+  _pcompUpdateProgress(0, 'Resuming&hellip;', _pcompQueue.length + ' firearm(s) to finish');
+  _pcompProcessNext();
+}
+
+function _pcompRollback(){
+  if(!confirm('Restore original photos and discard any compression progress?\n\nThis will replace any partially-compressed firearms with their pre-compression originals.')) return;
+  var keys = _pcompFindLingeringBackups();
+  var restored = 0, failed = 0;
+  // Read backups, restore each gun, save, delete backup.
+  // Sequential to avoid heap pressure — each backup is one full gun record.
+  function next(i){
+    if(i >= keys.length){
+      toast('Rolled back '+restored+' firearm(s)' + (failed?' ('+failed+' failed)':''));
+      var m = document.getElementById('pcomp_modal');
+      if(m) m.remove();
+      // Reload guns from DB so the in-memory array reflects rollback
+      ld();
+      return;
+    }
+    try {
+      var raw = localStorage.getItem(keys[i]);
+      if(!raw){ failed++; setTimeout(function(){next(i+1);}, 0); return; }
+      var rec = JSON.parse(raw);
+      _pcompSaveOneFirearm(rec).then(function(){
+        try { localStorage.removeItem(keys[i]); } catch(_){}
+        restored++;
+        setTimeout(function(){next(i+1);}, 50);
+      }).catch(function(){
+        failed++;
+        setTimeout(function(){next(i+1);}, 50);
+      });
+    } catch(e){
+      failed++;
+      setTimeout(function(){next(i+1);}, 0);
+    }
+  }
+  next(0);
+}
+
+function _pcompProcessNext(){
+  if(_pcompCancel){ return; }
+  if(!_pcompQueue || _pcompQueue.length === 0){
+    _pcompFinish();
+    return;
+  }
+  var totalCount = _pcompResults.firearmsProcessed + _pcompResults.firearmsFailed + _pcompQueue.length;
+  var doneCount = _pcompResults.firearmsProcessed + _pcompResults.firearmsFailed;
+  var pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  var gunId = _pcompQueue.shift();
+  var gun = guns.find(function(g){ return g.id === gunId; });
+  if(!gun){
+    _pcompResults.firearmsFailed++;
+    setTimeout(_pcompProcessNext, 0);
+    return;
+  }
+  var label = ((gun.make||'') + ' ' + (gun.model||'')).trim() || '(unnamed)';
+  _pcompUpdateProgress(pct, 'Compressing '+(doneCount+1)+' of '+totalCount, eh(label));
+
+  // Step 1: write per-firearm backup
+  try {
+    localStorage.setItem(_pcompBackupKey(gunId), JSON.stringify(gun));
+  } catch(e){
+    // Storage quota or other error — abort this one but continue.
+    _pcompResults.firearmsFailed++;
+    setTimeout(_pcompProcessNext, 0);
+    return;
+  }
+
+  // Step 2: compress the photos
+  _pcompCompressOneFirearm(gun, function(idx, total, status){
+    _pcompUpdateProgress(pct, 'Compressing '+(doneCount+1)+' of '+totalCount, eh(label) + ' &mdash; photo '+idx+' of '+total+' ('+status+')');
+  }).then(function(stats){
+    // Step 3: save the firearm
+    _pcompResults.totalPhotos += stats.compressed + stats.failed;
+    _pcompResults.compressedPhotos += stats.compressed;
+    _pcompResults.failedPhotos += stats.failed;
+    _pcompResults.originalKB += stats.originalKB;
+    _pcompResults.newKB += stats.newKB;
+
+    // Update the in-memory guns array so other parts of the app see the
+    // new photos. Also keep modular system in sync.
+    var idx = guns.findIndex(function(g){ return g.id === gunId; });
+    if(idx >= 0){ guns[idx] = gun; }
+    if(window._arsenal && window._arsenal.updateFirearm){
+      try { window._arsenal.updateFirearm(gunId, gun); } catch(_){}
+    }
+
+    _pcompSaveOneFirearm(gun).then(function(){
+      // Step 4: delete the backup
+      try { localStorage.removeItem(_pcompBackupKey(gunId)); } catch(_){}
+      _pcompResults.firearmsProcessed++;
+      // Yield — gives GC and UI a moment between firearms
+      setTimeout(_pcompProcessNext, 100);
+    }).catch(function(err){
+      // Save failed — leave backup in place, count as failure, move on.
+      _pcompResults.firearmsFailed++;
+      setTimeout(_pcompProcessNext, 100);
+    });
+  }).catch(function(err){
+    _pcompResults.firearmsFailed++;
+    setTimeout(_pcompProcessNext, 100);
+  });
+}
+
+function _pcompFinish(){
+  _pcompUpdateProgress(100, 'Done!', '');
+  var r = _pcompResults || {};
+  var savedKB = (r.originalKB || 0) - (r.newKB || 0);
+  var savedMB = (savedKB / 1024).toFixed(1);
+  var origMB  = ((r.originalKB || 0) / 1024).toFixed(1);
+  var newMB   = ((r.newKB || 0) / 1024).toFixed(1);
+  var inner = document.getElementById('pcomp_inner');
+  if(inner){
+    inner.innerHTML =
+       '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#e8c46a;font-weight:700;margin-bottom:8px">COMPRESSION COMPLETE</div>'
+      +'<div style="font-size:36px;text-align:center;margin:14px 0">&#10003;</div>'
+      +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:14px;margin-bottom:14px">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#8a95a8">Firearms processed:</span><strong style="color:#f0f2f5">'+(r.firearmsProcessed||0)+'</strong></div>'
+        +(r.firearmsFailed ? '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#8a95a8">Firearms failed:</span><strong style="color:#ff7070">'+r.firearmsFailed+'</strong></div>' : '')
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#8a95a8">Photos compressed:</span><strong style="color:#f0f2f5">'+(r.compressedPhotos||0)+'</strong></div>'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#8a95a8">Original size:</span><strong style="color:#f0f2f5">'+origMB+' MB</strong></div>'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#8a95a8">New size:</span><strong style="color:#60e880">'+newMB+' MB</strong></div>'
+        +'<div style="display:flex;justify-content:space-between;border-top:1px solid #2e3545;padding-top:6px;margin-top:6px"><span style="color:#e8c46a;font-weight:700">Saved:</span><strong style="color:#e8c46a">'+savedMB+' MB</strong></div>'
+      +'</div>'
+      +'<button onclick="document.getElementById(\'pcomp_modal\').remove();rnd();" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Done</button>';
+  }
+  // Re-render so any open detail/list views pick up the new (smaller) photos
+  setTimeout(function(){ try { rnd(); } catch(_){} }, 200);
+}
+
+// -Q Phase 3 (continued): on boot, check for lingering compression
+// backups. If any exist, surface a one-time toast pointing the user to
+// Settings -> Photo Compression so they can resume or roll back.
+function _pcompCheckOnBoot(){
+  try {
+    var n = _pcompFindLingeringBackups().length;
+    if(n > 0){
+      // Don't block boot — just inform after a brief delay so initial
+      // render has a chance to settle.
+      setTimeout(function(){
+        toast('Compression was interrupted &mdash; Settings &gt; Photo Compression to resume');
+      }, 2500);
+    }
+  } catch(_){}
+}
+
 // T1.9: rotate a single dataURL 90° clockwise via canvas.
 // Returns a Promise that resolves to the rotated dataURL (JPEG).
 // Called by rotatePhotoIdx() from the per-photo rotate button.
@@ -15117,6 +15472,9 @@ function _applyMergeResolutions(newOnes, resolved, data){
   // Async (fire-and-forget) — does not block boot. Logs result to
   // _SV_LOG_KEY ring buffer for diagnosis if inventory-loss recurs.
   _requestPersistentStorage();
+  // -Q Phase 3: alert user if a previous photo compression run was
+  // interrupted. Lingering backup keys = unfinished work.
+  _pcompCheckOnBoot();
   loadSettings();
   initPINLock();
 loadCollections();
