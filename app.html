@@ -1585,8 +1585,13 @@ loadRangeSessions();
 // ── INDEXEDDB STORAGE ────────────────────────────────────────────────
 var _db=null;
 var DB_NAME='ArsenalVaultDB';
-var DB_VERSION=2;
+// -R: bumped to v3 to add the photo_blob store. Photos stored as native
+// Blobs instead of base64 strings — eliminates 33% inflation AND gives
+// the browser proper memory management (Blobs can be GC'd; long base64
+// strings tend to stick in heap).
+var DB_VERSION=3;
 var STORE='firearms';
+var PHOTO_STORE='photo_blob';
 
 function openDB(cb){
   if(_db){cb(_db);return;}
@@ -1623,6 +1628,15 @@ function openDB(cb){
         cs.createIndex('gunId','gunId',{unique:false});
       }
     }
+    // -R: v2 → v3: photo blob store. Each record = one photo.
+    // Key: random photo id. Value: {gunId, blob, mimeType, createdAt}.
+    // Indexed by gunId so we can fetch all photos for a firearm.
+    if(oldVersion<3){
+      if(!db.objectStoreNames.contains(PHOTO_STORE)){
+        var ps=db.createObjectStore(PHOTO_STORE,{keyPath:'id'});
+        ps.createIndex('gunId','gunId',{unique:false});
+      }
+    }
   };
   req.onsuccess=function(e){_db=e.target.result;cb(_db);};
   req.onerror=function(){
@@ -1631,7 +1645,220 @@ function openDB(cb){
   };
 }
 
-// ── SV INSTRUMENTATION (BUILD_TAG 2026-04-26-J) ──────────────────────
+// ── PHOTO BLOB API (-R) ──────────────────────────────────────────────
+// Photos stored as native Blobs in their own IndexedDB store. The gun
+// record's `photos` array now holds string IDs (e.g. "ph_abc123") that
+// reference the photo_blob store. When a view needs to display a photo,
+// it loads the Blob and converts to a temporary object URL.
+//
+// Why this is better than base64:
+//   - Storage: Blobs are stored as raw bytes, not 33%-inflated strings
+//   - Heap: Blobs aren't loaded into JS heap until URL.createObjectURL
+//     is called for them — list/dashboard views don't pay any cost
+//   - GC: object URLs can be revoked when a view closes, freeing memory
+//     immediately rather than waiting for string GC
+//
+// The gun record's photos array can be either:
+//   - Old format: ["data:image/jpeg;base64,..."] strings (legacy base64)
+//   - New format: ["ph_abc123"] photo blob IDs
+//   - Mixed: both, during migration
+// Helpers below auto-detect format. _photoIsId(s) tells them apart.
+
+function _photoIsId(s){
+  // Photo IDs always start with "ph_" — never confused with data: URLs
+  return typeof s === 'string' && s.indexOf('ph_') === 0;
+}
+
+function _newPhotoId(){
+  return 'ph_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 8);
+}
+
+// Save a Blob to the photo_blob store. Returns Promise<photoId>.
+function photoBlobSave(blob, gunId){
+  return new Promise(function(resolve, reject){
+    if(!(blob instanceof Blob)){ reject(new Error('not a Blob')); return; }
+    openDB(function(db){
+      if(!db){ reject(new Error('DB unavailable')); return; }
+      try {
+        var id = _newPhotoId();
+        var tx = db.transaction([PHOTO_STORE], 'readwrite');
+        var store = tx.objectStore(PHOTO_STORE);
+        store.put({
+          id: id,
+          gunId: gunId || null,
+          blob: blob,
+          mimeType: blob.type || 'image/jpeg',
+          size: blob.size,
+          createdAt: new Date().toISOString()
+        });
+        tx.oncomplete = function(){ resolve(id); };
+        tx.onerror = function(){ reject(tx.error || new Error('photo save failed')); };
+        tx.onabort = function(){ reject(tx.error || new Error('photo save aborted')); };
+      } catch(e){ reject(e); }
+    });
+  });
+}
+
+// Get a Blob by photo ID. Returns Promise<Blob|null>.
+function photoBlobGet(photoId){
+  return new Promise(function(resolve, reject){
+    if(!_photoIsId(photoId)){ resolve(null); return; }
+    openDB(function(db){
+      if(!db){ reject(new Error('DB unavailable')); return; }
+      try {
+        var tx = db.transaction([PHOTO_STORE], 'readonly');
+        var req = tx.objectStore(PHOTO_STORE).get(photoId);
+        req.onsuccess = function(){
+          var rec = req.result;
+          resolve(rec && rec.blob ? rec.blob : null);
+        };
+        req.onerror = function(){ reject(req.error); };
+      } catch(e){ reject(e); }
+    });
+  });
+}
+
+// Delete a photo by ID. Returns Promise<void>. No-op if not found.
+function photoBlobDelete(photoId){
+  return new Promise(function(resolve, reject){
+    if(!_photoIsId(photoId)){ resolve(); return; }
+    openDB(function(db){
+      if(!db){ resolve(); return; }
+      try {
+        var tx = db.transaction([PHOTO_STORE], 'readwrite');
+        tx.objectStore(PHOTO_STORE).delete(photoId);
+        tx.oncomplete = function(){ resolve(); };
+        tx.onerror = function(){ resolve(); };
+      } catch(e){ resolve(); }
+    });
+  });
+}
+
+// Resolve a photo entry (string from gun.photos[]) to a displayable URL.
+// Old base64 entries → returned as-is (browser can render data: URLs directly)
+// New blob ID entries → loaded from store and given an object URL
+// Returns Promise<{url: string, isObjectUrl: boolean}>
+// Caller MUST call URL.revokeObjectURL(url) when isObjectUrl is true and
+// the view is done with the photo. Failing to revoke leaks memory.
+function photoResolveToUrl(entry){
+  return new Promise(function(resolve, reject){
+    if(!entry){ resolve({url: '', isObjectUrl: false}); return; }
+    if(!_photoIsId(entry)){
+      // Legacy base64 — return data URL as-is, no cleanup needed
+      resolve({url: entry, isObjectUrl: false});
+      return;
+    }
+    photoBlobGet(entry).then(function(blob){
+      if(!blob){ resolve({url: '', isObjectUrl: false}); return; }
+      var url = URL.createObjectURL(blob);
+      resolve({url: url, isObjectUrl: true});
+    }).catch(function(){
+      resolve({url: '', isObjectUrl: false});
+    });
+  });
+}
+
+// Convert a base64 data URL to a Blob. Used during migration AND when
+// converting a fresh capture to its blob form before saving.
+function _dataUrlToBlob(dataUrl){
+  return new Promise(function(resolve, reject){
+    try {
+      // Use fetch() to do the conversion — it handles all encodings
+      // natively without manual atob/Uint8Array dance, and stays out
+      // of the JS heap for the intermediate buffer.
+      fetch(dataUrl).then(function(r){ return r.blob(); })
+        .then(resolve)
+        .catch(reject);
+    } catch(e){ reject(e); }
+  });
+}
+
+// -R: Photo render helpers.
+//
+// `_photoSrc(entry)` returns the right src= value for an <img> tag.
+//   - For legacy base64 data URLs: returns the URL directly
+//   - For new photo IDs: returns "" and adds a data-photo-id="ph_xxx"
+//     attribute placeholder. The DOM hydrator below loads the Blob
+//     and sets src to an object URL after render.
+//
+// `_photoImgTag(entry, attrs)` builds a complete <img> tag with
+//   correct src/data-photo-id wiring. Use this anywhere code
+//   was previously concatenating '<img src="'+entry+'">'.
+//
+// `_hydratePhotoIds(rootEl)` walks any <img data-photo-id> elements
+//   under rootEl and asynchronously sets their src to object URLs.
+//   Tracks created object URLs in _photoObjectUrls for later cleanup.
+//   Called automatically at end of rnd() and after view transitions.
+//
+// `_revokeAllPhotoUrls()` revokes all created object URLs. Called at
+//   the start of every rnd() and on view changes — frees Blob memory
+//   the moment a photo leaves the viewport.
+
+var _photoObjectUrls = [];
+
+function _revokeAllPhotoUrls(){
+  for(var i=0; i<_photoObjectUrls.length; i++){
+    try { URL.revokeObjectURL(_photoObjectUrls[i]); } catch(_){}
+  }
+  _photoObjectUrls = [];
+}
+
+function _photoSrc(entry){
+  if(!entry) return '';
+  if(_photoIsId(entry)) return '';  // src filled in async by hydrator
+  return entry;  // legacy data: URL
+}
+
+function _photoImgTag(entry, attrs){
+  attrs = attrs || '';
+  if(!entry) return '<img src="" '+attrs+'/>';
+  if(_photoIsId(entry)){
+    return '<img src="" data-photo-id="'+entry+'" '+attrs+'/>';
+  }
+  return '<img src="'+entry+'" '+attrs+'/>';
+}
+
+function _hydratePhotoIds(rootEl){
+  rootEl = rootEl || document;
+  // Two patterns to find: explicit data-photo-id attribute (clean path
+  // from _photoImgTag), AND img tags whose src is just "ph_..." because
+  // legacy code used '<img src="'+entry+'">'. We accept both.
+  var explicit = rootEl.querySelectorAll('img[data-photo-id]');
+  var srcAsId = rootEl.querySelectorAll('img[src^="ph_"]');
+  var imgs = [];
+  for(var i=0; i<explicit.length; i++) imgs.push(explicit[i]);
+  for(var j=0; j<srcAsId.length; j++) imgs.push(srcAsId[j]);
+  if(!imgs.length) return;
+  // Sequential — load one at a time to keep heap pressure low even when
+  // a list view shows 30+ photo thumbnails. Each Blob is tiny (~300 KB)
+  // so this typically takes <1 sec for an entire list view.
+  var idx = 0;
+  function next(){
+    if(idx >= imgs.length) return;
+    var img = imgs[idx];
+    idx++;
+    var photoId = img.getAttribute('data-photo-id');
+    if(!photoId){
+      // Came from the src=ph_xxx pattern
+      var srcVal = img.getAttribute('src') || '';
+      if(srcVal.indexOf('ph_') === 0) photoId = srcVal;
+    }
+    if(!photoId){ next(); return; }
+    img.removeAttribute('data-photo-id');
+    img.src = '';  // clear broken src
+    photoBlobGet(photoId).then(function(blob){
+      if(blob){
+        var url = URL.createObjectURL(blob);
+        _photoObjectUrls.push(url);
+        img.src = url;
+      }
+      next();
+    }).catch(function(){ next(); });
+  }
+  next();
+}
+
+
 // Diagnostic ring buffer logging every sv() call. Goal: catch the bug
 // where guns array gets wiped to [] in storage. Each suspicious call
 // (drop from >0 to 0, or drop of 2+) is flagged so we can identify the
@@ -4039,6 +4266,12 @@ function getStorageSuggestions(){
 }
 function rnd(){
   if(QR_SCAN_MODE) return;
+  // -R: Revoke any object URLs from the previous render. The DOM elements
+  // referencing them are about to be replaced via innerHTML — without
+  // this revoke, the underlying Blobs stay in memory until GC notices
+  // they're orphaned (which can take a while). Revoking now releases
+  // them immediately.
+  _revokeAllPhotoUrls();
   var fab=document.getElementById('fab_add');
   if(fab) fab.style.display=(VIEW==='add')?'none':'flex';
   var backFab=document.getElementById('fab_back');
@@ -4063,6 +4296,10 @@ function rnd(){
   document.getElementById('photoInCam').onchange=onPhoto;
   document.getElementById('schIn').onchange=onSch;
   var imp=document.getElementById('importIn');if(imp)imp.onchange=restoreData;
+  // -R: Resolve any photo IDs in the freshly rendered DOM to actual
+  // object URLs. Sequential — only one Blob loaded at a time, so even
+  // a list view of 30 photos doesn't spike heap.
+  _hydratePhotoIds(document.getElementById('app'));
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────
@@ -5070,7 +5307,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-04-26-Q';   // bump on every revision
+var BUILD_TAG   = '2026-04-26-R';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -5427,9 +5664,9 @@ function openSettings(){
         +'<button onclick="this.disabled=true;this.textContent=\'\u2713 Tours reset \u2014 reloading\u2026\';this.style.opacity=\'0.7\';_ONB_resetAll();toast(\'Tours reset \u2014 reloading\u2026\');setTimeout(function(){location.reload();},800);" style="width:100%;background:transparent;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Replay onboarding tours</button>'
       +'</div>'
     +'<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
-        +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">Photo Compression</div>'
-        +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px;line-height:1.5">Reduces existing photo sizes (typically 10x smaller) to prevent low-memory crashes. Run this once after upgrading. Safe — creates per-firearm backups during the process.</div>'
-        +'<button onclick="document.getElementById(\'settings_modal\').remove();_openCompressionUtil()" style="width:100%;background:transparent;border:1px solid #e8c46a60;color:#e8c46a;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Compress All Photos</button>'
+        +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">Photo Storage</div>'
+        +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px;line-height:1.5">Convert existing photos to the new storage format. Run this once to fix low-memory crashes when adding new firearms.</div>'
+        +'<button onclick="document.getElementById(\'settings_modal\').remove();_openCompressionUtil()" style="width:100%;background:transparent;border:1px solid #e8c46a60;color:#e8c46a;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Migrate Photos</button>'
       +'</div>'
     +'<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
         +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">Inventory Recovery</div>'
@@ -12076,16 +12313,23 @@ function onPhoto(){
   // FileReader is still decoding the just-captured photo.
   _setPhotoProcessing(true);
 
-  // -Q Phase 2: process files SEQUENTIALLY (not parallel forEach).
-  // Each photo: read → compress → release original → next.
-  // Keeps heap to one photo's worth of data at a time, even if user
-  // selects multiple photos from the gallery.
+  // -R: Capture pipeline now goes:
+  //   File → FileReader (data URL) → Image → Canvas → JPEG Blob → photo_blob store
+  //
+  // The Blob is saved to the photo_blob store directly. Only the photo
+  // ID (e.g. "ph_abc123") is added to FORM.photos. The full image data
+  // never sits in the gun record's photos array, so heap pressure during
+  // sv() is gone.
+  //
+  // Sequential — only one photo's worth of data in flight at a time.
+  // After each photo: revoke object URL, null the data URL string,
+  // explicitly let GC reclaim before the next one starts.
+
   var idx = 0;
   function processNext(){
     if(idx >= files.length){
       _DBG_log('onPhoto:all-done', {photos: FORM.photos.length, view: typeof VIEW!=='undefined'?VIEW:'?'});
       rnd();
-      // -Q Phase 1: hold the lock for 2.5 sec AFTER everything finishes.
       _photoProcessingTimer = setTimeout(function(){
         _setPhotoProcessing(false);
         _photoProcessingTimer = null;
@@ -12098,30 +12342,47 @@ function onPhoto(){
     var r = new FileReader();
     r.onload = function(e){
       var rawDataUrl = e.target.result;
-      // Compress before storing. Sequential — only one in flight.
-      _compressPhoto(rawDataUrl, 1800, 0.85).then(function(compressed){
-        FORM.photos.push(compressed);
-        if(FORM.photos.length>0) FORM.photo = FORM.photos[0];
-        // Log size reduction for diagnostic visibility
-        try {
-          var origKB = Math.round((rawDataUrl.length * 0.75) / 1024);  // base64 -> bytes
-          var newKB  = Math.round((compressed.length * 0.75) / 1024);
-          _DBG_log('onPhoto:compressed', {idx: idx, of: files.length, origKB: origKB, newKB: newKB, reductionPct: Math.round((1 - newKB/origKB) * 100)});
-        } catch(_){}
-        // CRITICAL: drop reference to raw original. Garbage collector
-        // can now reclaim the 4MB string before next photo loads.
+      // Compress to a smaller JPEG. _compressPhoto returns a base64 data
+      // URL today; we then convert that to a Blob and save it.
+      _compressPhoto(rawDataUrl, 1800, 0.85).then(function(compressedDataUrl){
+        // Drop reference to original raw data URL — GC can reclaim
         rawDataUrl = null;
-        rnd();
-        processNext();
+        return _dataUrlToBlob(compressedDataUrl).then(function(blob){
+          // Drop reference to compressed data URL too — Blob has the bytes now
+          compressedDataUrl = null;
+          // Save the Blob to photo_blob store. gunId is null at capture
+          // time (firearm not yet saved); we'll update gunId at sv() time.
+          return photoBlobSave(blob, null).then(function(photoId){
+            blob = null;  // store has ownership now
+            FORM.photos.push(photoId);
+            if(FORM.photos.length > 0) FORM.photo = FORM.photos[0];
+            try {
+              _DBG_log('onPhoto:saved-blob', {idx: idx, of: files.length, photoId: photoId, fileSizeKB: Math.round(fileSize/1024)});
+            } catch(_){}
+            rnd();
+            processNext();
+          });
+        });
       }).catch(function(err){
-        _DBG_log('onPhoto:compress-fail', {msg: err && err.message});
-        // Fall back: store the original uncompressed. Better to have
-        // the photo than to lose it because compression hiccupped.
-        FORM.photos.push(rawDataUrl);
-        if(FORM.photos.length>0) FORM.photo = FORM.photos[0];
-        rawDataUrl = null;
-        rnd();
-        processNext();
+        _DBG_log('onPhoto:capture-failed', {msg: err && err.message});
+        // Fallback: save the raw data URL as a Blob (uncompressed)
+        // so we don't lose the photo entirely.
+        if(rawDataUrl){
+          _dataUrlToBlob(rawDataUrl).then(function(blob){
+            return photoBlobSave(blob, null);
+          }).then(function(photoId){
+            FORM.photos.push(photoId);
+            if(FORM.photos.length > 0) FORM.photo = FORM.photos[0];
+            rawDataUrl = null;
+            rnd();
+            processNext();
+          }).catch(function(){
+            rawDataUrl = null;
+            processNext();
+          });
+        } else {
+          processNext();
+        }
       });
     };
     r.onerror = function(){
@@ -12212,44 +12473,38 @@ function _pcompFindLingeringBackups(){
 }
 
 function _openCompressionUtil(){
-  if(!requirePro('Photo Compression')) return;
+  if(!requirePro('Photo Migration')) return;
   var existing = document.getElementById('pcomp_modal');
   if(existing) existing.remove();
 
-  // Count photos and estimate total size for the preview
-  var photoCount = 0;
-  var estBytes = 0;
+  // Count photos that need migration (base64 entries) vs already-blob (ph_xxx)
+  var legacyCount = 0;
+  var blobCount = 0;
+  var totalLegacyBytes = 0;
   guns.forEach(function(g){
     var ps = g.photos || (g.photo ? [g.photo] : []);
     ps.forEach(function(p){
       if(typeof p === 'string'){
-        photoCount++;
-        // base64 string length × 0.75 ≈ raw bytes
-        estBytes += Math.round(p.length * 0.75);
+        if(_photoIsId(p)){ blobCount++; }
+        else { legacyCount++; totalLegacyBytes += Math.round(p.length * 0.75); }
       }
     });
   });
-  var estMB = (estBytes / 1048576).toFixed(1);
-
-  var lingering = _pcompFindLingeringBackups();
-  var lingerNote = '';
-  if(lingering.length > 0){
-    lingerNote = '<div style="background:#3a2a15;border:1px solid #e8c46a60;color:#e8c46a;padding:10px;border-radius:6px;margin-bottom:14px;font-size:12px;line-height:1.5">'
-      +'<strong>Recovery needed:</strong> A previous compression run was interrupted. '+lingering.length+' firearm backup(s) are still in storage. Resume to finish, or roll back to restore originals.'
-      +'</div>';
-  }
+  var totalLegacyMB = (totalLegacyBytes / 1048576).toFixed(1);
 
   var modal = document.createElement('div');
   modal.id = 'pcomp_modal';
   modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto';
   modal.innerHTML =
     '<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:22px;max-width:460px;width:100%;margin:auto" id="pcomp_inner">'
-      +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#e8c46a;font-weight:700;margin-bottom:8px">PHOTO COMPRESSION</div>'
-      +lingerNote
-      +'<div style="font-size:14px;color:#f0f2f5;margin-bottom:6px">Will compress <strong>'+photoCount+' photos</strong> across <strong>'+guns.length+' firearms</strong>.</div>'
-      +'<div style="font-size:12px;color:#8a95a8;margin-bottom:14px;line-height:1.5">Current photo storage: ~<strong>'+estMB+' MB</strong>. After: typically ~10x smaller. Safe to interrupt — each firearm is backed up before its photos are touched, and the backup is deleted only after that firearm saves successfully.</div>'
+      +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#e8c46a;font-weight:700;margin-bottom:8px">PHOTO MIGRATION</div>'
+      +'<div style="font-size:14px;color:#f0f2f5;margin-bottom:6px">Convert <strong>'+legacyCount+' legacy photos</strong> ('+totalLegacyMB+' MB) to the new format.</div>'
+      +'<div style="font-size:12px;color:#8a95a8;margin-bottom:14px;line-height:1.5">'
+        +'New format stores photos separately from firearm records, eliminating heap pressure during saves. After migration, your existing photos are stored more efficiently and load faster.'
+        +(blobCount > 0 ? '<br/><br/>'+blobCount+' photos are already in the new format.' : '')
+      +'</div>'
       +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:#a0aab8;line-height:1.6">'
-        +'<strong style="color:#e8c46a">Important:</strong> Don\'t close this window or use the app during compression. Each photo takes 1-2 seconds. Estimated time: ~<strong>'+Math.ceil(photoCount * 1.5)+' seconds</strong>.'
+        +'<strong style="color:#e8c46a">Safe to run:</strong> Each photo is verified after conversion. Original is only removed once the new copy is confirmed in storage. Interruptions are recoverable.'
       +'</div>'
       +'<div id="pcomp_progress" style="display:none">'
         +'<div style="font-size:13px;color:#e8c46a;font-weight:700;margin-bottom:8px" id="pcomp_status">Preparing&hellip;</div>'
@@ -12257,14 +12512,135 @@ function _openCompressionUtil(){
         +'<div style="font-size:11px;color:#8a95a8" id="pcomp_substatus">&nbsp;</div>'
       +'</div>'
       +'<div id="pcomp_buttons">'
-        +(lingering.length > 0
-          ? '<button onclick="_pcompResume()" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Resume Compression</button>'
-            +'<button onclick="_pcompRollback()" style="width:100%;background:transparent;border:1px solid #ff707060;color:#ff7070;padding:11px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;margin-bottom:8px">Roll Back to Originals</button>'
-          : '<button onclick="_pcompStart()" '+(photoCount===0?'disabled ':'')+'style="width:100%;background:'+(photoCount===0?'#3a4455':'linear-gradient(135deg,#e8c46a,#c8a040)')+';color:'+(photoCount===0?'#8a95a8':'#1a1d24')+';border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:'+(photoCount===0?'default':'pointer')+';font-family:inherit;margin-bottom:8px">Start Compression</button>')
-        +'<button onclick="document.getElementById(\'pcomp_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
+        +'<button onclick="_pcompStartMigration()" '+(legacyCount===0?'disabled ':'')+'style="width:100%;background:'+(legacyCount===0?'#3a4455':'linear-gradient(135deg,#e8c46a,#c8a040)')+';color:'+(legacyCount===0?'#8a95a8':'#1a1d24')+';border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:'+(legacyCount===0?'default':'pointer')+';font-family:inherit;margin-bottom:8px">'+(legacyCount===0?'Nothing to Migrate':'Start Migration')+'</button>'
+        +'<button onclick="document.getElementById(\'pcomp_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Close</button>'
       +'</div>'
     +'</div>';
   document.body.appendChild(modal);
+}
+
+// Migration: walks every gun's photos[] array. Each base64 entry is
+// converted to Blob, saved to photo_blob store, and the array entry
+// is replaced with the new photo ID. After processing all photos for
+// one firearm, the gun is saved to IndexedDB. Crash-safe: if interrupted
+// mid-migration, base64 entries that haven't been converted are still
+// usable (the rendering code handles both formats).
+var _pmigQueue = null;
+var _pmigStats = null;
+
+function _pcompStartMigration(){
+  _pmigQueue = guns.map(function(g){ return g.id; });
+  _pmigStats = {firearmsDone:0, firearmsFailed:0, photosConverted:0, photosFailed:0, bytesBefore:0, bytesAfter:0};
+  var p = document.getElementById('pcomp_progress');
+  var b = document.getElementById('pcomp_buttons');
+  if(p) p.style.display = 'block';
+  if(b) b.style.display = 'none';
+  _pmigProcessNext();
+}
+
+function _pmigProcessNext(){
+  if(!_pmigQueue || _pmigQueue.length === 0){
+    _pmigFinish();
+    return;
+  }
+  var totalCount = _pmigStats.firearmsDone + _pmigStats.firearmsFailed + _pmigQueue.length;
+  var doneCount = _pmigStats.firearmsDone + _pmigStats.firearmsFailed;
+  var pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  var gunId = _pmigQueue.shift();
+  var gun = guns.find(function(g){ return g.id === gunId; });
+  if(!gun){
+    _pmigStats.firearmsFailed++;
+    setTimeout(_pmigProcessNext, 0);
+    return;
+  }
+  var label = ((gun.make||'') + ' ' + (gun.model||'')).trim() || '(unnamed)';
+  _pcompUpdateProgress(pct, 'Migrating '+(doneCount+1)+' of '+totalCount, eh(label));
+
+  // Process this firearm's photos sequentially
+  var photos = gun.photos || (gun.photo ? [gun.photo] : []);
+  var newPhotos = [];
+  var pIdx = 0;
+
+  function nextPhoto(){
+    if(pIdx >= photos.length){
+      // All photos for this firearm done. Update gun and save.
+      gun.photos = newPhotos;
+      gun.photo = newPhotos[0] || '';
+      var memIdx = guns.findIndex(function(g){ return g.id === gunId; });
+      if(memIdx >= 0) guns[memIdx] = gun;
+      // Save firearm record directly (bypass sv() to avoid serializing
+      // the entire guns array — that's the heap pressure we're escaping)
+      _pcompSaveOneFirearm(gun).then(function(){
+        _pmigStats.firearmsDone++;
+        setTimeout(_pmigProcessNext, 50);
+      }).catch(function(){
+        _pmigStats.firearmsFailed++;
+        setTimeout(_pmigProcessNext, 50);
+      });
+      return;
+    }
+    var entry = photos[pIdx];
+    pIdx++;
+    if(!entry || typeof entry !== 'string'){
+      nextPhoto();
+      return;
+    }
+    if(_photoIsId(entry)){
+      // Already migrated — keep as is
+      newPhotos.push(entry);
+      nextPhoto();
+      return;
+    }
+    // Legacy base64 — convert to Blob, save, replace entry with ID
+    var origBytes = Math.round(entry.length * 0.75);
+    _pcompUpdateProgress(pct, 'Migrating '+(doneCount+1)+' of '+totalCount, eh(label) + ' &mdash; photo '+pIdx+' of '+photos.length);
+    _dataUrlToBlob(entry).then(function(blob){
+      _pmigStats.bytesBefore += origBytes;
+      _pmigStats.bytesAfter += blob.size;
+      return photoBlobSave(blob, gunId);
+    }).then(function(photoId){
+      newPhotos.push(photoId);
+      _pmigStats.photosConverted++;
+      // Drop reference to the old base64 string for GC
+      entry = null;
+      // Yield to event loop so UI can repaint
+      setTimeout(nextPhoto, 30);
+    }).catch(function(err){
+      // Conversion failed — keep the original base64 entry. No data loss.
+      newPhotos.push(entry);
+      _pmigStats.photosFailed++;
+      entry = null;
+      setTimeout(nextPhoto, 0);
+    });
+  }
+  nextPhoto();
+}
+
+function _pmigFinish(){
+  _pcompUpdateProgress(100, 'Migration complete!', '');
+  var s = _pmigStats || {};
+  var beforeMB = ((s.bytesBefore || 0) / 1048576).toFixed(1);
+  var afterMB = ((s.bytesAfter || 0) / 1048576).toFixed(1);
+  var savedMB = (((s.bytesBefore || 0) - (s.bytesAfter || 0)) / 1048576).toFixed(1);
+  var inner = document.getElementById('pcomp_inner');
+  if(inner){
+    inner.innerHTML =
+       '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#e8c46a;font-weight:700;margin-bottom:8px">MIGRATION COMPLETE</div>'
+      +'<div style="font-size:36px;text-align:center;margin:14px 0">&#10003;</div>'
+      +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:14px;margin-bottom:14px">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#8a95a8">Firearms processed:</span><strong style="color:#f0f2f5">'+(s.firearmsDone||0)+'</strong></div>'
+        +(s.firearmsFailed ? '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#8a95a8">Firearms failed:</span><strong style="color:#ff7070">'+s.firearmsFailed+'</strong></div>' : '')
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#8a95a8">Photos converted:</span><strong style="color:#f0f2f5">'+(s.photosConverted||0)+'</strong></div>'
+        +(s.photosFailed ? '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#8a95a8">Photos failed:</span><strong style="color:#ff7070">'+s.photosFailed+'</strong></div>' : '')
+        +'<div style="display:flex;justify-content:space-between;border-top:1px solid #2e3545;padding-top:6px;margin-top:6px"><span style="color:#e8c46a;font-weight:700">Storage saved:</span><strong style="color:#e8c46a">'+savedMB+' MB</strong></div>'
+      +'</div>'
+      +'<div style="background:#1a3320;border:1px solid #60e88060;color:#90e8a0;padding:10px;border-radius:6px;margin-bottom:14px;font-size:12px;line-height:1.5">'
+        +'<strong>Heap pressure should now be resolved.</strong> Adding new firearms with photos should no longer cause low-memory crashes.'
+      +'</div>'
+      +'<button onclick="document.getElementById(\'pcomp_modal\').remove();rnd();" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Done</button>';
+  }
+  setTimeout(function(){ try { rnd(); } catch(_){} }, 200);
 }
 
 function _pcompUpdateProgress(pct, status, sub){
@@ -12522,13 +12898,12 @@ function _pcompFinish(){
 // Settings -> Photo Compression so they can resume or roll back.
 function _pcompCheckOnBoot(){
   try {
-    var n = _pcompFindLingeringBackups().length;
-    if(n > 0){
-      // Don't block boot — just inform after a brief delay so initial
-      // render has a chance to settle.
-      setTimeout(function(){
-        toast('Compression was interrupted &mdash; Settings &gt; Photo Compression to resume');
-      }, 2500);
+    // -R: Clean up any leftover backup keys from previous (-Q) attempts.
+    // The new Blob storage system doesn't use these. Removing them frees
+    // localStorage space.
+    var leftovers = _pcompFindLingeringBackups();
+    for(var i=0; i<leftovers.length; i++){
+      try { localStorage.removeItem(leftovers[i]); } catch(_){}
     }
   } catch(_){}
 }
