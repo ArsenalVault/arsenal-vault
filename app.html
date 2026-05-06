@@ -1773,6 +1773,76 @@ function _dataUrlToBlob(dataUrl){
   });
 }
 
+// ── Photo resolution for export / print / PDF child windows ──────────
+// `window.open('', '_blank')` produces a fresh window with no access to
+// this window's IndexedDB blobs as object URLs (and the parent's
+// blob:-scheme URLs are scoped to the parent). The print HTML embeds
+// <img src="..."> values that the child window has to fetch on its
+// own — for ph_xxx blob IDs, that's a broken image.
+//
+// To make print/PDF work for migrated photos, callers must resolve any
+// ph_xxx entries to inline data: URLs BEFORE writing them into the
+// child window. Data URLs are universal and self-contained.
+//
+// Heap discipline: sequential resolution — one Blob+data URL pair in
+// flight at a time. For a typical print job (1-10 photos at ~100 KB
+// each), this adds <1s to the render and never holds more than ~250 KB
+// of compressed bytes plus a ~140 KB base64 string in memory.
+//
+// Returns '' for any entry that fails to resolve so the print still
+// completes (just with a blank cell where the broken photo would be).
+function _resolvePhotoEntryForExport(entry){
+  return new Promise(function(resolve){
+    if(!entry || typeof entry !== 'string'){ resolve(''); return; }
+    if(!_photoIsId(entry)){
+      // Already a data: URL or http(s) URL — pass through as-is
+      resolve(entry);
+      return;
+    }
+    photoBlobGet(entry).then(function(blob){
+      if(!blob){ resolve(''); return; }
+      var fr = new FileReader();
+      fr.onload  = function(e){ resolve((e.target && e.target.result) || ''); };
+      fr.onerror = function(){ resolve(''); };
+      fr.readAsDataURL(blob);
+    }).catch(function(){ resolve(''); });
+  });
+}
+
+// Resolve an array of entries in order. Sequential to bound heap.
+// Always returns an array of the same length as input, with '' for
+// failures — never rejects.
+function _resolvePhotoEntriesForExport(entries){
+  if(!entries || !entries.length) return Promise.resolve([]);
+  var out = new Array(entries.length);
+  var p = Promise.resolve();
+  entries.forEach(function(entry, i){
+    p = p.then(function(){
+      return _resolvePhotoEntryForExport(entry).then(function(d){ out[i] = d; });
+    });
+  });
+  return p.then(function(){ return out; });
+}
+
+// Minimal "preparing print preview" page used as the first thing
+// written to a freshly opened print window while we async-resolve
+// photos. Without this, popup blockers see a window with no content
+// and may close it before our real document is ready. Also gives the
+// user feedback that something is happening.
+function _printLoadingHtml(title){
+  title = title || 'ArsenalDB';
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"/>'
+    +'<title>'+title+'</title>'
+    +'<style>body{font-family:-apple-system,sans-serif;background:#fff;color:#333;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}'
+    +'.box{text-align:center;padding:30px}'
+    +'.spin{width:32px;height:32px;border:3px solid #e8c46a;border-top-color:transparent;border-radius:50%;animation:r 0.8s linear infinite;margin:0 auto 14px}'
+    +'@keyframes r{to{transform:rotate(360deg)}}'
+    +'.t{font-size:14px;color:#666}'
+    +'</style></head><body>'
+    +'<div class="box"><div class="spin"></div><div class="t">Preparing print preview&hellip;</div></div>'
+    +'</body></html>';
+}
+
 // -R: Photo render helpers.
 //
 // `_photoSrc(entry)` returns the right src= value for an <img> tag.
@@ -2110,7 +2180,16 @@ var _ONB_loadHookFired = false;
 function _ONB_afterLoadHook(){
   if(_ONB_loadHookFired) return;
   _ONB_loadHookFired = true;
+  // Stamp the initial entry with the current view state. Subsequent
+  // navigations push on top; system back pops back to this one and
+  // any further back press exits the PWA (matches expected mobile UX).
+  // Done after data load so any QR-code / deep-link view change has
+  // already settled VIEW before we capture it.
+  if(typeof _historyReplace === 'function') _historyReplace();
   if(typeof _ONB_maybeStartTours === 'function') _ONB_maybeStartTours();
+  // If any legacy base64 photos remain, surface the migration modal so the
+  // user can convert them and escape the sv()-heap-overflow crash loop.
+  if(typeof _pcompPromptIfLegacy === 'function') _pcompPromptIfLegacy();
 }
 
 function ldFallback(){
@@ -2309,6 +2388,68 @@ function _pushViewState(){
   if(VIEW==='reports'){st.reportTab=reportTab;}
   _viewHistory.push(st);
 }
+
+// ── Browser history integration ───────────────────────────────────────
+// _pushViewState above captures the *previous* view into a (now unused)
+// internal stack. The browser History API is different: each entry
+// represents the *currently displayed* view. So we add a separate pair
+// of helpers that record the current state, called AFTER each navigation
+// completes. The popstate listener restores state on system back press.
+//
+// _suppressNextPush avoids double-pushing when popstate triggers a
+// navigation that would otherwise call _historyPush itself (the popstate
+// path uses _navigateToState directly, which does NOT push, so this flag
+// is currently a safety net for any future shared-codepath cases).
+
+var _suppressNextPush = false;
+
+function _buildViewState(){
+  var st = {view: VIEW};
+  if(VIEW === 'detail'){ st.selId = selId; st.dTab = dTab; }
+  else if(VIEW === 'add'){ st.editId = editId; }
+  else if(VIEW === 'reports'){ st.reportTab = reportTab; }
+  return st;
+}
+
+function _historyPush(){
+  if(_suppressNextPush){ _suppressNextPush = false; return; }
+  try { history.pushState(_buildViewState(), '', location.href); } catch(_){}
+}
+
+function _historyReplace(){
+  try { history.replaceState(_buildViewState(), '', location.href); } catch(_){}
+}
+
+// Restore the app to a state object popped from history. Sets the
+// state variables (VIEW, selId, dTab, editId, reportTab, FORM) and
+// re-renders. Does NOT push history — the popstate listener calls
+// this AFTER the browser has already updated history for us.
+function _navigateToState(st){
+  if(!st || typeof st !== 'object'){
+    // No state attached to entry (e.g. user landed via URL-only nav).
+    // Fall back to dashboard.
+    VIEW = 'dashboard';
+    rnd();
+    return;
+  }
+  if(st.view === 'detail'){
+    if(st.selId) selId = st.selId;
+    if(st.dTab) dTab = st.dTab;
+  } else if(st.view === 'add'){
+    editId = st.editId || null;
+    if(editId){
+      var g = guns.find(function(x){ return x.id === editId; });
+      FORM = g ? Object.assign({}, g) : ef();
+      if(!FORM.photos || !FORM.photos.length) FORM.photos = FORM.photo ? [FORM.photo] : [];
+    } else {
+      FORM = ef();
+    }
+  } else if(st.view === 'reports'){
+    reportTab = st.reportTab || 'worth';
+  }
+  VIEW = st.view || 'dashboard';
+  rnd();
+}
 function go(v){
   // REPORT-T12: clear ephemeral report selection when leaving Reports view
   if(VIEW==='reports' && v!=='reports'){ clearReportSelection(); }
@@ -2323,10 +2464,12 @@ function go(v){
     }
     FORM=ef();editId=null;aiVal=null;aiDiag=null;playRack();
   }
-  if(v!==VIEW) _pushViewState();
+  var changed = (v !== VIEW);
+  if(changed) _pushViewState();
   if(v==='dashboard') _viewHistory=[];
   if(v==='pic'&&!picGunId&&guns.length){picGunId=guns[0].id;}
   VIEW=v;rnd();
+  if(changed) _historyPush();
 }
 
 function stats(){
@@ -3940,22 +4083,37 @@ function printWO(idx){
   var wo = _woUpgradeRecord(orders[idx]);
   var snap = wo.snapshot || {};
   var titleSuffix = [snap.make, snap.model].filter(function(s){return s;}).join(' ');
-  var html = _buildWOPacketHtml(wo, gun, {
-    omitPayload: true,
-    titleSuffix:  titleSuffix
-  });
+
+  // Open the window synchronously inside the click handler so the popup
+  // blocker doesn't intervene. Show a loading page while we async-
+  // resolve the firearm's first photo (a ph_xxx blob ID would be a
+  // broken image in the print window — needs a self-contained data URL).
   var W;
   try{ W = window.open('', '_blank'); }catch(e){ W = null; }
   if(!W){ toast('Pop-ups blocked — enable them to print','err'); return; }
   W.document.open();
-  W.document.write(html);
+  W.document.write(_printLoadingHtml(titleSuffix || 'Work Order'));
   W.document.close();
-  // Wait for window to finish loading (especially photos) before printing
-  if(W.document.readyState === 'complete'){
-    setTimeout(function(){ try{ W.print(); }catch(e){} }, 200);
-  } else {
-    W.onload = function(){ setTimeout(function(){ try{ W.print(); }catch(e){} }, 200); };
-  }
+
+  var firstEntry = (gun.photos && gun.photos.length) ? gun.photos[0]
+                 : (gun.photo ? gun.photo : '');
+  _resolvePhotoEntryForExport(firstEntry).then(function(firstPhotoData){
+    if(!W || W.closed) return;
+    var html = _buildWOPacketHtml(wo, gun, {
+      omitPayload: true,
+      titleSuffix:  titleSuffix,
+      firstPhotoData: firstPhotoData
+    });
+    W.document.open();
+    W.document.write(html);
+    W.document.close();
+    // Wait for window to finish loading (especially photos) before printing
+    if(W.document.readyState === 'complete'){
+      setTimeout(function(){ try{ W.print(); }catch(e){} }, 200);
+    } else {
+      W.onload = function(){ setTimeout(function(){ try{ W.print(); }catch(e){} }, 200); };
+    }
+  });
 }
 
 // T2: escape JSON for safe embedding inside a <script> tag.
@@ -3979,9 +4137,17 @@ function _buildWOVisualSection(wo, gun, opts){
   var includeOwner = opts.includeOwner === true;
   var ownerProfile = opts.ownerProfile || {};
   var firstPhoto = null;
-  if(includePhoto && gun){
-    if(gun.photos && gun.photos.length) firstPhoto = gun.photos[0];
-    else if(gun.photo) firstPhoto = gun.photo;
+  if(includePhoto){
+    // Caller may pre-resolve a ph_xxx blob ID to a self-contained data
+    // URL (needed for child-window print/PDF) and pass it via
+    // opts.firstPhotoData. Falls back to the gun's raw entry for
+    // legacy/screen rendering where the parent's hydrator handles IDs.
+    if(opts.firstPhotoData != null){
+      firstPhoto = opts.firstPhotoData || null;
+    } else if(gun){
+      if(gun.photos && gun.photos.length) firstPhoto = gun.photos[0];
+      else if(gun.photo) firstPhoto = gun.photo;
+    }
   }
   var snap = wo.snapshot || {};
   var fmLine = [snap.make, snap.model].filter(function(s){return s;}).join(' ');
@@ -4226,7 +4392,10 @@ function _buildWOPacketHtml(wo, gun, opts){
   var visible = _buildWOVisualSection(wo, gun, {
     includePhoto: true,
     includeOwner: !opts.omitPayload,
-    ownerProfile: ownerProfile
+    ownerProfile: ownerProfile,
+    // Pre-resolved data URL for the child-window print path; undefined
+    // for screen rendering (visual section falls back to gun.photos[0]).
+    firstPhotoData: opts.firstPhotoData
   });
   var html = '<!DOCTYPE html>'
     +'<html lang="en"><head><meta charset="UTF-8">'
@@ -4653,8 +4822,8 @@ function rAdd(){
       +'<div style="color:#8a95a8;font-size:12px;margin-top:12px">💡 Switch to Full Form to add serial number, photos, value, ammo, and storage info.</div>'
       +'</div>'
       +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-bottom:26px">'
-      +'<button class="btn-g" onclick="go(\'list\')">Cancel</button>'
-      +'<button class="btn-p" onclick="doSave()">'+(editId?'Save Changes':'Add to Inventory')+'</button>'
+      +'<button class="btn-g" id="cancel_btn" onclick="go(\'list\')"'+(_photoProcessing?' disabled':'')+'>Cancel</button>'
+      +'<button class="btn-p" id="save_btn" onclick="doSave()"'+(_photoProcessing?' disabled':'')+'>'+(_photoProcessing?'Processing photo&hellip;':(editId?'Save Changes':'Add to Inventory'))+'</button>'
       +'</div>';
   }
 
@@ -4709,8 +4878,8 @@ function rAdd(){
     +panelWrap('value','$ Value &amp; Pricing',valueHtml)
     +panelWrap('extra','🔫 Ammo &amp; Storage',ammoHtml)
     +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-bottom:26px">'
-    +'<button class="btn-g" onclick="go(\'list\')">Cancel</button>'
-    +'<button class="btn-p" onclick="doSave()">'+(editId?'Save Changes':'Add to Inventory')+'</button>'
+    +'<button class="btn-g" id="cancel_btn" onclick="go(\'list\')"'+(_photoProcessing?' disabled':'')+'>Cancel</button>'
+    +'<button class="btn-p" id="save_btn" onclick="doSave()"'+(_photoProcessing?' disabled':'')+'>'+(_photoProcessing?'Processing photo&hellip;':(editId?'Save Changes':'Add to Inventory'))+'</button>'
     +'</div>';
 }
 
@@ -4719,9 +4888,11 @@ function goFilter(workFilter, condFilter, srchVal, typeFilter){
   fCond=condFilter||'All';
   srch=srchVal||'';
   fType=typeFilter||'All';
-  if(VIEW!=='list') _pushViewState();
+  var changed = (VIEW !== 'list');
+  if(changed) _pushViewState();
   VIEW='list';
   rnd();
+  if(changed) _historyPush();
 }
 
 // ── STAR / FLAG ───────────────────────────────────────────────────────
@@ -4790,16 +4961,19 @@ function doSave(){
     setTimeout(function(){ try{ openAcquisitionPrompt(newId); }catch(e){} }, 400);
   }
   sv();checkMilestones('save');FORM=ef();editId=null;aiVal=null;aiDiag=null;VIEW='list';rnd();
+  _historyPush();
 }
 
 function openDet(id){
   _pushViewState();
   selId=id;dTab='mnt';VIEW='detail';rnd();
+  _historyPush();
 }
 
 function viewSchematics(id){
   _pushViewState();
   selId=id;dTab='sch';SCH=null;VIEW='detail';rnd();
+  _historyPush();
 }
 
 function deleteGun(id){
@@ -4811,6 +4985,7 @@ function deleteGun(id){
     if(db){try{db.transaction([STORE],'readwrite').objectStore(STORE).delete(id);}catch(e){};}
   });
   sv();haptic('delete');toast('Firearm deleted');VIEW='list';rnd();
+  _historyPush();
 }
 
 
@@ -4917,18 +5092,26 @@ function _reportFromDetail(gunId, kind){
   go('reports');
 }
 
+function _setReportTab(t){
+  if(reportTab===t) return;
+  _pushViewState();
+  reportTab=t;
+  rnd();
+  _historyPush();
+}
+
 function rReports(){
   // -N: tabs reorganized into two semantic groups with a visual divider between them.
   //   INSIGHTS: Worth · Cleaning · Milestones (analytics about your inventory)
   //   REPORTS:  Insurance · Theft · Custody (printable documents for external use)
   var tabs='<div class="tabs-h">'
-    +'<button class="tab-h'+(reportTab==='worth'?' on':'')+'" onclick="if(reportTab!==\'worth\'){_pushViewState();reportTab=\'worth\';rnd()}">&#128176; Worth</button>'
-    +'<button class="tab-h'+(reportTab==='maint'?' on':'')+'" onclick="if(reportTab!==\'maint\'){_pushViewState();reportTab=\'maint\';rnd()}">&#129529; Cleaning</button>'
-    +'<button class="tab-h'+(reportTab==='milestones'?' on':'')+'" onclick="if(reportTab!==\'milestones\'){_pushViewState();reportTab=\'milestones\';rnd()}">&#127942; Milestones</button>'
+    +'<button class="tab-h'+(reportTab==='worth'?' on':'')+'" onclick="_setReportTab(\'worth\')">&#128176; Worth</button>'
+    +'<button class="tab-h'+(reportTab==='maint'?' on':'')+'" onclick="_setReportTab(\'maint\')">&#129529; Cleaning</button>'
+    +'<button class="tab-h'+(reportTab==='milestones'?' on':'')+'" onclick="_setReportTab(\'milestones\')">&#127942; Milestones</button>'
     +'<span class="tab-divider" aria-hidden="true"></span>'
-    +'<button class="tab-h'+(reportTab==='ins'?' on':'')+'" onclick="if(reportTab!==\'ins\'){_pushViewState();reportTab=\'ins\';rnd()}">'+_iM('document')+' Insurance</button>'
-    +'<button class="tab-h'+(reportTab==='theft'?' on':'')+'" onclick="if(reportTab!==\'theft\'){_pushViewState();reportTab=\'theft\';rnd()}">'+_iM('lock')+' Theft</button>'
-    +'<button class="tab-h'+(reportTab==='custody'?' on':'')+'" onclick="if(reportTab!==\'custody\'){_pushViewState();reportTab=\'custody\';rnd()}">'+_iM('lock-open')+' Custody</button>'
+    +'<button class="tab-h'+(reportTab==='ins'?' on':'')+'" onclick="_setReportTab(\'ins\')">'+_iM('document')+' Insurance</button>'
+    +'<button class="tab-h'+(reportTab==='theft'?' on':'')+'" onclick="_setReportTab(\'theft\')">'+_iM('lock')+' Theft</button>'
+    +'<button class="tab-h'+(reportTab==='custody'?' on':'')+'" onclick="_setReportTab(\'custody\')">'+_iM('lock-open')+' Custody</button>'
     +'</div>';
 
   var body='';
@@ -5165,21 +5348,42 @@ function printTheft(){
   var selGuns=getSelectedGuns(guns);
   if(!selGuns.length){ toast('No firearms selected','err'); return; }
   var roster=_reportSelectionRoster(guns);
+  // Open the window synchronously inside the click handler so the popup
+  // blocker doesn't intervene. Show a loading page while we async-
+  // resolve each row's first-photo entry to a self-contained data URL
+  // (ph_xxx blob IDs would be broken images otherwise).
   var W=window.open('','_blank');
-  var rows=selGuns.map(function(g,i){
-    var photos=((g.photos&&g.photos.length)?g.photos:(g.photo?[g.photo]:[]));
-    var photoHtml=photos.length?'<img src="'+photos[0]+'" style="width:60px;height:45px;object-fit:cover;border:1px solid #ccc"/>':'<div style="width:60px;height:45px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:10px;color:#999">No photo</div>';
-    return '<tr><td>'+photoHtml+'</td><td><strong>'+g.make+' '+g.model+'</strong></td><td>'+(g.type||'—')+'</td><td>'+g.caliber+'</td><td style="font-weight:bold;color:#c00">'+(g.serialNumber||'NOT RECORDED')+'</td><td>'+(g.year||'—')+'</td><td>'+g.condition+'</td><td>'+fm(g.currentValue)+'</td></tr>';
-  }).join('');
-  W.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Theft Report - ArsenalDB</title><style>body{font-family:Georgia,serif;padding:40px;color:#000;max-width:900px;margin:0 auto}h1{margin:0;font-size:24px;color:#c00}h2{font-size:14px;color:#444;margin:4px 0 20px}.warning{background:#fff3cd;border:2px solid #ffc107;padding:12px;border-radius:6px;margin-bottom:20px;font-size:13px}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#c00;color:#fff;padding:8px;text-align:left}td{border:1px solid #ddd;padding:7px;vertical-align:middle}tr:nth-child(even){background:#f9f9f9}.footer{margin-top:30px;font-size:11px;color:#999;border-top:1px solid #ccc;padding-top:10px}</style></head><body>');
-  W.document.write('<h1>&#128272; Firearms Theft / Loss Report</h1>');
-  W.document.write('<h2>ArsenalDB &mdash; Generated '+new Date().toLocaleDateString()+(reportSelection!==null?' &mdash; '+selGuns.length+' of '+guns.length+' firearms':'')+'</h2>');
-  W.document.write(roster);
-  W.document.write('<div class="warning">&#9888; <strong>IMPORTANT:</strong> File a police report immediately. Provide this document and all serial numbers to law enforcement. Contact your insurance company with this report.</div>');
-  W.document.write('<table><thead><tr><th>Photo</th><th>Make &amp; Model</th><th>Type</th><th>Caliber</th><th>Serial Number</th><th>Year</th><th>Condition</th><th>Est. Value</th></tr></thead><tbody>'+rows+'</tbody></table>');
-  W.document.write('<div class="footer">Total firearms listed: '+selGuns.length+(reportSelection!==null?' (selected from '+guns.length+')':'')+' &middot; Report generated by ArsenalDB &middot; '+new Date().toLocaleDateString()+'</div>');
-  W.document.write('</body></html>');
-  W.document.close();W.print();
+  if(!W){ toast('Pop-up blocked. Allow pop-ups to print.','err'); return; }
+  W.document.open();
+  W.document.write(_printLoadingHtml('Theft Report'));
+  W.document.close();
+
+  // One first-photo entry per gun; '' for guns with no photos.
+  var firstEntries = selGuns.map(function(g){
+    var ps = (g.photos && g.photos.length) ? g.photos : (g.photo ? [g.photo] : []);
+    return ps[0] || '';
+  });
+
+  _resolvePhotoEntriesForExport(firstEntries).then(function(resolved){
+    if(!W || W.closed) return;
+    var rows=selGuns.map(function(g,i){
+      var src = resolved[i] || '';
+      var photoHtml = src
+        ? '<img src="'+src+'" style="width:60px;height:45px;object-fit:cover;border:1px solid #ccc"/>'
+        : '<div style="width:60px;height:45px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:10px;color:#999">No photo</div>';
+      return '<tr><td>'+photoHtml+'</td><td><strong>'+g.make+' '+g.model+'</strong></td><td>'+(g.type||'—')+'</td><td>'+g.caliber+'</td><td style="font-weight:bold;color:#c00">'+(g.serialNumber||'NOT RECORDED')+'</td><td>'+(g.year||'—')+'</td><td>'+g.condition+'</td><td>'+fm(g.currentValue)+'</td></tr>';
+    }).join('');
+    W.document.open();
+    W.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Theft Report - ArsenalDB</title><style>body{font-family:Georgia,serif;padding:40px;color:#000;max-width:900px;margin:0 auto}h1{margin:0;font-size:24px;color:#c00}h2{font-size:14px;color:#444;margin:4px 0 20px}.warning{background:#fff3cd;border:2px solid #ffc107;padding:12px;border-radius:6px;margin-bottom:20px;font-size:13px}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#c00;color:#fff;padding:8px;text-align:left}td{border:1px solid #ddd;padding:7px;vertical-align:middle}tr:nth-child(even){background:#f9f9f9}.footer{margin-top:30px;font-size:11px;color:#999;border-top:1px solid #ccc;padding-top:10px}</style></head><body>');
+    W.document.write('<h1>&#128272; Firearms Theft / Loss Report</h1>');
+    W.document.write('<h2>ArsenalDB &mdash; Generated '+new Date().toLocaleDateString()+(reportSelection!==null?' &mdash; '+selGuns.length+' of '+guns.length+' firearms':'')+'</h2>');
+    W.document.write(roster);
+    W.document.write('<div class="warning">&#9888; <strong>IMPORTANT:</strong> File a police report immediately. Provide this document and all serial numbers to law enforcement. Contact your insurance company with this report.</div>');
+    W.document.write('<table><thead><tr><th>Photo</th><th>Make &amp; Model</th><th>Type</th><th>Caliber</th><th>Serial Number</th><th>Year</th><th>Condition</th><th>Est. Value</th></tr></thead><tbody>'+rows+'</tbody></table>');
+    W.document.write('<div class="footer">Total firearms listed: '+selGuns.length+(reportSelection!==null?' (selected from '+guns.length+')':'')+' &middot; Report generated by ArsenalDB &middot; '+new Date().toLocaleDateString()+'</div>');
+    W.document.write('</body></html>');
+    W.document.close();W.print();
+  });
 }
 
 
@@ -6379,37 +6583,70 @@ function haptic(type){
 }
 
 // ── BACK BUTTON & SWIPE BACK ──────────────────────────────────────────
-// System back button is no longer intercepted. Chrome/Android handles it
-// however they want (typically closes the tab). Users navigate with the
-// in-app ← BACK button (fab_back) which calls handleBack() directly.
-// Edge-swipe-from-left also calls handleBack() — see initSwipeNav().
+// System (hardware/gesture) back is now wired through the History API:
+// every navigation pushes a state entry; popstate restores the popped
+// state. The in-app FAB and edge-swipe call handleBack(), which runs
+// the same pre-checks as the popstate handler then defers to
+// history.back() so both paths follow the same code.
 var _swipeStartX=0;
 var _swipeStartY=0;
 
-function handleBack(){
-  // -Q Phase 1: if a photo is currently being processed during firearm
-  // entry, refuse back navigation. Modal closes are still allowed.
+// Pre-flight checks shared by handleBack() and the popstate listener.
+// Returns true if the back press was consumed by closing a modal,
+// dismissing the hamburger, blocking on unsaved changes, or refusing
+// during photo processing — caller should NOT navigate after a true
+// return. Mutates UI state (closes modals, shows warnings, toasts).
+function _backIntercepted(){
+  // Photo-processing lock: refuse back while FileReader/compression in flight
   if(VIEW==='add' && _photoProcessing){
     toast('Wait — finishing photo&hellip;');
-    return;
+    return true;
   }
   // Close any open modal first
   var modals=['qr_modal','label_modal','settings_modal','print_menu',
-    'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal','exit_modal'];
-  for(var i=0;i<modals.length;i++){var m=document.getElementById(modals[i]);if(m){m.remove();return;}}
+    'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal','exit_modal','pcomp_modal'];
+  for(var i=0;i<modals.length;i++){
+    var m=document.getElementById(modals[i]);
+    if(m){ m.remove(); return true; }
+  }
   // Close hamburger menu
-  if(hamOpen){closeHam();return;}
+  if(hamOpen){ closeHam(); return true; }
   // Unsaved-edit guard
-  if(VIEW==='add'&&editId&&_hasUnsavedChanges()){showUnsavedWarning();return;}
-  // Explicit view hierarchy
-  if(VIEW==='detail'){haptic('light');go('list');return;}
-  if(VIEW==='reports'&&reportTab!=='worth'){haptic('light');reportTab='worth';rnd();return;}
-  if(VIEW==='list'){haptic('light');go('dashboard');return;}
-  if(VIEW==='reports'){haptic('light');go('dashboard');return;}
-  if(VIEW==='add'){haptic('light');go('list');return;}
-  if(VIEW==='pic'){haptic('light');go('list');return;}
-  // dashboard and anything else: silent no-op — already at home
+  if(VIEW==='add' && editId && _hasUnsavedChanges()){
+    showUnsavedWarning();
+    return true;
+  }
+  return false;
 }
+
+function handleBack(){
+  if(_backIntercepted()) return;
+  if(VIEW==='dashboard'){
+    // Already at home — silent no-op. We do NOT call history.back() here:
+    // entries before the app's initial replaceState belong to the browser
+    // (or nothing in PWA standalone mode), and we don't want the FAB to
+    // exit the PWA. The system back button still works on dashboard —
+    // the OS handles that without firing our popstate.
+    return;
+  }
+  haptic('light');
+  // Defer to browser history. The popstate listener restores the popped
+  // state via _navigateToState — same code path as the system back button.
+  history.back();
+}
+
+// popstate fires for system back/forward AND for our own history.back()
+// calls. The pre-flight checks have to run here too because the system
+// back button bypasses handleBack entirely. When we intercept (modal
+// close etc.), re-push the current state so the user can press back
+// again to actually navigate.
+window.addEventListener('popstate', function(e){
+  if(_backIntercepted()){
+    _historyPush();
+    return;
+  }
+  _navigateToState(e.state);
+});
 
 function _hasUnsavedChanges(){
   // Compare current form state to saved gun
@@ -7385,6 +7622,7 @@ function markTransferredOut(gunId){
   showCustodyForm=false;
   editingCustodyId=null;
   rnd();
+  _historyPush();
 }
 
 function printCustodyRecord(gunId){
@@ -8118,9 +8356,22 @@ function printBOS(bosId){
     '@media print{.no-print{display:none}}'
   ].join('');
 
-  var photo=sn.photos&&sn.photos.length
-    ?'<img class="gun-photo" src="'+sn.photos[0]+'" />'
-    :'<div class="gun-photo-ph">No Photo</div>';
+  // Open the print window synchronously inside the click handler so the
+  // popup blocker doesn't intervene. Show a loading page while we async-
+  // resolve the firearm photo (a ph_xxx blob ID needs to become a self-
+  // contained data URL — child windows can't access this window's blobs).
+  var W=window.open('','_blank');
+  if(!W){toast('Pop-up blocked. Allow pop-ups for this page.','err');return;}
+  W.document.open();
+  W.document.write(_printLoadingHtml('Bill of Sale '+(b.bosNumber||'')));
+  W.document.close();
+
+  var firstEntry = (sn.photos && sn.photos.length) ? sn.photos[0] : '';
+  _resolvePhotoEntryForExport(firstEntry).then(function(firstPhotoData){
+    if(!W || W.closed) return;
+    var photo = firstPhotoData
+      ? '<img class="gun-photo" src="'+firstPhotoData+'" />'
+      : '<div class="gun-photo-ph">No Photo</div>';
 
   var compRows='';
   var compItems=[
@@ -8206,10 +8457,11 @@ function printBOS(bosId){
 
   html+='</div></body></html>';
 
-  var W=window.open('','_blank');
-  if(!W){toast('Pop-up blocked. Allow pop-ups for this page.','err');return;}
-  W.document.write(html);
-  W.document.close();
+    // Reset the loading-page document and write the real BOS document
+    W.document.open();
+    W.document.write(html);
+    W.document.close();
+  });
 }
 
 
@@ -8270,6 +8522,7 @@ function bosComplete(){
   document.body.style.overflow='';document.body.style.position='';
   toast((g?g.make+' '+g.model:'Firearm')+' transferred & archived. BOS: '+completedBos.bosNumber);
   VIEW='list';rnd();
+  _historyPush();
   // Offer to print
   setTimeout(function(){
     var modal=document.createElement('div');
@@ -8594,6 +8847,10 @@ function switchCollection(collId){
   loadMilestones();
   loadTransferred();
   rnd();
+  // Collection switch wipes the data set; back-stack entries from the
+  // previous collection reference firearms that no longer exist. Flatten
+  // history so the new dashboard is the only entry.
+  _historyReplace();
   toast('Switched to '+collections[collId].name);
 }
 
@@ -8677,6 +8934,8 @@ function createCollection(){
   VIEW='dashboard';
   FORM=ef();
   rnd();
+  // New empty collection — old back-stack entries are stale, flatten.
+  _historyReplace();
   if(resolved.suffixed){
     toast('Collection "'+finalName+'" created — "'+name+'" already existed');
   } else {
@@ -9410,6 +9669,7 @@ function applyIdentifierResult(result){
   VIEW='add';
   playRack();
   rnd();
+  _historyPush();
   toast('Fields pre-filled — review and save');
 }
 
@@ -9433,6 +9693,7 @@ function openPicPage(id){
   picGunId = id;
   VIEW = 'pic';
   rnd();
+  _historyPush();
 }
 
 function rPicturePage(){
@@ -9901,6 +10162,7 @@ function qrtVerifyCode(gunId,bosNum){
   closeQRTransfer();
   toast((g.make+' '+g.model)+' transferred. BOS: '+bosNum);
   VIEW='list';rnd();
+  _historyPush();
 
   // Offer print
   setTimeout(function(){
@@ -10266,6 +10528,7 @@ function editGun(id){
   if(!FORM.photos||!FORM.photos.length)FORM.photos=FORM.photo?[FORM.photo]:[];
   _pushViewState();
   editId=id;aiVal=null;aiDiag=null;VIEW='add';rnd();
+  _historyPush();
 }
 
 
@@ -12263,13 +12526,17 @@ function loadSch(id){
 var _photoProcessing = false;
 var _photoProcessingTimer = null;
 
+// Timer used to revert the Save button from "Photo ready" → default label.
+var _photoReadyTimer = null;
+
 function _setPhotoProcessing(on){
   _photoProcessing = !!on;
-  // Clear any prior timer so back-to-back photos don't compound
+  // Clear any prior processing timer so back-to-back photos don't compound
   if(_photoProcessingTimer){ clearTimeout(_photoProcessingTimer); _photoProcessingTimer = null; }
-  // Visual: disable Save and FAB Back buttons while processing.
-  // We don't disable per-button onclicks (those are inline), we set
-  // a global gate that the existing handlers check via _photoProcessing.
+  // Also clear a pending "Photo ready" revert — a new capture supersedes it
+  if(_photoReadyTimer){ clearTimeout(_photoReadyTimer); _photoReadyTimer = null; }
+
+  // Visual: top-of-screen indicator
   var ind = document.getElementById('_photo_processing_indicator');
   if(on){
     if(!ind){
@@ -12289,6 +12556,38 @@ function _setPhotoProcessing(on){
     ind.style.display = 'flex';
   } else {
     if(ind) ind.style.display = 'none';
+  }
+
+  // Save + Cancel buttons: disabled while processing, then a brief green
+  // "Photo ready" flash on Save before reverting to default. The default
+  // labels are also re-derived by rnd() (see rAdd buttons), so the
+  // "Processing photo…" + disabled-Cancel state survives the between-photos
+  // rnd() calls in onPhoto. The flash here is the one piece rnd() can't
+  // express on its own.
+  var saveBtn = document.getElementById('save_btn');
+  var cancelBtn = document.getElementById('cancel_btn');
+  if(on){
+    if(saveBtn){
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Processing photo…';
+      saveBtn.dataset.pstate = 'processing';
+    }
+    if(cancelBtn){ cancelBtn.disabled = true; }
+  } else {
+    if(cancelBtn){ cancelBtn.disabled = false; }
+    if(saveBtn){
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Photo ready';
+      saveBtn.dataset.pstate = 'ready';
+      _photoReadyTimer = setTimeout(function(){
+        var b = document.getElementById('save_btn');
+        if(b && b.dataset.pstate === 'ready'){
+          b.textContent = (typeof editId !== 'undefined' && editId) ? 'Save Changes' : 'Add to Inventory';
+          delete b.dataset.pstate;
+        }
+        _photoReadyTimer = null;
+      }, 1500);
+    }
   }
 }
 
@@ -12344,7 +12643,9 @@ function onPhoto(){
       var rawDataUrl = e.target.result;
       // Compress to a smaller JPEG. _compressPhoto returns a base64 data
       // URL today; we then convert that to a Blob and save it.
-      _compressPhoto(rawDataUrl, 1800, 0.85).then(function(compressedDataUrl){
+      // Target: 1024px longest edge, quality 0.72 → ~80-120 KB per photo.
+      // Visual placeholder + legible serial when zoomed; not print-quality.
+      _compressPhoto(rawDataUrl, 1024, 0.72).then(function(compressedDataUrl){
         // Drop reference to original raw data URL — GC can reclaim
         rawDataUrl = null;
         return _dataUrlToBlob(compressedDataUrl).then(function(blob){
@@ -12395,12 +12696,18 @@ function onPhoto(){
   this.value='';
 }
 
-// -Q Phase 2: Compress a photo data URL to fit Chrome PWA heap limits.
+// Compress a photo data URL to fit Chrome PWA heap limits.
 // Samsung S22 photos are ~3-4 MB each at full resolution; storing 60+
 // such photos in IndexedDB blows the heap during sv() serialization.
-// Target: max 1800px on the longest edge, JPEG quality 0.85 — gives
-// ~300-500 KB per photo (10x reduction) while keeping enough detail
-// to read serial numbers when zoomed.
+//
+// Reusable with configurable maxEdge / quality so callers can pick a
+// target. Phase 2 dual-resolution will reuse this for an archive-spec
+// (2048 / 0.85) export alongside the stored mobile master.
+//
+// Default target ("mobile master"):
+//   1024px longest edge, JPEG quality 0.72 → ~80-120 KB per photo.
+// Sized for visual ID + a legible serial when zoomed (slightly grainy
+// is fine). Not print-quality.
 //
 // Returns a Promise<string> resolving to the compressed data URL.
 // Always returns a JPEG, even if input was PNG. EXIF is stripped (a
@@ -12412,8 +12719,8 @@ function onPhoto(){
 // queue compressions sequentially rather than parallel to avoid
 // stacking heap pressure.
 function _compressPhoto(dataUrl, maxEdge, quality){
-  maxEdge = maxEdge || 1800;
-  quality = quality != null ? quality : 0.85;
+  maxEdge = maxEdge || 1024;
+  quality = quality != null ? quality : 0.72;
   return new Promise(function(resolve, reject){
     if(!dataUrl){ reject(new Error('empty dataUrl')); return; }
     var img = new Image();
@@ -12472,8 +12779,11 @@ function _pcompFindLingeringBackups(){
   return keys;
 }
 
-function _openCompressionUtil(){
-  if(!requirePro('Photo Migration')) return;
+// skipProGate=true bypasses the requirePro check. Used by the auto-boot
+// prompt when legacy photos are detected, so a free-tier user with legacy
+// photos isn't trapped in the crash loop the migration is meant to fix.
+function _openCompressionUtil(skipProGate){
+  if(!skipProGate && !requirePro('Photo Migration')) return;
   var existing = document.getElementById('pcomp_modal');
   if(existing) existing.remove();
 
@@ -12555,7 +12865,7 @@ function _pmigProcessNext(){
     return;
   }
   var label = ((gun.make||'') + ' ' + (gun.model||'')).trim() || '(unnamed)';
-  _pcompUpdateProgress(pct, 'Migrating '+(doneCount+1)+' of '+totalCount, eh(label));
+  _pcompUpdateProgress(pct, 'Compressing '+(doneCount+1)+' of '+totalCount, eh(label));
 
   // Process this firearm's photos sequentially
   var photos = gun.photos || (gun.photo ? [gun.photo] : []);
@@ -12592,27 +12902,40 @@ function _pmigProcessNext(){
       nextPhoto();
       return;
     }
-    // Legacy base64 — convert to Blob, save, replace entry with ID
+    // Legacy base64 — compress to mobile-master spec (1024/0.72) FIRST,
+    // then convert to Blob and save. Compressing before the Blob conversion
+    // means the bytes that ever live in IndexedDB are already at the
+    // ~80-120 KB target. If compression fails, fall back to the raw entry
+    // so we don't lose the photo (migration still helps by moving the
+    // bytes out of the gun record).
     var origBytes = Math.round(entry.length * 0.75);
-    _pcompUpdateProgress(pct, 'Migrating '+(doneCount+1)+' of '+totalCount, eh(label) + ' &mdash; photo '+pIdx+' of '+photos.length);
-    _dataUrlToBlob(entry).then(function(blob){
-      _pmigStats.bytesBefore += origBytes;
-      _pmigStats.bytesAfter += blob.size;
-      return photoBlobSave(blob, gunId);
-    }).then(function(photoId){
-      newPhotos.push(photoId);
-      _pmigStats.photosConverted++;
-      // Drop reference to the old base64 string for GC
-      entry = null;
-      // Yield to event loop so UI can repaint
-      setTimeout(nextPhoto, 30);
-    }).catch(function(err){
-      // Conversion failed — keep the original base64 entry. No data loss.
-      newPhotos.push(entry);
-      _pmigStats.photosFailed++;
-      entry = null;
-      setTimeout(nextPhoto, 0);
-    });
+    _pcompUpdateProgress(pct, 'Compressing '+(doneCount+1)+' of '+totalCount, eh(label) + ' &mdash; photo '+pIdx+' of '+photos.length);
+    _compressPhoto(entry, 1024, 0.72)
+      .catch(function(){ return entry; })  // fall back to raw on compress error
+      .then(function(maybeCompressed){
+        return _dataUrlToBlob(maybeCompressed);
+      })
+      .then(function(blob){
+        _pmigStats.bytesBefore += origBytes;
+        _pmigStats.bytesAfter += blob.size;
+        return photoBlobSave(blob, gunId);
+      })
+      .then(function(photoId){
+        newPhotos.push(photoId);
+        _pmigStats.photosConverted++;
+        // Drop reference to the old base64 string for GC
+        entry = null;
+        // Yield to event loop so UI can repaint
+        setTimeout(nextPhoto, 30);
+      })
+      .catch(function(err){
+        // Both compression+blob save failed — keep the original base64
+        // entry in newPhotos so we don't drop it. No data loss.
+        newPhotos.push(entry);
+        _pmigStats.photosFailed++;
+        entry = null;
+        setTimeout(nextPhoto, 0);
+      });
   }
   nextPhoto();
 }
@@ -12689,8 +13012,10 @@ function _pcompCompressOneFirearm(gunRecord, onPhotoProgress){
       var origKB = Math.round(p.length * 0.75 / 1024);
       stats.originalKB += origKB;
       // Already small? Skip recompression — store as-is.
-      // Threshold: photos under 600KB (~likely already compressed)
-      if(p.length * 0.75 < 600 * 1024){
+      // Threshold: photos under 150KB are at or near the new 1024/0.72
+      // mobile-master target (~80-120KB), so re-encoding would only
+      // degrade quality without meaningful storage win.
+      if(p.length * 0.75 < 150 * 1024){
         newPhotos.push(p);
         stats.newKB += origKB;
         if(onPhotoProgress) onPhotoProgress(idx, photos.length, 'kept');
@@ -12698,7 +13023,7 @@ function _pcompCompressOneFirearm(gunRecord, onPhotoProgress){
         setTimeout(processNext, 0);
         return;
       }
-      _compressPhoto(p, 1800, 0.85).then(function(compressed){
+      _compressPhoto(p, 1024, 0.72).then(function(compressed){
         newPhotos.push(compressed);
         var newKB = Math.round(compressed.length * 0.75 / 1024);
         stats.newKB += newKB;
@@ -12908,6 +13233,37 @@ function _pcompCheckOnBoot(){
   } catch(_){}
 }
 
+// Auto-prompt: if guns[] still has legacy base64 photos when the app
+// finishes loading, surface the migration modal. Migration moves the
+// bytes into the photo_blob store AND right-sizes them to 1024/0.72,
+// eliminating the sv() heap pressure that crashes Chrome at ~32 firearms.
+// Re-prompts every boot until migration completes (legacyCount drops to 0
+// once all photos are blob IDs). User can Close to dismiss this session.
+function _pcompPromptIfLegacy(){
+  try {
+    if(!guns || !guns.length) return;
+    // Avoid double-prompt if modal is already on screen for any reason
+    if(document.getElementById('pcomp_modal')) return;
+    var legacyCount = 0;
+    for(var i=0; i<guns.length; i++){
+      var ps = guns[i].photos || (guns[i].photo ? [guns[i].photo] : []);
+      for(var j=0; j<ps.length; j++){
+        if(typeof ps[j] === 'string' && !_photoIsId(ps[j])){
+          legacyCount++;
+          if(legacyCount > 0) break;  // any is enough — _openCompressionUtil counts the rest
+        }
+      }
+      if(legacyCount > 0) break;
+    }
+    if(legacyCount === 0) return;
+    // Brief delay so the dashboard renders first — feels less intrusive
+    // than the modal popping up before the user perceives load completion.
+    setTimeout(function(){
+      try { _openCompressionUtil(true); } catch(_){}
+    }, 800);
+  } catch(_){}
+}
+
 // T1.9: rotate a single dataURL 90° clockwise via canvas.
 // Returns a Promise that resolves to the rotated dataURL (JPEG).
 // Called by rotatePhotoIdx() from the per-photo rotate button.
@@ -13033,18 +13389,54 @@ function showPrintMenu(id){
 
 function pOneOpts(id, includePhotos){
   var g=guns.find(function(x){return x.id===id;});if(!g)return;
+  // Open the window synchronously inside the click handler so the popup
+  // blocker doesn't intervene. Show a loading page while we async-
+  // resolve photos (ph_xxx blob IDs → data URLs); the print window has
+  // no access to this window's IndexedDB blobs, so embedded <img src>
+  // values must be self-contained data URLs.
   var W=window.open('','_blank');
+  if(!W){ toast('Pop-up blocked. Allow pop-ups to print.','err'); return; }
+  W.document.open();
+  W.document.write(_printLoadingHtml((g.make||'')+' '+(g.model||'')));
+  W.document.close();
+
   var photos=((g.photos&&g.photos.length)?g.photos:(g.photo?[g.photo]:[]));
+
+  var photosPromise = (includePhotos && photos.length)
+    ? _resolvePhotoEntriesForExport(photos)
+    : Promise.resolve([]);
+
+  photosPromise.then(function(resolvedPhotos){
+    _pOnePrintRender(W, g, includePhotos, resolvedPhotos);
+  }).catch(function(){
+    // Resolution shouldn't reject (helper swallows errors), but be safe
+    _pOnePrintRender(W, g, includePhotos, []);
+  });
+}
+
+// Synchronous final render — called once photo data URLs are ready.
+// Replaces the loading page with the real document and triggers print.
+function _pOnePrintRender(W, g, includePhotos, resolvedPhotos){
+  if(!W || W.closed){ return; }
+  // Reset the document so the chained writes below replace the loading
+  // page with the real print preview (document.write after close()
+  // implicitly opens, but being explicit avoids the loading content
+  // bleeding into the output if a browser handles that edge case).
+  W.document.open();
   var photoHtml='';
-  if(includePhotos&&photos.length){
-    // 3x2 grid - 6 photos per page
-    var photoItems=photos.map(function(src,i){
+  if(includePhotos && resolvedPhotos.length){
+    // 3x2 grid - 6 photos per page. Skip empty entries (failed-resolve)
+    // so the user sees no broken-image cells.
+    var photoItems=resolvedPhotos.map(function(src,i){
+      if(!src) return '';
       return '<div style="break-inside:avoid">'
         +'<img src="'+src+'" style="width:100%;height:140px;object-fit:cover;border:1px solid #ccc;border-radius:4px;display:block"/>'
         +'<div style="font-size:9px;color:#999;text-align:center;margin-top:2px">Photo '+(i+1)+'</div>'
         +'</div>';
-    }).join('');
-    photoHtml='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;page-break-inside:avoid">'+photoItems+'</div>';
+    }).filter(function(s){ return s; }).join('');
+    if(photoItems){
+      photoHtml='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;page-break-inside:avoid">'+photoItems+'</div>';
+    }
   }
 
   W.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>'+g.make+' '+g.model+'</title>');
@@ -15658,6 +16050,7 @@ function doImport(data){
     toast('Imported '+guns.length+' firearms into "'+name+'"'+(_resolved.suffixed?' (renamed to avoid collision)':''));
     VIEW='dashboard';
     rnd();
+    _historyReplace();
   } else if(mode==='merge'){
     // Pro+ gate
     if(!requireProPlus('Merge Collections')) return;
@@ -15672,6 +16065,7 @@ function doImport(data){
     toast('Restored '+guns.length+' firearms');
     VIEW='dashboard';
     rnd();
+    _historyReplace();
   }
 }
 
@@ -15818,6 +16212,9 @@ function _applyMergeResolutions(newOnes, resolved, data){
   toast('Merged: '+(parts.length?parts.join(', '):'no changes'));
   VIEW='dashboard';
   rnd();
+  // Merge changes the data set; old back-stack entries may reference
+  // pre-merge state. Flatten so the dashboard is the only entry.
+  _historyReplace();
 }
 // ── END MERGE IMPORT ─────────────────────────────────────────────────
 
