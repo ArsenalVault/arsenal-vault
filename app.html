@@ -1879,11 +1879,17 @@ function _photoSrc(entry){
   return entry;  // legacy data: URL
 }
 
+// 1x1 transparent GIF used as a placeholder while the real Blob URL is
+// being resolved. Empty src ("") is unsafe — iOS Safari renders the
+// broken-image icon and sometimes refuses to repaint after the src is
+// later set to the real Blob URL. A valid data: URL avoids that.
+var _PHOTO_BLANK_PX = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
 function _photoImgTag(entry, attrs){
   attrs = attrs || '';
-  if(!entry) return '<img src="" '+attrs+'/>';
+  if(!entry) return '<img src="'+_PHOTO_BLANK_PX+'" '+attrs+'/>';
   if(_photoIsId(entry)){
-    return '<img src="" data-photo-id="'+entry+'" '+attrs+'/>';
+    return '<img src="'+_PHOTO_BLANK_PX+'" data-photo-id="'+entry+'" '+attrs+'/>';
   }
   return '<img src="'+entry+'" '+attrs+'/>';
 }
@@ -1915,7 +1921,12 @@ function _hydratePhotoIds(rootEl){
     }
     if(!photoId){ next(); return; }
     img.removeAttribute('data-photo-id');
-    img.src = '';  // clear broken src
+    // Replace any pending broken src (a literal "ph_xxx" from legacy
+    // raw-concat call sites) with the inert placeholder so the browser
+    // doesn't keep a 404 visible while the Blob load is in flight.
+    if(img.getAttribute('src') !== _PHOTO_BLANK_PX){
+      img.src = _PHOTO_BLANK_PX;
+    }
     photoBlobGet(photoId).then(function(blob){
       if(blob){
         var url = URL.createObjectURL(blob);
@@ -4790,7 +4801,8 @@ function rAdd(){
   // Photo grid
   var photos=f.photos&&f.photos.length?f.photos:(f.photo?[f.photo]:[]);
   var phGrid=photos.length>0?'<div class="photo-grid">'+photos.map(function(src,i){
-    return '<div class="photo-wrap-rel"><img src="'+src+'" class="photo-thumb'+(i===0?' main':'')+'" onclick="openLb(FORM.photos&&FORM.photos.length?FORM.photos:(FORM.photo?[FORM.photo]:[]),'+i+')"/>'
+    return '<div class="photo-wrap-rel">'
+      +_photoImgTag(src,'class="photo-thumb'+(i===0?' main':'')+'" onclick="openLb(FORM.photos&&FORM.photos.length?FORM.photos:(FORM.photo?[FORM.photo]:[]),'+i+')"')
       +'<button class="photo-rot" onclick="rotatePhotoIdx('+i+')" title="Rotate 90°">&#x21bb;</button>'
       +'<button class="photo-del" onclick="removePhoto('+i+')" title="Remove">'+_iM('x-close')+'</button></div>';
   }).join('')+'</div>':'<div class="ph-none" style="width:100%;text-align:center;padding:20px">No Photos</div>';
@@ -9712,7 +9724,7 @@ function rPicturePage(){
   var gain = (parseFloat(g.currentValue)||0) - (parseFloat(g.purchasePrice)||0);
 
   var heroHtml = photos.length
-    ? '<img src="'+photos[0]+'" onerror="this.src=\'\'"/>'
+    ? _photoImgTag(photos[0], '')
     : '<div class="pic-hero-empty">No Photo on File</div>';
 
   // Thumbnail strip if multiple photos
@@ -9720,7 +9732,7 @@ function rPicturePage(){
   if(photos.length > 1){
     thumbs = '<div style="display:flex;gap:6px;overflow-x:auto;padding:10px 20px;scrollbar-width:none">'
       + photos.map(function(src,i){
-          return '<img src="'+src+'" onclick="picSetPhoto('+i+')" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:2px solid '+(i===0?'#e8c46a':'#2e3545')+';flex-shrink:0;cursor:pointer" id="pic_thumb_'+i+'"/>';
+          return _photoImgTag(src, 'onclick="picSetPhoto('+i+')" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:2px solid '+(i===0?'#e8c46a':'#2e3545')+';flex-shrink:0;cursor:pointer" id="pic_thumb_'+i+'"');
         }).join('')
       + '</div>';
   }
@@ -9809,7 +9821,21 @@ function picSetPhoto(idx){
   var hero = document.getElementById('pic_hero');
   if(hero && photos[idx]){
     var img = hero.querySelector('img');
-    if(img) img.src = photos[idx];
+    if(img){
+      var entry = photos[idx];
+      if(_photoIsId(entry)){
+        // Blob-ID photo: set data-photo-id and let the hydrator resolve
+        // the Blob to an object URL. Setting src directly to "ph_xxx"
+        // would just trigger a 404.
+        img.src = _PHOTO_BLANK_PX;
+        img.setAttribute('data-photo-id', entry);
+        _hydratePhotoIds(hero);
+      } else {
+        // Legacy data: URL — assignable directly
+        img.removeAttribute('data-photo-id');
+        img.src = entry;
+      }
+    }
     // Update thumbnail borders
     var thumbs = document.querySelectorAll('[id^="pic_thumb_"]');
     thumbs.forEach(function(t,i){t.style.border='2px solid '+(i===idx?'#e8c46a':'#2e3545');});
@@ -10445,7 +10471,7 @@ function showQRView(g){
     +'</div>'
 
     // Photo
-    +(photos.length?'<div class="photo-wrap" style="background:#0f1117;display:flex;justify-content:center;padding:16px 0"><img src="'+photos[0]+'" style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:2px solid #e8c46a30;image-rendering:crisp-edges" onerror="this.parentNode.innerHTML=\'<div class=\\\"photo-placeholder\\\"><span style=\\\"color:#2a3040;font-size:12px\\\">No Photo</span></div>\'"/></div>'
+    +(photos.length?'<div class="photo-wrap" style="background:#0f1117;display:flex;justify-content:center;padding:16px 0">'+_photoImgTag(photos[0],'style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:2px solid #e8c46a30;image-rendering:crisp-edges"')+'</div>'
       :'<div class="photo-placeholder"><span style="color:#2a3040;font-size:12px;letter-spacing:.1em;text-transform:uppercase">No Photo on File</span></div>')
 
     // Content
@@ -10519,6 +10545,11 @@ function showQRView(g){
       +'<div class="footer-logo">&#9654; ArsenalDB</div>'
       +'<div class="footer-sub">Personal Firearms Inventory</div>'
     +'</div>';
+
+  // QR_SCAN_MODE replaces document.body and short-circuits rnd(), so the
+  // normal end-of-render hydrator never runs. Resolve any ph_xxx blob IDs
+  // in this document body explicitly.
+  _hydratePhotoIds(document.body);
 }
 
 function editGun(id){
@@ -10553,8 +10584,11 @@ function rDet(){
   }
 
   var _photos=((g.photos&&g.photos.length)?g.photos:(g.photo?[g.photo]:[]));
+  // Escape JSON for inline onclick — without this, ph_xxx and base64
+  // strings in the array embed raw double quotes that break attribute parsing.
+  var _photosAttr=JSON.stringify(_photos).replace(/"/g,'&quot;');
   var ph=_photos.length
-    ?'<img src="'+_photos[0]+'" class="ph-img" style="width:130px;height:95px;object-fit:cover;border-radius:6px;border:2px solid #3a4455;flex-shrink:0;cursor:pointer" onclick="openLb('+JSON.stringify(_photos)+',0)"/>'
+    ?_photoImgTag(_photos[0],'class="ph-img" style="width:130px;height:95px;object-fit:cover;border-radius:6px;border:2px solid #3a4455;flex-shrink:0;cursor:pointer" onclick="openLb('+_photosAttr+',0)"')
     :'<div class="ph-none" style="width:130px;height:95px">No Photo</div>';
 
   var tc='';
@@ -10796,8 +10830,9 @@ function openRangeSession(id){
 
   var photosHtml='';
   if(s.photos&&s.photos.length){
+    var _sPhotosAttr=JSON.stringify(s.photos).replace(/"/g,'&quot;');
     photosHtml='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px">'
-      +s.photos.map(function(p){return'<img src="'+p+'" style="width:100%;border-radius:8px;border:1px solid #2e3545;object-fit:cover;max-height:140px" onclick="openLb('+JSON.stringify(s.photos)+',0)"/>';}).join('')
+      +s.photos.map(function(p){return _photoImgTag(p,'style="width:100%;border-radius:8px;border:1px solid #2e3545;object-fit:cover;max-height:140px" onclick="openLb('+_sPhotosAttr+',0)"');}).join('')
       +'</div>';
   }
 
@@ -10831,6 +10866,9 @@ function openRangeSession(id){
     +'</div>';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
   document.body.appendChild(modal);
+  // Modal lives outside #app, so the rnd() hydrator can't reach it.
+  // Resolve any ph_xxx blob IDs in this subtree explicitly.
+  _hydratePhotoIds(modal);
 }
 
 function deleteRangeSession(id){
@@ -10964,7 +11002,7 @@ function renderRangeFormModal(){
     +'<button onclick="document.getElementById(\'range_photo_inp\').click()" style="background:#1e2535;border:1px solid #3a4455;color:#c0c8d8;border-radius:6px;padding:10px;font-size:13px;cursor:pointer;font-family:inherit;width:100%">📷 Add Target / Group Photos</button>'
     +(rangeForm.photos&&rangeForm.photos.length
       ?'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px">'
-        +rangeForm.photos.map(function(p,i){return'<div style="position:relative"><img src="'+p+'" style="width:100%;height:70px;object-fit:cover;border-radius:6px;border:1px solid #2e3545"/><button onclick="removeRangePhoto('+i+')" style="position:absolute;top:2px;right:2px;background:#000000aa;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button></div>';}).join('')
+        +rangeForm.photos.map(function(p,i){return'<div style="position:relative">'+_photoImgTag(p,'style="width:100%;height:70px;object-fit:cover;border-radius:6px;border:1px solid #2e3545"')+'<button onclick="removeRangePhoto('+i+')" style="position:absolute;top:2px;right:2px;background:#000000aa;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button></div>';}).join('')
         +'</div>'
       :'')
     +'</div>'
@@ -13289,11 +13327,36 @@ function _rotatePhoto90(dataUrl){
 
 // T1.9: rotate a specific photo by index (0-based). Wired to the 🔄 button
 // on each photo thumbnail. User can tap multiple times to cycle.
+//
+// Handles both photo formats. For legacy base64 the rotated data URL is
+// stored back in place. For ph_xxx blob IDs the rotated bytes are saved
+// as a new Blob, the reference is swapped, and the old Blob is deleted
+// to avoid orphaning storage.
 function rotatePhotoIdx(idx){
   if(!FORM.photos || !FORM.photos[idx]) return;
-  _rotatePhoto90(FORM.photos[idx]).then(function(rotated){
-    FORM.photos[idx] = rotated;
-    if(idx === 0) FORM.photo = rotated;
+  var entry = FORM.photos[idx];
+  // Resolve to a data URL so the canvas-based rotator can read it.
+  // For legacy base64 entries this is a passthrough; for ph_xxx blob
+  // IDs it loads the Blob and FileReader's it into a data URL.
+  _resolvePhotoEntryForExport(entry).then(function(dataUrl){
+    if(!dataUrl) throw new Error('photo not found');
+    return _rotatePhoto90(dataUrl);
+  }).then(function(rotatedDataUrl){
+    if(_photoIsId(entry)){
+      var oldId = entry;
+      return _dataUrlToBlob(rotatedDataUrl)
+        .then(function(blob){ return photoBlobSave(blob, FORM.id || null); })
+        .then(function(newId){
+          FORM.photos[idx] = newId;
+          if(idx === 0) FORM.photo = newId;
+          // Best-effort cleanup of the pre-rotation Blob. A failure here
+          // just leaves an orphan in the store — non-fatal.
+          photoBlobDelete(oldId).catch(function(){});
+          rnd();
+        });
+    }
+    FORM.photos[idx] = rotatedDataUrl;
+    if(idx === 0) FORM.photo = rotatedDataUrl;
     rnd();
   }).catch(function(){
     toast('Could not rotate photo','err');
@@ -14286,7 +14349,7 @@ function showLb(){
   lb.className = 'lightbox';
   lb.onclick = function(e){ if(e.target===lb) closeLb(); };
   lb.innerHTML =
-    '<img src="'+lbPhotos[lbIdx]+'" alt="Photo '+(lbIdx+1)+'"/>'+
+    _photoImgTag(lbPhotos[lbIdx], 'alt="Photo '+(lbIdx+1)+'"')+
     '<div class="lightbox-nav">'+
     (lbPhotos.length>1?'<button class="lb-btn" onclick="lbPrev()">&#8592;</button>':'')+
     '<span class="lb-counter">'+(lbIdx+1)+' / '+lbPhotos.length+'</span>'+
@@ -14294,6 +14357,7 @@ function showLb(){
     '<button class="lb-btn" onclick="closeLb()" style="margin-left:10px;color:#ff7070">✕ Close</button>'+
     '</div>';
   document.body.appendChild(lb);
+  _hydratePhotoIds(lb);
 }
 
 function lbNext(){
