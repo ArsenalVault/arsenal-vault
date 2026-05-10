@@ -14462,8 +14462,9 @@ function _countPhotos(gs){
   var n = 0;
   for(var i = 0; i < gs.length; i++){
     var g = gs[i];
+    // -S2: g.photo is always a duplicate of photos[0], so only count the array.
     if(g.photos && g.photos.length) n += g.photos.length;
-    if(g.photo) n += 1;
+    else if(g.photo) n += 1;  // fallback: photo field with no photos array
   }
   return n;
 }
@@ -14601,8 +14602,14 @@ function _buildCompressedExportGuns(gs, onProgress){
       var newGun = Object.assign({}, g);
       var photosList = (g.photos && g.photos.length) ? g.photos : [];
       return serial(photosList, compressOne).then(function(np){
-        if(photosList.length) newGun.photos = np;
-        if(g.photo){
+        if(photosList.length){
+          newGun.photos = np;
+          // -S2: g.photo is always photos[0], so reuse the already-compressed
+          // first entry instead of compressing the same photo a second time.
+          if(g.photo) newGun.photo = np[0] || '';
+          newGuns.push(newGun);
+        } else if(g.photo){
+          // Fallback: photo field with no photos array (legacy data)
           return compressOne(g.photo).then(function(r){
             newGun.photo = r;
             newGuns.push(newGun);
