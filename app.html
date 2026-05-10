@@ -14604,9 +14604,9 @@ function _buildCompressedExportGuns(gs, onProgress){
       return serial(photosList, compressOne).then(function(np){
         if(photosList.length){
           newGun.photos = np;
-          // -S2: g.photo is always photos[0], so reuse the already-compressed
-          // first entry instead of compressing the same photo a second time.
-          if(g.photo) newGun.photo = np[0] || '';
+          // -S2: photo field is always photos[0]. Strip it from export to
+          // avoid duplicating every hero photo. Import reconstructs it.
+          newGun.photo = '';
           newGuns.push(newGun);
         } else if(g.photo){
           // Fallback: photo field with no photos array (legacy data)
@@ -16113,6 +16113,13 @@ function doImport(data){
   // Support legacy calls that pass data directly; otherwise read from staging
   if(!data) data=_pendingImportData;
   if(!data||!data.guns){ toast('Import data missing','err'); return; }
+  // -S2: reconstruct photo field from photos[0] if missing. Export strips
+  // the duplicate to save space; legacy imports already have it populated.
+  data.guns.forEach(function(g){
+    if((!g.photo || g.photo === '') && g.photos && g.photos.length){
+      g.photo = g.photos[0];
+    }
+  });
   var nameEl=document.getElementById('import_name');
   var modalEl=document.getElementById('import_modal');
   var name=nameEl?nameEl.value.trim():'Imported Collection';
