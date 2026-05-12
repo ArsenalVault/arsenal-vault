@@ -4743,8 +4743,9 @@ function rList(){
       +'<option value="model"'+(srtBy==='model'?' selected':'')+'>Sort: Model</option>'
       +'<option value="caliber"'+(srtBy==='caliber'?' selected':'')+'>Sort: Caliber</option>'
       +'<option value="value"'+(srtBy==='value'?' selected':'')+'>Sort: Value</option></select>'
-    +'<button class="btn-g" onclick="toggleBulkMode()" style="font-size:11px">'+(bulkMode?'✓ Done':'⬡ Bulk Edit')+'</button>'+'<button class="btn-ex" onclick="expCSV()">&#8595; CSV</button>'+'<button class="btn-ai" onclick="go(\'pic\')" style="font-size:11px">'+_iM('camera')+' View Inventory</button>'
-    +'<button class="btn-pr" onclick="pAll()">Print</button>'
+    +'<button class="btn-g" onclick="toggleBulkMode()" style="font-size:11px">'+(bulkMode?'✓ Done':'⬡ Bulk Edit')+'</button>'+'<button class="btn-ex" onclick="expCSV()">&#8595; CSV</button>'+'<button class="btn-pr" onclick="pAll()">Print</button>'
+    +'<button class="btn-ai" onclick="go(\'pic\')" style="font-size:11px">'+_iM('camera')+' View Inventory</button>'
+    +'<button class="btn-g" onclick="openTransferWorksheetModal()" style="font-size:11px">'+_iM('document')+' Transfer Worksheet</button>'
     
     +'</div>'
     +'<div style="font-size:12px;color:#8a95a8;margin-bottom:10px">Showing '+f.length+' of '+guns.length+' firearms'+(bulkMode?' — tap to select':' — tap to view')+'</div>'+(bulkMode?'<div style="background:#1a2e1a;border:2px solid #60e88050;border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span id="bulk_count" style="color:#60e880;font-weight:700;font-size:14px">'+bulkSelected.length+' selected</span><button onclick="openBulkEdit()" style="background:#e8c46a;color:#1a1d24;border:none;padding:9px 18px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Edit Selected</button></div>':'')
@@ -5739,7 +5740,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-05-11-V';   // bump on every revision
+var BUILD_TAG   = '2026-05-11-W';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -8203,15 +8204,75 @@ function bosStepContent(){
 }
 
 
-// ── TRANSFER WORKSHEET (-U) ──────────────────────────────────────────
+// ── TRANSFER WORKSHEET (-U, -W multi-select) ────────────────────────
 // Printable worksheet aligned to ATF Form 4473 Section D column order.
 // Pre-fills seller info + firearm data; buyer section is blank lines.
 // NOT an ATF form — no OMB number, no government logos. Read-only
 // convenience print, no data model changes, no persistence.
-function printTransferWorksheet(gunId){
+
+// -W: Multi-select modal for Transfer Worksheet from inventory page
+function openTransferWorksheetModal(){
+  var existing=document.getElementById('tws_modal');if(existing)existing.remove();
+  if(!guns.length){toast('No firearms in inventory','err');return;}
+
+  var modal=document.createElement('div');
+  modal.id='tws_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+
+  var rows=guns.map(function(g){
+    return '<label style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid #252c38;cursor:pointer;-webkit-tap-highlight-color:rgba(232,196,106,0.1)">'
+      +'<input type="checkbox" class="tws-chk" data-id="'+g.id+'" style="width:18px;height:18px;accent-color:#e8c46a;flex-shrink:0"/>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:700;color:#f0f2f5;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+eh(g.make)+' '+eh(g.model)+'</div>'
+        +'<div style="font-size:12px;color:#8a95a8;margin-top:2px">'+eh(g.type||'')+' &middot; '+eh(g.caliber)+(g.serialNumber?' &middot; SN: '+eh(g.serialNumber):'')+'</div>'
+      +'</div>'
+      +'</label>';
+  }).join('');
+
+  modal.innerHTML='<div style="background:#222835;border:2px solid #3a4455;border-radius:12px;max-width:400px;width:100%;margin:auto">'
+    +'<div style="padding:20px 20px 0">'
+      +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:4px">'+_iM('document')+' Transfer Worksheet</div>'
+      +'<div style="font-size:12px;color:#8a95a8;margin-bottom:14px">Select firearms to include on the worksheet</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:12px">'
+        +'<button onclick="_twsSelectAll(true)" style="flex:1;background:#1e3050;border:1px solid #a0c0ff40;color:#a0c0ff;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Select All</button>'
+        +'<button onclick="_twsSelectAll(false)" style="flex:1;background:#1e2535;border:1px solid #3a4455;color:#8a95a8;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Clear All</button>'
+      +'</div>'
+    +'</div>'
+    +'<div style="max-height:340px;overflow-y:auto;border-top:1px solid #2e3545;border-bottom:1px solid #2e3545">'+rows+'</div>'
+    +'<div style="padding:16px 20px;display:flex;flex-direction:column;gap:8px">'
+      +'<div style="font-size:11px;color:#4a5568;margin-bottom:4px">Generates a printable worksheet aligned to ATF Form 4473 Section D</div>'
+      +'<button onclick="_twsGenerate()" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.02em">'+_iM('printer')+' Generate Worksheet</button>'
+      +'<button onclick="document.getElementById(\'tws_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
+    +'</div>'
+    +'</div>';
+
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  document.body.appendChild(modal);
+}
+
+function _twsSelectAll(sel){
+  var chks=document.querySelectorAll('.tws-chk');
+  chks.forEach(function(c){c.checked=sel;});
+}
+
+function _twsGenerate(){
+  var chks=document.querySelectorAll('.tws-chk:checked');
+  if(!chks.length){toast('Select at least one firearm','err');return;}
+  var ids=[];
+  chks.forEach(function(c){ids.push(c.dataset.id);});
+  var modal=document.getElementById('tws_modal');if(modal)modal.remove();
+  printTransferWorksheet(ids);
+}
+function printTransferWorksheet(gunIdOrIds){
   if(!requirePro('Transfer Worksheet')) return;
-  var g=guns.find(function(x){return x.id===gunId;});
-  if(!g){toast('Firearm not found','err');return;}
+  // -W: Accept single gunId string or array of gunIds
+  var gunIds=Array.isArray(gunIdOrIds)?gunIdOrIds:[gunIdOrIds];
+  var selected=[];
+  gunIds.forEach(function(id){
+    var g=guns.find(function(x){return x.id===id;});
+    if(g) selected.push(g);
+  });
+  if(!selected.length){toast('No firearms found','err');return;}
   var p=(appSettings&&appSettings.ownerProfile)||{};
   var esc=function(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
   var blankLine='______________________________';
@@ -8274,19 +8335,22 @@ function printTransferWorksheet(gunId){
   }
 
   // Firearm table — 4473 Section D column order + bonus columns
-  var gunRow='<tr>'
-    +'<td>1</td>'
-    +'<td>'+esc(g.make)+'</td>'
-    +'<td>'+esc(g.model)+'</td>'
-    +'<td class="sn">'+esc(g.serialNumber||'N/A')+'</td>'
-    +'<td>'+esc(g.type)+'</td>'
-    +'<td>'+esc(g.caliber)+'</td>'
-    +'<td>'+(g.barrelLength?esc(g.barrelLength)+'″':'—')+'</td>'
-    +'<td>'+esc(g.condition||'—')+'</td>'
-    +'<td>'+(g.currentValue?'$'+Number(g.currentValue).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'
-    +'</tr>';
+  var gunRows=selected.map(function(g,i){
+    return '<tr>'
+      +'<td>'+(i+1)+'</td>'
+      +'<td>'+esc(g.make)+'</td>'
+      +'<td>'+esc(g.model)+'</td>'
+      +'<td class="sn">'+esc(g.serialNumber||'N/A')+'</td>'
+      +'<td>'+esc(g.type)+'</td>'
+      +'<td>'+esc(g.caliber)+'</td>'
+      +'<td>'+(g.barrelLength?esc(g.barrelLength)+'″':'—')+'</td>'
+      +'<td>'+esc(g.condition||'—')+'</td>'
+      +'<td>'+(g.currentValue?'$'+Number(g.currentValue).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'
+      +'</tr>';
+  }).join('');
 
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Transfer Worksheet — '+esc(g.make)+' '+esc(g.model)+'</title><style>'+css+'</style></head><body>';
+  var titleSuffix=selected.length===1?(esc(selected[0].make)+' '+esc(selected[0].model)):(selected.length+' Firearms');
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Transfer Worksheet — '+titleSuffix+'</title><style>'+css+'</style></head><body>';
 
   // Print / Close buttons
   html+='<div class="no-print-ws">'
@@ -8333,7 +8397,7 @@ function printTransferWorksheet(gunId){
     +'<div class="sec-head">Firearm Description &mdash; 4473 Section D Order</div>'
     +'<table>'
     +'<thead><tr><th>#</th><th>Manufacturer /<br/>Importer</th><th>Model</th><th>Serial Number</th><th>Type</th><th>Caliber /<br/>Gauge</th><th>Barrel<br/>Length</th><th>Condition</th><th>Value</th></tr></thead>'
-    +'<tbody>'+gunRow+'</tbody>'
+    +'<tbody>'+gunRows+'</tbody>'
     +'</table>'
     +'</div>';
 
