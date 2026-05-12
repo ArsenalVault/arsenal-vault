@@ -5740,7 +5740,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-05-11-X';   // bump on every revision
+var BUILD_TAG   = '2026-05-12-Y';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -12392,6 +12392,12 @@ function valLookup(make,model,caliber,condition,year){
     if(md.indexOf('shield')>=0) return price(300,400,500,'S&W Shield compact');
     if(md.indexOf('sw9')>=0||md.indexOf('sw40')>=0) return price(250,350,450,'S&W semi-auto pistol');
     if(md.indexOf('1911')>=0) return price(800,1000,1300,'S&W 1911 pistol');
+    if(md.indexOf('500')>=0) return price(1000,1300,1700,'S&W Model 500 .50 cal revolver');
+    if(md.indexOf('governor')>=0) return price(600,780,960,'S&W Governor .410/.45');
+    if(md.indexOf('sd9')>=0||md.indexOf('sd40')>=0||md.indexOf('sd ')>=0) return price(300,380,470,'S&W SD series — great value');
+    if(md.indexOf('csx')>=0) return price(450,550,680,'S&W CSX micro-compact');
+    if(md.indexOf('bodyguard')>=0) return price(300,380,470,'S&W Bodyguard');
+    if(md.indexOf('equalizer')>=0) return price(400,500,620,'S&W Equalizer');
     return price(300,500,700,'Smith & Wesson firearm');
   }
 
@@ -12408,6 +12414,13 @@ function valLookup(make,model,caliber,condition,year){
     if(md.indexOf('30')>=0) return price(450,550,650,'Glock 30 .45 ACP compact');
     if(md.indexOf('43')>=0) return price(450,550,650,'Glock 43 9mm slim');
     if(md.indexOf('48')>=0) return price(500,600,700,'Glock 48 9mm slim');
+    if(md.indexOf('34')>=0) return price(550,680,820,'Glock 34 9mm competition');
+    if(md.indexOf('40')>=0&&md.indexOf('gen')< 0) return price(600,750,900,'Glock 40 10mm long slide');
+    if(md.indexOf('44')>=0) return price(350,430,530,'Glock 44 .22 LR');
+    if(md.indexOf('45')>=0) return price(500,600,720,'Glock 45 9mm crossover');
+    if(md.indexOf('42')>=0) return price(350,430,530,'Glock 42 .380');
+    if(md.indexOf('29')>=0) return price(500,600,720,'Glock 29 10mm subcompact');
+    if(md.indexOf('47')>=0) return price(500,600,720,'Glock 47 9mm duty');
     return price(400,520,650,'Glock pistol');
   }
 
@@ -12441,6 +12454,16 @@ function valLookup(make,model,caliber,condition,year){
     if(md.indexOf('american')>=0) return price(350,450,600,'Ruger American rifle');
     if(md.indexOf('precision')>=0) return price(1200,1500,1900,'Ruger Precision Rifle');
     if(md.indexOf('77')>=0) return price(500,700,900,'Ruger Model 77 bolt action');
+    if(md.indexOf('lcp')>=0&&md.indexOf('ii')>=0||md.indexOf('lcp2')>=0) return price(280,360,450,'Ruger LCP II pocket pistol');
+    if(md.indexOf('lcp')>=0) return price(220,300,380,'Ruger LCP pocket pistol');
+    if(md.indexOf('max-9')>=0||md.indexOf('max9')>=0||md.indexOf('max 9')>=0) return price(320,400,500,'Ruger MAX-9 micro-compact');
+    if(md.indexOf('wrangler')>=0) return price(180,230,300,'Ruger Wrangler .22 revolver');
+    if(md.indexOf('pc carbine')>=0||md.indexOf('pc9')>=0) return price(500,630,780,'Ruger PC Carbine 9mm');
+    if(md.indexOf('mark iv')>=0||md.indexOf('mark 4')>=0||md.indexOf('mkiv')>=0) return price(400,520,660,'Ruger Mark IV .22 target pistol');
+    if(md.indexOf('57')>=0) return price(550,680,830,'Ruger-57 5.7x28mm');
+    if(md.indexOf('charger')>=0) return price(350,450,570,'Ruger Charger .22 pistol');
+    if(md.indexOf('ranch')>=0) return price(350,450,570,'Ruger Ranch Rifle');
+    if(md.indexOf('no. 1')>=0||md.indexOf('number 1')>=0||md.indexOf('no.1')>=0) return price(1000,1400,1900,'Ruger No. 1 single shot — collectible');
     return price(350,500,700,'Ruger firearm');
   }
 
@@ -12490,6 +12513,11 @@ function valLookup(make,model,caliber,condition,year){
     if(md.indexOf('p938')>=0) return price(600,750,900,'Sig P938 9mm');
     if(md.indexOf('mcx')>=0) return price(1800,2200,2800,'Sig MCX rifle');
     if(md.indexOf('mpx')>=0) return price(1500,1900,2400,'Sig MPX');
+    if(md.indexOf('p210')>=0) return price(1200,1500,1900,'Sig P210 — premium');
+    if(md.indexOf('cross')>=0) return price(1400,1700,2100,'Sig Cross bolt action rifle');
+    if(md.indexOf('spear')>=0) return price(3200,3800,4500,'Sig Spear — MCX platform');
+    if(md.indexOf('legion')>=0) return price(1100,1400,1750,'Sig Legion series — premium');
+    if(md.indexOf('m400')>=0||md.indexOf('m17')>=0||md.indexOf('m18')>=0) return price(550,700,880,'Sig M-series military/duty');
     return price(550,750,1000,'Sig Sauer firearm');
   }
 
@@ -12515,6 +12543,10 @@ function valLookup(make,model,caliber,condition,year){
     if(md.indexOf('hellcat')>=0) return price(500,620,760,'Springfield Hellcat');
     if(md.indexOf('m1a')>=0||md.indexOf('socom')>=0) return price(1400,1700,2200,'Springfield M1A rifle');
     if(md.indexOf('saint')>=0) return price(800,1000,1300,'Springfield SAINT AR rifle');
+    if(md.indexOf('1903')>=0) return price(800,1100,1600,'Springfield 1903 bolt action — milsurp collectible');
+    if(md.indexOf('trapdoor')>=0) return price(800,1200,2000,'Springfield Trapdoor — antique');
+    if(md.indexOf('echelon')>=0) return price(550,680,830,'Springfield Echelon');
+    if(md.indexOf('prodigy')>=0) return price(1200,1500,1850,'Springfield Prodigy 2011');
     return price(450,650,900,'Springfield Armory firearm');
   }
 
@@ -12891,6 +12923,347 @@ function valLookup(make,model,caliber,condition,year){
     return price(400,600,850,'Auto-Ordnance/Kahr firearm');
   }
 
+  // ── MILITARY SURPLUS / HISTORICAL ─────────────────────────────────
+
+  // Mosin-Nagant
+  if(m.indexOf('mosin')>=0){
+    if(md.indexOf('91/30')>=0||md.indexOf('9130')>=0) return price(300,400,550,'Mosin-Nagant 91/30 — common milsurp, price depends on matching numbers and bore');
+    if(md.indexOf('m44')>=0) return price(350,480,650,'Mosin-Nagant M44 carbine — folding bayonet model');
+    if(md.indexOf('m38')>=0) return price(400,550,750,'Mosin-Nagant M38 carbine — no bayonet, scarcer');
+    if(md.indexOf('finnish')>=0||md.indexOf('finn')>=0||md.indexOf('m39')>=0||md.indexOf('sako')>=0) return price(500,750,1100,'Finnish Mosin — premium over standard Russian');
+    if(md.indexOf('sniper')>=0||md.indexOf('pu')>=0||md.indexOf('pe')>=0) return price(800,1200,2000,'Mosin sniper variant — verify scope originality');
+    if(md.indexOf('hex')>=0) return price(350,500,700,'Mosin hex receiver — earlier production, slight premium');
+    return price(280,380,530,'Mosin-Nagant rifle — price varies with bore condition and matching numbers');
+  }
+
+  // SKS
+  if(m.indexOf('sks')>=0||(m.indexOf('simonov')>=0)){
+    if(md.indexOf('chinese')>=0||md.indexOf('norinco')>=0||md.indexOf('type 56')>=0) return price(350,480,650,'Chinese SKS — most common variant');
+    if(md.indexOf('yugo')>=0||md.indexOf('m59')>=0) return price(400,550,750,'Yugoslavian SKS — grenade launcher equipped');
+    if(md.indexOf('russian')>=0||md.indexOf('tula')>=0||md.indexOf('izhevsk')>=0) return price(500,700,1000,'Russian SKS — premium over Chinese');
+    if(md.indexOf('albanian')>=0||md.indexOf('romanian')>=0) return price(400,550,750,'Eastern Bloc SKS variant');
+    return price(350,500,700,'SKS semi-auto rifle — price depends heavily on country of origin');
+  }
+
+  // M1 Garand
+  if(m.indexOf('garand')>=0||(m.indexOf('m1')>=0&&(md.indexOf('garand')>=0||cal.indexOf('.30-06')>=0||cal.indexOf('30-06')>=0))){
+    if(md.indexOf('cmp')>=0||md.indexOf('service')>=0) return price(900,1200,1600,'M1 Garand — CMP/service grade');
+    if(md.indexOf('correct')>=0||md.indexOf('collector')>=0) return price(1500,2200,3500,'M1 Garand — correct/collector grade');
+    if(md.indexOf('sniper')>=0||md.indexOf('m1c')>=0||md.indexOf('m1d')>=0) return price(3000,5000,8000,'M1 Garand sniper variant — verify authenticity');
+    if(md.indexOf('tanker')>=0) return price(800,1100,1500,'M1 Garand tanker conversion');
+    return price(900,1300,1800,'M1 Garand — American icon, price varies with manufacturer and condition');
+  }
+
+  // M1 Carbine
+  if((m.indexOf('m1')>=0||m.indexOf('carbine')>=0||m.indexOf('inland')>=0||m.indexOf('universal')>=0)&&(md.indexOf('carbine')>=0||md.indexOf('m1')>=0||cal.indexOf('.30 carbine')>=0||cal.indexOf('30 carbine')>=0)){
+    if(m.indexOf('inland')>=0||md.indexOf('inland')>=0) return price(800,1100,1500,'Inland M1 Carbine — WWII manufacturer');
+    if(m.indexOf('universal')>=0||md.indexOf('universal')>=0) return price(400,550,750,'Universal M1 Carbine — post-war commercial');
+    if(md.indexOf('m2')>=0||md.indexOf('paratrooper')>=0) return price(1200,1800,2800,'M1/M2 Carbine paratrooper/select-fire — verify legal status');
+    return price(700,1000,1400,'M1 Carbine — price varies by manufacturer and originality');
+  }
+
+  // Mauser
+  if(m.indexOf('mauser')>=0){
+    if(md.indexOf('k98')>=0||md.indexOf('98k')>=0||md.indexOf('kar98')>=0) return price(500,800,1400,'Mauser K98k — price depends heavily on matching numbers and capture markings');
+    if(md.indexOf('c96')>=0||md.indexOf('broomhandle')>=0||md.indexOf('broom handle')>=0) return price(1500,2500,4000,'Mauser C96 Broomhandle — iconic collectible');
+    if(md.indexOf('hsc')>=0) return price(350,500,700,'Mauser HSc pistol');
+    if(md.indexOf('1893')>=0||md.indexOf('1895')>=0||md.indexOf('spanish')>=0) return price(250,400,650,'Spanish Mauser — common milsurp');
+    if(md.indexOf('1896')>=0||md.indexOf('swedish')>=0||md.indexOf('m96')>=0) return price(400,600,900,'Swedish Mauser — excellent quality, 6.5x55');
+    if(md.indexOf('turkish')>=0||md.indexOf('1903')>=0) return price(250,380,550,'Turkish Mauser — abundant import');
+    if(md.indexOf('vz')>=0||md.indexOf('czech')>=0) return price(350,550,800,'Czech Mauser — quality manufacture');
+    if(md.indexOf('yugo')>=0||md.indexOf('m48')>=0||md.indexOf('24/47')>=0) return price(350,500,700,'Yugoslavian Mauser — common milsurp');
+    if(md.indexOf('gewehr')>=0||md.indexOf('g98')>=0||md.indexOf('gew')>=0) return price(500,800,1300,'Gewehr 98 — WWI era');
+    if(md.indexOf('m18')>=0||md.indexOf('m12')>=0) return price(700,900,1200,'Mauser M18/M12 modern sporting rifle');
+    return price(350,600,1000,'Mauser bolt action — price varies enormously by model, country, and matching');
+  }
+
+  // Lee-Enfield
+  if(m.indexOf('enfield')>=0||m.indexOf('lee-enfield')>=0||m.indexOf('lee enfield')>=0){
+    if(md.indexOf('no.1')>=0||md.indexOf('no1')>=0||md.indexOf('mk iii')>=0||md.indexOf('mkiii')>=0||md.indexOf('smle')>=0) return price(400,650,950,'Lee-Enfield No.1 Mk III SMLE — WWI/WWII');
+    if(md.indexOf('no.4')>=0||md.indexOf('no4')>=0) return price(400,600,900,'Lee-Enfield No.4 — WWII production');
+    if(md.indexOf('no.5')>=0||md.indexOf('no5')>=0||md.indexOf('jungle')>=0) return price(500,750,1100,'Lee-Enfield No.5 Jungle Carbine');
+    if(md.indexOf('ishapore')>=0||md.indexOf('2a')>=0) return price(300,450,650,'Ishapore 2A/2A1 — .308 conversion');
+    return price(350,550,850,'Lee-Enfield rifle — .303 British, price varies with model and arsenal');
+  }
+
+  // Luger
+  if(m.indexOf('luger')>=0||(m.indexOf('dwm')>=0)||m.indexOf('p08')>=0||md.indexOf('luger')>=0||md.indexOf('p08')>=0||md.indexOf('p.08')>=0){
+    if(md.indexOf('artillery')>=0||md.indexOf('lp08')>=0) return price(2000,3500,6000,'Artillery Luger LP08 — long barrel, premium collectible');
+    if(md.indexOf('navy')>=0||md.indexOf('marine')>=0) return price(2500,4000,7000,'Navy Luger — scarce, high collector interest');
+    if(md.indexOf('mauser')>=0&&md.indexOf('banner')>=0) return price(1500,2500,4000,'Mauser Banner Luger');
+    return price(1000,1800,3000,'Luger P08 — iconic, price varies dramatically with markings and matching');
+  }
+
+  // Walther P38 / P1 (separate from modern Walther block)
+  if(md.indexOf('p38')>=0||md.indexOf('p.38')>=0||md.indexOf('p1')>=0&&m.indexOf('walther')>=0){
+    if(md.indexOf('p1')>=0) return price(350,500,700,'Walther P1 — post-war Bundeswehr');
+    return price(500,800,1300,'Walther P38 — WWII, price depends on manufacturer code and matching');
+  }
+
+  // Tokarev
+  if(m.indexOf('tokarev')>=0||md.indexOf('tt-33')>=0||md.indexOf('tt33')>=0||md.indexOf('tokarev')>=0){
+    if(md.indexOf('chinese')>=0||md.indexOf('type 54')>=0||md.indexOf('norinco')>=0) return price(200,300,420,'Chinese Tokarev Type 54');
+    if(md.indexOf('yugo')>=0||md.indexOf('m57')>=0) return price(250,350,480,'Yugoslavian M57 Tokarev');
+    if(md.indexOf('romanian')>=0) return price(200,300,420,'Romanian Tokarev TTC');
+    return price(250,370,520,'Tokarev TT-33 — 7.62x25, price varies by country');
+  }
+
+  // Nagant Revolver
+  if((m.indexOf('nagant')>=0&&m.indexOf('mosin')<0)||md.indexOf('nagant')>=0&&md.indexOf('mosin')<0){
+    return price(200,300,430,'Nagant M1895 revolver — 7.62x38R, unique gas-seal design');
+  }
+
+  // Makarov
+  if(m.indexOf('makarov')>=0||md.indexOf('makarov')>=0||md.indexOf('pm')>=0&&(m.indexOf('russian')>=0||m.indexOf('east german')>=0||m.indexOf('bulgarian')>=0)){
+    if(m.indexOf('east german')>=0||md.indexOf('east german')>=0) return price(400,600,900,'East German Makarov — most desirable variant');
+    if(m.indexOf('russian')>=0||md.indexOf('russian')>=0) return price(350,500,750,'Russian Makarov PM');
+    if(m.indexOf('bulgarian')>=0||md.indexOf('bulgarian')>=0) return price(300,420,580,'Bulgarian Makarov');
+    return price(300,450,650,'Makarov PM — 9x18mm, price depends on country of origin');
+  }
+
+  // Swiss K31
+  if(m.indexOf('swiss')>=0||md.indexOf('k31')>=0||md.indexOf('k-31')>=0||md.indexOf('schmidt')>=0){
+    if(md.indexOf('k31')>=0||md.indexOf('k-31')>=0) return price(500,700,1000,'Swiss K31 — excellent accuracy, 7.5x55 Swiss');
+    if(md.indexOf('k11')>=0||md.indexOf('k-11')>=0) return price(350,500,700,'Swiss K11 carbine');
+    if(md.indexOf('1911')>=0) return price(300,450,650,'Swiss Model 1911 rifle');
+    return price(400,600,900,'Swiss military rifle — known for quality');
+  }
+
+  // Arisaka
+  if(m.indexOf('arisaka')>=0||md.indexOf('arisaka')>=0||md.indexOf('type 99')>=0||md.indexOf('type 38')>=0){
+    if(md.indexOf('type 99')>=0||md.indexOf('t99')>=0) return price(300,450,700,'Arisaka Type 99 — 7.7mm Japanese, check mum status');
+    if(md.indexOf('type 38')>=0||md.indexOf('t38')>=0) return price(300,450,700,'Arisaka Type 38 — 6.5mm Japanese');
+    if(md.indexOf('last ditch')>=0||md.indexOf('late war')>=0) return price(200,300,450,'Late-war Arisaka — crude finish, lower collector value');
+    return price(250,400,650,'Arisaka rifle — value depends on mum intact vs ground');
+  }
+
+  // CZ-52 / vz.52 (separate from modern CZ block)
+  if(md.indexOf('cz-52')>=0||md.indexOf('cz52')>=0||md.indexOf('vz.52')>=0||md.indexOf('vz52')>=0){
+    return price(250,370,500,'CZ-52 pistol — 7.62x25 Tokarev, roller-locked');
+  }
+
+  // SVT-40
+  if(md.indexOf('svt')>=0||md.indexOf('svt-40')>=0||md.indexOf('svt40')>=0){
+    return price(800,1200,1800,'SVT-40 semi-auto rifle — Soviet WWII, rising collector interest');
+  }
+
+  // Carcano
+  if(m.indexOf('carcano')>=0||md.indexOf('carcano')>=0){
+    if(md.indexOf('cavalry')>=0||md.indexOf('carbine')>=0) return price(250,380,550,'Carcano cavalry carbine');
+    return price(200,320,480,'Carcano rifle — 6.5x52mm Italian, common milsurp');
+  }
+
+  // Webley
+  if(m.indexOf('webley')>=0||md.indexOf('webley')>=0){
+    if(md.indexOf('mk vi')>=0||md.indexOf('mk6')>=0) return price(600,900,1400,'Webley Mk VI — .455, WWI British');
+    if(md.indexOf('mk iv')>=0||md.indexOf('mk4')>=0) return price(400,600,950,'Webley Mk IV revolver');
+    return price(400,650,1000,'Webley revolver — British military, .455 or .38');
+  }
+
+  // Norinco (Chinese military/commercial)
+  if(m.indexOf('norinco')>=0||m.indexOf('polytech')>=0){
+    if(md.indexOf('mak-90')>=0||md.indexOf('mak90')>=0||md.indexOf('hunter')>=0) return price(800,1100,1500,'Norinco MAK-90 AK variant — banned import premium');
+    if(md.indexOf('sks')>=0||md.indexOf('type 56')>=0) return price(350,480,650,'Norinco SKS Type 56');
+    if(md.indexOf('1911')>=0) return price(400,550,750,'Norinco 1911 — good quality, import-banned premium');
+    if(md.indexOf('tokarev')>=0||md.indexOf('213')>=0) return price(200,300,420,'Norinco Tokarev/Type 213');
+    return price(400,600,900,'Norinco firearm — Chinese import, often carries ban premium');
+  }
+
+  // Star (Spanish)
+  if(m.indexOf('star')>=0&&(m.indexOf('bonifacio')>=0||md.indexOf('bm')>=0||md.indexOf('model b')>=0||md.indexOf('super')>=0)){
+    if(md.indexOf('bm')>=0) return price(250,350,480,'Star BM 9mm — compact Spanish military');
+    if(md.indexOf('model b')>=0||md.indexOf('super b')>=0) return price(250,380,530,'Star Model B/Super — Spanish service pistol');
+    return price(200,320,470,'Star pistol — Spanish military surplus');
+  }
+
+  // Generic milsurp by era cues
+  if(md.indexOf('wwii')>=0||md.indexOf('ww2')>=0||md.indexOf('world war')>=0){
+    return price(500,800,1400,'WWII-era firearm — value depends heavily on specific model and provenance');
+  }
+  if(md.indexOf('wwi')>=0||md.indexOf('ww1')>=0){
+    return price(600,1000,1800,'WWI-era firearm — antique/collectible, verify condition carefully');
+  }
+
+  // ── PREMIUM / CUSTOM ──────────────────────────────────────────────
+
+  // Staccato (formerly STI)
+  if(m.indexOf('staccato')>=0||m.indexOf('sti')>=0){
+    if(md.indexOf('p')>=0&&md.indexOf('duo')< 0) return price(2000,2400,2900,'Staccato P 2011 — duty/carry');
+    if(md.indexOf('c')>=0||md.indexOf('c2')>=0) return price(1800,2200,2700,'Staccato C2 compact 2011');
+    if(md.indexOf('xc')>=0) return price(3500,4200,5000,'Staccato XC competition — premium');
+    if(md.indexOf('xl')>=0) return price(3200,3800,4600,'Staccato XL competition');
+    if(md.indexOf('duo')>=0) return price(1700,2100,2600,'Staccato/STI DUO');
+    return price(1800,2400,3200,'Staccato/STI 2011 pistol');
+  }
+
+  // Les Baer
+  if(m.indexOf('les baer')>=0||m.indexOf('baer')>=0){
+    if(md.indexOf('premier')>=0) return price(2200,2700,3300,'Les Baer Premier II 1911');
+    if(md.indexOf('custom carry')>=0) return price(2000,2500,3100,'Les Baer Custom Carry');
+    if(md.indexOf('monolith')>=0) return price(2400,2900,3600,'Les Baer Monolith');
+    return price(2000,2500,3200,'Les Baer 1911 — semi-custom premium');
+  }
+
+  // Nighthawk Custom
+  if(m.indexOf('nighthawk')>=0){
+    if(md.indexOf('agent')>=0) return price(3000,3600,4400,'Nighthawk Agent 2');
+    if(md.indexOf('predator')>=0) return price(3200,3900,4800,'Nighthawk Predator');
+    if(md.indexOf('counselor')>=0) return price(3000,3600,4400,'Nighthawk Counselor');
+    return price(2800,3500,4500,'Nighthawk Custom 1911 — full custom');
+  }
+
+  // Ed Brown
+  if(m.indexOf('ed brown')>=0){
+    if(md.indexOf('kobra')>=0) return price(2500,3000,3700,'Ed Brown Kobra');
+    if(md.indexOf('executive')>=0) return price(2500,3100,3800,'Ed Brown Executive');
+    if(md.indexOf('fx2')>=0) return price(2200,2700,3300,'Ed Brown FX2');
+    return price(2200,2800,3500,'Ed Brown 1911 — semi-custom premium');
+  }
+
+  // Dan Wesson (CZ-owned premium)
+  if(m.indexOf('dan wesson')>=0){
+    if(md.indexOf('specialist')>=0) return price(1400,1700,2100,'Dan Wesson Specialist 1911');
+    if(md.indexOf('pointman')>=0) return price(1200,1500,1850,'Dan Wesson Pointman');
+    if(md.indexOf('vigil')>=0) return price(1000,1250,1550,'Dan Wesson Vigil');
+    if(md.indexOf('wraith')>=0) return price(1500,1850,2300,'Dan Wesson Wraith');
+    if(md.indexOf('bruin')>=0) return price(1600,2000,2500,'Dan Wesson Bruin 10mm');
+    if(md.indexOf('dwx')>=0) return price(1200,1500,1850,'Dan Wesson DWX');
+    return price(1200,1600,2100,'Dan Wesson firearm — premium');
+  }
+
+  // ── BUDGET / VALUE BRANDS ─────────────────────────────────────────
+
+  // Bersa
+  if(m.indexOf('bersa')>=0){
+    if(md.indexOf('thunder')>=0&&md.indexOf('pro')>=0) return price(350,440,550,'Bersa Thunder Pro');
+    if(md.indexOf('thunder')>=0) return price(250,330,420,'Bersa Thunder .380 — popular CCW');
+    if(md.indexOf('tpr')>=0) return price(350,450,570,'Bersa TPR');
+    return price(250,350,470,'Bersa pistol');
+  }
+
+  // SAR / Sarsilmaz
+  if(m.indexOf('sar')>=0&&m.indexOf('sarsilmaz')>=0||m.indexOf('sar usa')>=0||m.indexOf('sarsilmaz')>=0||(m.indexOf('sar')>=0&&(md.indexOf('sar9')>=0||md.indexOf('b6')>=0||md.indexOf('k2')>=0))){
+    if(md.indexOf('sar9')>=0) return price(320,400,500,'SAR9 striker pistol');
+    if(md.indexOf('b6')>=0) return price(280,350,440,'SAR B6 pistol');
+    if(md.indexOf('k2')>=0) return price(350,440,550,'SAR K2 .45 ACP');
+    return price(280,370,480,'SAR/Sarsilmaz pistol');
+  }
+
+  // Girsan
+  if(m.indexOf('girsan')>=0){
+    if(md.indexOf('regard')>=0) return price(350,450,570,'Girsan Regard — Beretta 92 clone');
+    if(md.indexOf('mc14')>=0) return price(300,380,480,'Girsan MC14 .380');
+    if(md.indexOf('mc28')>=0) return price(350,440,550,'Girsan MC28 striker pistol');
+    if(md.indexOf('1911')>=0) return price(400,520,650,'Girsan 1911 — Turkish made, good value');
+    return price(300,400,530,'Girsan firearm');
+  }
+
+  // EAA / Tanfoglio
+  if(m.indexOf('eaa')>=0||m.indexOf('tanfoglio')>=0||m.indexOf('european american')>=0){
+    if(md.indexOf('witness')>=0&&md.indexOf('elite')>=0) return price(500,650,820,'EAA Witness Elite');
+    if(md.indexOf('witness')>=0) return price(400,520,660,'EAA Witness');
+    if(md.indexOf('girsan')>=0) return price(350,440,550,'EAA/Girsan import');
+    return price(350,480,640,'EAA/Tanfoglio firearm');
+  }
+
+  // Palmetto State Armory
+  if(m.indexOf('palmetto')>=0||m.indexOf('psa')>=0){
+    if(md.indexOf('jakl')>=0) return price(800,1000,1250,'PSA JAKL');
+    if(md.indexOf('ak-47')>=0||md.indexOf('gf3')>=0||md.indexOf('gf5')>=0||md.indexOf('ak-103')>=0||md.indexOf('ak-104')>=0) return price(600,800,1050,'PSA AK variant — American-made');
+    if(md.indexOf('ar-15')>=0||md.indexOf('pa-15')>=0||md.indexOf('pa15')>=0) return price(400,550,720,'PSA AR-15 — budget build');
+    if(md.indexOf('dagger')>=0) return price(250,330,420,'PSA Dagger — Glock-compatible');
+    if(md.indexOf('ar-10')>=0||md.indexOf('pa-10')>=0) return price(600,800,1050,'PSA AR-10 .308');
+    if(md.indexOf('sabre')>=0) return price(300,400,520,'PSA Sabre pistol');
+    return price(400,580,780,'Palmetto State Armory firearm');
+  }
+
+  // Aero Precision
+  if(m.indexOf('aero')>=0&&m.indexOf('precision')>=0){
+    if(md.indexOf('m4e1')>=0||md.indexOf('ar-15')>=0) return price(600,800,1050,'Aero Precision AR-15 — quality mid-tier');
+    if(md.indexOf('m5')>=0||md.indexOf('ar-10')>=0) return price(800,1050,1350,'Aero Precision AR-10 .308');
+    if(md.indexOf('epc')>=0) return price(500,650,820,'Aero Precision EPC PCC');
+    return price(600,800,1100,'Aero Precision firearm');
+  }
+
+  // ── SHOTGUN SPECIALISTS ───────────────────────────────────────────
+
+  // Franchi
+  if(m.indexOf('franchi')>=0){
+    if(md.indexOf('affinity')>=0) return price(750,950,1200,'Franchi Affinity semi-auto shotgun');
+    if(md.indexOf('instinct')>=0) return price(1200,1500,1900,'Franchi Instinct O/U');
+    if(md.indexOf('momentum')>=0) return price(550,700,880,'Franchi Momentum rifle');
+    return price(600,850,1150,'Franchi firearm');
+  }
+
+  // TriStar
+  if(m.indexOf('tristar')>=0||m.indexOf('tri-star')>=0||m.indexOf('tri star')>=0){
+    if(md.indexOf('viper')>=0) return price(400,520,660,'TriStar Viper semi-auto shotgun');
+    if(md.indexOf('cobra')>=0) return price(250,330,420,'TriStar Cobra pump shotgun');
+    if(md.indexOf('trinity')>=0) return price(500,650,820,'TriStar Trinity O/U');
+    return price(300,430,580,'TriStar shotgun');
+  }
+
+  // Escort
+  if(m.indexOf('escort')>=0){
+    if(md.indexOf('bts')>=0||md.indexOf('bullpup')>=0) return price(350,450,570,'Escort BTS bullpup shotgun');
+    if(md.indexOf('sdx')>=0||md.indexOf('semi')>=0) return price(350,450,570,'Escort semi-auto shotgun');
+    if(md.indexOf('slugger')>=0||md.indexOf('field')>=0) return price(250,330,420,'Escort pump shotgun');
+    return price(280,380,500,'Escort shotgun — Turkish made');
+  }
+
+  // ── COWBOY ACTION / REPRODUCTIONS ─────────────────────────────────
+
+  // Uberti
+  if(m.indexOf('uberti')>=0){
+    if(md.indexOf('cattleman')>=0) return price(400,530,680,'Uberti Cattleman SAA replica');
+    if(md.indexOf('1873')>=0) return price(450,580,740,'Uberti 1873 lever action');
+    if(md.indexOf('1866')>=0) return price(450,580,740,'Uberti 1866 Yellowboy');
+    if(md.indexOf('1860')>=0||md.indexOf('army')>=0) return price(350,450,580,'Uberti 1860 Army percussion');
+    if(md.indexOf('walker')>=0) return price(400,530,680,'Uberti Walker percussion');
+    if(md.indexOf('schofield')>=0) return price(600,780,980,'Uberti Schofield top-break');
+    return price(400,550,750,'Uberti reproduction firearm');
+  }
+
+  // Cimarron
+  if(m.indexOf('cimarron')>=0){
+    if(md.indexOf('frontier')>=0||md.indexOf('evil roy')>=0) return price(450,580,740,'Cimarron SAA reproduction');
+    if(md.indexOf('1873')>=0) return price(500,650,830,'Cimarron 1873 lever action');
+    if(md.indexOf('1860')>=0||md.indexOf('richards')>=0) return price(400,520,660,'Cimarron 1860 conversion');
+    return price(400,560,750,'Cimarron reproduction firearm');
+  }
+
+  // Pietta
+  if(m.indexOf('pietta')>=0){
+    if(md.indexOf('1851')>=0||md.indexOf('navy')>=0) return price(200,280,380,'Pietta 1851 Navy percussion');
+    if(md.indexOf('1858')>=0||md.indexOf('remington')>=0) return price(250,330,430,'Pietta 1858 Remington percussion');
+    if(md.indexOf('1860')>=0||md.indexOf('army')>=0) return price(220,300,400,'Pietta 1860 Army percussion');
+    if(md.indexOf('1873')>=0||md.indexOf('saa')>=0) return price(350,450,580,'Pietta 1873 SAA cartridge');
+    return price(250,350,480,'Pietta reproduction firearm');
+  }
+
+  // ── BLACK POWDER / MUZZLELOADERS ──────────────────────────────────
+
+  // CVA
+  if(m.indexOf('cva')>=0){
+    if(md.indexOf('paramount')>=0) return price(600,800,1050,'CVA Paramount muzzleloader — premium');
+    if(md.indexOf('accura')>=0) return price(350,450,580,'CVA Accura inline muzzleloader');
+    if(md.indexOf('optima')>=0) return price(250,330,430,'CVA Optima muzzleloader');
+    if(md.indexOf('wolf')>=0) return price(200,270,350,'CVA Wolf muzzleloader — budget');
+    if(md.indexOf('scout')>=0) return price(250,330,430,'CVA Scout single shot rifle');
+    if(md.indexOf('cascade')>=0) return price(450,580,730,'CVA Cascade bolt action');
+    return price(250,370,520,'CVA firearm');
+  }
+
+  // Traditions
+  if(m.indexOf('traditions')>=0){
+    if(md.indexOf('vortek')>=0) return price(250,330,430,'Traditions Vortek muzzleloader');
+    if(md.indexOf('pursuit')>=0) return price(200,270,350,'Traditions Pursuit muzzleloader');
+    if(md.indexOf('buckstalker')>=0) return price(180,240,320,'Traditions BuckStalker');
+    if(md.indexOf('crackshot')>=0) return price(200,270,350,'Traditions Crackshot single shot');
+    if(md.indexOf('outfitter')>=0) return price(300,400,520,'Traditions Outfitter');
+    return price(200,300,420,'Traditions firearm');
+  }
+
   // AR platform generic
   if(md.indexOf('ar-15')>=0||md.indexOf('ar15')>=0||md.indexOf('m4')>=0||md.indexOf('m16')>=0){
     return price(550,750,1100,'AR-15 platform rifle');
@@ -12931,6 +13304,29 @@ function valLookup(make,model,caliber,condition,year){
     if(cal.indexOf('.243')>=0) return price(450,650,950,'.243 Win rifle — category estimate');
     if(cal.indexOf('.30-30')>=0||cal.indexOf('30-30')>=0) return price(400,600,850,'.30-30 lever action — category estimate');
     if(cal.indexOf('.50')>=0&&(cal.indexOf('bmg')>=0||cal.indexOf('beowulf')>=0)) return price(2000,3500,5500,'.50 caliber — category estimate');
+    if(cal.indexOf('.50 ae')>=0||cal.indexOf('.50 action')>=0) return price(1200,1700,2300,'.50 AE pistol — category estimate');
+    if(cal.indexOf('7mm')>=0&&cal.indexOf('rem')>=0||cal.indexOf('7mm mag')>=0) return price(600,900,1300,'7mm Rem Mag rifle — category estimate');
+    if(cal.indexOf('.338')>=0&&cal.indexOf('lapua')>=0) return price(2000,3000,5000,'.338 Lapua precision rifle — category estimate');
+    if(cal.indexOf('.338')>=0) return price(800,1200,1800,'.338 rifle — category estimate');
+    if(cal.indexOf('.350')>=0&&cal.indexOf('legend')>=0) return price(400,600,850,'.350 Legend — category estimate');
+    if(cal.indexOf('6mm')>=0&&cal.indexOf('arc')>=0) return price(600,850,1200,'6mm ARC rifle — category estimate');
+    if(cal.indexOf('.204')>=0) return price(400,600,850,'.204 Ruger rifle — category estimate');
+    if(cal.indexOf('28 gauge')>=0||cal.indexOf('28 ga')>=0||cal.indexOf('28ga')>=0) return price(500,750,1100,'28 gauge shotgun — category estimate');
+    if(cal.indexOf('16 gauge')>=0||cal.indexOf('16 ga')>=0||cal.indexOf('16ga')>=0) return price(300,500,800,'16 gauge shotgun — category estimate');
+    if(cal.indexOf('.25 acp')>=0||cal.indexOf('.25 auto')>=0) return price(150,250,400,'.25 ACP pocket pistol — category estimate');
+    if(cal.indexOf('.32 acp')>=0||cal.indexOf('.32 auto')>=0||cal.indexOf('7.65')>=0) return price(200,350,550,'.32 ACP pistol — category estimate');
+    if(cal.indexOf('5.7')>=0&&cal.indexOf('28')>=0) return price(500,700,950,'5.7x28mm — category estimate');
+    if(cal.indexOf('7.62x54')>=0||cal.indexOf('7.62x54r')>=0) return price(300,450,650,'7.62x54R rifle — likely milsurp');
+    if(cal.indexOf('7.62x25')>=0) return price(200,350,520,'7.62x25 Tokarev — likely milsurp');
+    if(cal.indexOf('9x18')>=0||cal.indexOf('9mm mak')>=0) return price(250,380,550,'9x18 Makarov — likely milsurp');
+    if(cal.indexOf('.303')>=0) return price(350,550,850,'.303 British — likely milsurp');
+    if(cal.indexOf('8mm')>=0&&cal.indexOf('mauser')>=0||cal.indexOf('7.92')>=0) return price(350,550,850,'8mm Mauser — likely milsurp');
+    if(cal.indexOf('6.5')>=0&&(cal.indexOf('swede')>=0||cal.indexOf('swedish')>=0||cal.indexOf('x55')>=0)) return price(400,600,900,'6.5x55 Swedish — likely milsurp, premium');
+    if(cal.indexOf('6.5')>=0&&(cal.indexOf('japanese')>=0||cal.indexOf('arisaka')>=0)) return price(250,400,650,'6.5 Japanese — likely milsurp');
+    if(cal.indexOf('.45-70')>=0||cal.indexOf('45-70')>=0) return price(500,750,1100,'.45-70 Govt — category estimate');
+    if(cal.indexOf('.300')>=0&&cal.indexOf('wsm')>=0) return price(700,950,1300,'.300 WSM rifle — category estimate');
+    if(cal.indexOf('.450')>=0&&cal.indexOf('bushmaster')>=0) return price(600,850,1200,'.450 Bushmaster — category estimate');
+    if(cal.indexOf('muzzle')>=0||cal.indexOf('.50 cal')>=0&&cal.indexOf('bmg')<0) return price(200,350,600,'Muzzleloader — category estimate');
   }
 
   return{low:300,mid:500,high:900,notes:'No specific data for this make/model — showing broad estimate. For a more accurate figure, enter value manually or upgrade to Pro+ for AI-powered estimates.'};
