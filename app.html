@@ -1557,6 +1557,7 @@ function getSelectedGuns(pool){
   return pool.filter(function(g){ return reportSelection.has(g.id); });
 }
 function clearReportSelection(){ reportSelection=null; }
+var _insDetailsOpen=false; // -V: Insurance Details panel collapse state
 var maintSort='overdue';
 var collapsed={photo:false,basic:false,condition:false,value:true,extra:true,custody:true};
 var lbPhotos=[];
@@ -5254,14 +5255,58 @@ function rIns(){
   var totalIns=selGuns.reduce(function(t,g){return t+(parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0);},0);
   var totalMkt=selGuns.reduce(function(t,g){return t+(parseFloat(g.currentValue)||0);},0);
   var canPrint=selGuns.length>0;
-  return bar+'<div class="panel" style="border-color:#a0c0ff40">'
+
+  // -V: Insurance Details collapsible panel
+  var ic=appSettings.ins_company||'';
+  var ip=appSettings.ins_policy||'';
+  var ia=appSettings.ins_agent||'';
+  var iap=appSettings.ins_agentPhone||'';
+  var ir=appSettings.ins_rider||'';
+  var ied=appSettings.ins_effectiveDate||'';
+  var hasPolicyInfo=(ic||ip);
+  var policySummary=hasPolicyInfo
+    ?(eh(ic)+(ic&&ip?' &middot; ':'')+(ip?'Policy #'+eh(ip):''))
+    :'No policy details yet';
+
+  var insFld=function(id,label,val,type){
+    type=type||'text';
+    return '<div style="margin-bottom:10px">'
+      +'<div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a95a8;margin-bottom:4px">'+label+'</div>'
+      +'<input id="ins_'+id+'" type="'+type+'" value="'+eh(val||'')+'" '
+        +'style="width:100%;background:#13161d;border:2px solid #3a4455;border-radius:8px;color:#f0f2f5;padding:9px 11px;font-size:13px;outline:none;font-family:inherit;box-sizing:border-box"/>'
+      +'</div>';
+  };
+
+  var insPanel='<div class="panel" style="border-color:#a0c0ff40;margin-bottom:14px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center">'
+      +'<div><div class="sec-title" style="color:#a0c0ff;margin-bottom:2px">'+_iM('document')+' Insurance Details</div>'
+      +'<div style="font-size:12px;color:#8a95a8">'+policySummary+'</div></div>'
+      +'<button onclick="_insDetailsOpen=!_insDetailsOpen;rnd()" style="background:#e8c46a20;border:2px solid #e8c46a60;color:#e8c46a;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">'+(_insDetailsOpen?'▲ Collapse':'Edit Policy Details')+'</button>'
+    +'</div>';
+
+  if(_insDetailsOpen){
+    insPanel+='<div style="margin-top:14px;padding-top:14px;border-top:1px solid #2e3545">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">'
+      +insFld('company','Insurance Company',ic)
+      +insFld('policy','Policy Number',ip)
+      +insFld('agent','Agent Name',ia)
+      +insFld('agentPhone','Agent Phone',iap,'tel')
+      +insFld('rider','Rider / Endorsement #',ir)
+      +insFld('effectiveDate','Coverage Effective Date',ied,'date')
+      +'</div>'
+      +'<button onclick="_saveInsDetails()" style="width:100%;background:#a0c0ff;color:#0a0f1a;border:none;padding:11px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:4px">Save Policy Details</button>'
+      +'</div>';
+  }
+  insPanel+='</div>';
+
+  return bar+insPanel+'<div class="panel" style="border-color:#a0c0ff40">'
     +'<div class="sec-title" style="color:#a0c0ff">'+_iM('document')+' Insurance Report</div>'
     +'<div style="font-size:13px;color:#8a95a8;margin-bottom:14px">Generated '+new Date().toLocaleDateString()+' &middot; '+selGuns.length+' of '+guns.length+' firearm'+(guns.length!==1?'s':'')+' selected</div>'
     +'<div style="display:flex;gap:20px;margin-bottom:16px;flex-wrap:wrap">'
       +'<div><div style="font-size:11px;color:#8a95a8;text-transform:uppercase">Total Insured Value</div><div style="font-size:22px;font-weight:800;color:#a0c0ff">'+fm(totalIns)+'</div></div>'
       +'<div><div style="font-size:11px;color:#8a95a8;text-transform:uppercase">Market Value</div><div style="font-size:22px;font-weight:800;color:#e8c46a">'+fm(totalMkt)+'</div></div>'
     +'</div>'
-    +'<button class="report-btn" onclick="printIns()"'+(canPrint?'':' disabled')+' style="width:100%'+(canPrint?'':';opacity:0.45;cursor:not-allowed')+'">'+_iM('printer')+' Print / Save Insurance Report'+(canPrint&&reportSelection!==null?' ('+selGuns.length+' of '+guns.length+')':'')+'</button>'
+    +'<button class="report-btn" onclick="printIns()"'+(canPrint?'':' disabled')+' style="width:100%'+(canPrint?'':';opacity:0.45;cursor:not-allowed')+'">'+_iM('printer')+' Print Claim Sheets'+(canPrint&&reportSelection!==null?' ('+selGuns.length+' of '+guns.length+')':'')+'</button>'
     +'</div>'
     +'<div class="panel">'
     +'<div class="sec-title">Firearms Schedule</div>'
@@ -5332,7 +5377,22 @@ function rTheft(){
     +'</div>';
 }
 
-// ── PRINT INSURANCE REPORT ────────────────────────────────────────────
+// ── INSURANCE DETAILS SAVE (-V) ──────────────────────────────────────
+function _saveInsDetails(){
+  var g=function(id){var el=document.getElementById('ins_'+id);return el?el.value.trim():'';};
+  appSettings.ins_company=g('company');
+  appSettings.ins_policy=g('policy');
+  appSettings.ins_agent=g('agent');
+  appSettings.ins_agentPhone=g('agentPhone');
+  appSettings.ins_rider=g('rider');
+  appSettings.ins_effectiveDate=g('effectiveDate');
+  saveSettings();
+  _insDetailsOpen=false;
+  toast('Policy details saved','ok');
+  rnd();
+}
+
+// ── PRINT INSURANCE CLAIM SHEETS (-V) ────────────────────────────────
 function printIns(){
   // REPORT-T12: filter to selection
   var selGuns=getSelectedGuns(guns);
@@ -5340,21 +5400,174 @@ function printIns(){
   var totalIns=selGuns.reduce(function(t,g){return t+(parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0);},0);
   var totalMkt=selGuns.reduce(function(t,g){return t+(parseFloat(g.currentValue)||0);},0);
   var roster=_reportSelectionRoster(guns);
+  var esc=function(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+  var today=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  var p=(appSettings&&appSettings.ownerProfile)||{};
+
   var W=window.open('','_blank');
-  var rows=selGuns.map(function(g,i){
-    var insVal=parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0;
-    return '<tr><td>'+(i+1)+'</td><td>'+g.make+' '+g.model+'</td><td>'+(g.type||'—')+'</td><td>'+g.caliber+'</td><td>'+(g.serialNumber||'N/A')+'</td><td>'+(g.year||'—')+'</td><td>'+g.condition+'</td><td style="text-align:right">'+fm(g.purchasePrice)+'</td><td style="text-align:right;font-weight:bold">'+fm(insVal)+'</td></tr>';
-  }).join('');
-  W.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Insurance Report - ArsenalDB</title><style>body{font-family:Georgia,serif;padding:40px;color:#000;max-width:900px;margin:0 auto}h1{margin:0;font-size:24px}h2{font-size:16px;color:#444;margin:4px 0 0}table{width:100%;border-collapse:collapse;margin-top:20px;font-size:12px}th{background:#1a1d24;color:#e8c46a;padding:8px;text-align:left}td{border:1px solid #ddd;padding:7px}tr:nth-child(even){background:#f9f9f9}.total{margin-top:20px;text-align:right;font-size:18px;font-weight:bold}.footer{margin-top:30px;font-size:11px;color:#999;border-top:1px solid #ccc;padding-top:10px}</style></head><body>');
-  W.document.write('<h1>&#128196; Firearms Insurance Schedule</h1>');
-  W.document.write('<h2>ArsenalDB &mdash; Prepared '+new Date().toLocaleDateString()+(reportSelection!==null?' &mdash; '+selGuns.length+' of '+guns.length+' firearms':'')+'</h2>');
-  W.document.write(roster);
-  W.document.write('<table><thead><tr><th>#</th><th>Make &amp; Model</th><th>Type</th><th>Caliber</th><th>Serial Number</th><th>Year</th><th>Condition</th><th>Purchase Price</th><th>Insured Value</th></tr></thead><tbody>'+rows+'</tbody></table>');
-  W.document.write('<div class="total">Total Insured Value: '+fm(totalIns)+'</div>');
-  W.document.write('<div class="total" style="font-size:14px;color:#555">Total Market Value: '+fm(totalMkt)+'</div>');
-  W.document.write('<div class="footer">This document was generated by ArsenalDB on '+new Date().toLocaleDateString()+'. Total firearms: '+selGuns.length+(reportSelection!==null?' (selected from '+guns.length+')':'')+'. Keep a copy with your insurance policy.</div>');
-  W.document.write('</body></html>');
-  W.document.close();W.print();
+  if(!W){toast('Pop-up blocked. Allow pop-ups for this page.','err');return;}
+  W.document.open();
+  W.document.write(_printLoadingHtml('Insurance Claim Sheets'));
+  W.document.close();
+
+  // Collect ALL photo entries across all selected guns (up to 4 each)
+  var photoMap=[]; // [{gunIdx, photoIdx, entry}]
+  selGuns.forEach(function(g,gi){
+    var ps=(g.photos&&g.photos.length)?g.photos:(g.photo?[g.photo]:[]);
+    for(var pi=0;pi<Math.min(ps.length,4);pi++){
+      photoMap.push({gi:gi,pi:pi,entry:ps[pi]});
+    }
+  });
+  var allEntries=photoMap.map(function(pm){return pm.entry;});
+
+  _resolvePhotoEntriesForExport(allEntries).then(function(resolved){
+    if(!W||W.closed) return;
+
+    // Rebuild per-gun photo arrays from flat resolved list
+    var gunPhotos=selGuns.map(function(){return [];});
+    photoMap.forEach(function(pm,idx){
+      if(resolved[idx]) gunPhotos[pm.gi][pm.pi]=resolved[idx];
+    });
+
+    var css=[
+      '*{margin:0;padding:0;box-sizing:border-box}',
+      'body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;padding:24px;max-width:800px;margin:0 auto;line-height:1.5}',
+      '.no-print-ic{margin-bottom:16px;display:flex;gap:10px}',
+      '.no-print-ic button{padding:10px 20px;font-size:13px;font-weight:bold;cursor:pointer;border-radius:4px}',
+      'h1{font-size:22px;font-weight:800;margin-bottom:2px}',
+      'h2{font-size:14px;color:#555;margin:0 0 16px}',
+      '.summary-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:6px}',
+      '.summary-tbl th{background:#1a2a3a;color:#fff;padding:7px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em}',
+      '.summary-tbl td{border:1px solid #ccc;padding:6px 8px}',
+      '.summary-tbl tr:nth-child(even){background:#f8f8f8}',
+      '.summary-total{text-align:right;font-size:16px;font-weight:800;margin:10px 0 6px}',
+      '.page-break{page-break-before:always}',
+      '.claim-header{margin-bottom:14px}',
+      '.claim-title{font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}',
+      '.claim-sub{font-size:11px;color:#666}',
+      '.policy-block{border:1px solid #ccc;border-radius:6px;padding:12px;margin-bottom:14px;background:#f9f9f9}',
+      '.policy-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;color:#333}',
+      '.policy-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px}',
+      '.policy-row{font-size:12px}',
+      '.policy-label{font-weight:700;color:#555}',
+      '.gun-block{border:1px solid #999;border-radius:6px;padding:14px;margin-bottom:14px}',
+      '.gun-title{font-size:16px;font-weight:800;margin-bottom:6px}',
+      '.gun-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-bottom:10px}',
+      '.gun-row{font-size:12px}',
+      '.gun-label{font-weight:700;color:#555}',
+      '.sn-big{font-size:20px;font-weight:900;letter-spacing:.06em;margin:8px 0;padding:8px 12px;background:#f0f0f0;border:2px solid #333;border-radius:4px;display:inline-block}',
+      '.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}',
+      '.photo-grid img{width:100%;height:auto;max-height:200px;object-fit:cover;border:1px solid #ccc;border-radius:4px}',
+      '.attest{border-top:1px solid #ccc;padding-top:12px;margin-top:12px;font-size:12px;color:#333;line-height:1.6}',
+      '.sig-line{border-top:1px solid #333;margin-top:30px;padding-top:4px;font-size:11px;color:#555;width:60%}',
+      '.footer-ins{margin-top:20px;font-size:10px;color:#999;border-top:1px solid #ccc;padding-top:8px}',
+      '@media print{.no-print-ic{display:none}body{padding:16px}}'
+    ].join('');
+
+    // Policy info block (reused per page)
+    var ic=esc(appSettings.ins_company||'');
+    var ip=esc(appSettings.ins_policy||'');
+    var ia=esc(appSettings.ins_agent||'');
+    var iap=esc(appSettings.ins_agentPhone||'');
+    var ir=esc(appSettings.ins_rider||'');
+    var ied=esc(appSettings.ins_effectiveDate||'');
+    var hasPolicyBlock=(ic||ip||ia||ir);
+    var policyHtml='';
+    if(hasPolicyBlock){
+      var pRows='';
+      if(ic) pRows+='<div class="policy-row"><span class="policy-label">Company:</span> '+ic+'</div>';
+      if(ip) pRows+='<div class="policy-row"><span class="policy-label">Policy #:</span> '+ip+'</div>';
+      if(ia) pRows+='<div class="policy-row"><span class="policy-label">Agent:</span> '+ia+'</div>';
+      if(iap) pRows+='<div class="policy-row"><span class="policy-label">Agent Phone:</span> '+iap+'</div>';
+      if(ir) pRows+='<div class="policy-row"><span class="policy-label">Rider/Endorsement:</span> '+ir+'</div>';
+      if(ied) pRows+='<div class="policy-row"><span class="policy-label">Effective Date:</span> '+ied+'</div>';
+      policyHtml='<div class="policy-block"><div class="policy-title">Policy Information</div><div class="policy-grid">'+pRows+'</div></div>';
+    }
+
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Insurance Claim Sheets - ArsenalDB</title><style>'+css+'</style></head><body>';
+
+    // Print/Close buttons
+    html+='<div class="no-print-ic">'
+      +'<button onclick="window.print()" style="background:#1a1d24;color:#e8c46a;border:none;letter-spacing:.05em">PRINT / SAVE PDF</button>'
+      +'<button onclick="window.close()" style="background:#eee;color:#333;border:1px solid #ccc">Close</button>'
+      +'</div>';
+
+    // Page 1 — Summary schedule
+    html+='<h1>&#128196; Firearms Insurance Schedule</h1>';
+    html+='<h2>ArsenalDB &mdash; Prepared '+esc(today)+(reportSelection!==null?' &mdash; '+selGuns.length+' of '+guns.length+' firearms':'')+'</h2>';
+    html+=roster;
+    if(hasPolicyBlock) html+=policyHtml;
+
+    var summaryRows=selGuns.map(function(g,i){
+      var insVal=parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0;
+      return '<tr><td>'+(i+1)+'</td><td>'+esc(g.make)+' '+esc(g.model)+'</td><td>'+esc(g.type||'—')+'</td><td>'+esc(g.caliber)+'</td><td>'+esc(g.serialNumber||'N/A')+'</td><td>'+esc(g.year||'—')+'</td><td>'+esc(g.condition)+'</td><td style="text-align:right">'+fm(g.purchasePrice)+'</td><td style="text-align:right;font-weight:bold">'+fm(insVal)+'</td></tr>';
+    }).join('');
+    html+='<table class="summary-tbl"><thead><tr><th>#</th><th>Make &amp; Model</th><th>Type</th><th>Caliber</th><th>Serial #</th><th>Year</th><th>Condition</th><th>Purchase Price</th><th>Insured Value</th></tr></thead><tbody>'+summaryRows+'</tbody></table>';
+    html+='<div class="summary-total">Total Insured Value: '+fm(totalIns)+'</div>';
+    html+='<div class="summary-total" style="font-size:13px;color:#555;font-weight:600">Total Market Value: '+fm(totalMkt)+'</div>';
+
+    // Per-gun claim sheets
+    selGuns.forEach(function(g,i){
+      var insVal=parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0;
+      html+='<div class="page-break"></div>';
+      // Header
+      html+='<div class="claim-header">'
+        +'<div class="claim-title">Firearms Insurance Claim Sheet</div>'
+        +'<div class="claim-sub">ArsenalDB &mdash; '+esc(today)+' &mdash; Firearm '+(i+1)+' of '+selGuns.length+'</div>'
+        +'</div>';
+
+      // Policy block
+      if(hasPolicyBlock) html+=policyHtml;
+
+      // Serial number — hero element
+      html+='<div class="sn-big">SN: '+esc(g.serialNumber||'NOT RECORDED')+'</div>';
+
+      // Firearm details grid
+      var gRows='';
+      gRows+='<div class="gun-row"><span class="gun-label">Make:</span> '+esc(g.make)+'</div>';
+      gRows+='<div class="gun-row"><span class="gun-label">Model:</span> '+esc(g.model)+'</div>';
+      gRows+='<div class="gun-row"><span class="gun-label">Type:</span> '+esc(g.type||'—')+'</div>';
+      gRows+='<div class="gun-row"><span class="gun-label">Caliber:</span> '+esc(g.caliber)+'</div>';
+      if(g.barrelLength) gRows+='<div class="gun-row"><span class="gun-label">Barrel Length:</span> '+esc(g.barrelLength)+'&Prime;</div>';
+      if(g.year) gRows+='<div class="gun-row"><span class="gun-label">Year:</span> '+esc(g.year)+'</div>';
+      gRows+='<div class="gun-row"><span class="gun-label">Condition:</span> '+esc(g.condition||'—')+'</div>';
+      if(g.purchasePrice) gRows+='<div class="gun-row"><span class="gun-label">Purchase Price:</span> '+fm(g.purchasePrice)+'</div>';
+      gRows+='<div class="gun-row"><span class="gun-label">Current Value:</span> '+fm(g.currentValue)+'</div>';
+      gRows+='<div class="gun-row"><span class="gun-label">Insured Value:</span> <strong>'+fm(insVal)+'</strong></div>';
+      if(g.storageLocation) gRows+='<div class="gun-row"><span class="gun-label">Storage Location:</span> '+esc(g.storageLocation)+'</div>';
+
+      html+='<div class="gun-block"><div class="gun-title">'+esc(g.make)+' '+esc(g.model)+'</div>'
+        +'<div class="gun-grid">'+gRows+'</div>';
+
+      // Photos (up to 4, 2×2)
+      var photos=gunPhotos[i]||[];
+      var photoItems=photos.filter(Boolean);
+      if(photoItems.length){
+        html+='<div class="photo-grid">';
+        photoItems.forEach(function(src){
+          html+='<img src="'+src+'"/>';
+        });
+        html+='</div>';
+      }
+      html+='</div>'; // close gun-block
+
+      // Owner attestation
+      var ownerName=esc(p.name||'');
+      html+='<div class="attest">'
+        +'I attest that the above information is accurate to the best of my knowledge.'
+        +'<div class="sig-line">Signature'+(ownerName?' &mdash; '+ownerName:'')+'</div>'
+        +'<div class="sig-line" style="width:30%;margin-top:20px">Date</div>'
+        +'</div>';
+
+      // Footer
+      html+='<div class="footer-ins">Generated by ArsenalDB &mdash; arsenaldb.com &mdash; '+esc(today)+'</div>';
+    });
+
+    html+='</body></html>';
+    W.document.open();
+    W.document.write(html);
+    W.document.close();
+  });
 }
 
 // ── PRINT THEFT REPORT ────────────────────────────────────────────────
@@ -5526,7 +5739,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-05-11-T';   // bump on every revision
+var BUILD_TAG   = '2026-05-11-V';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -5698,6 +5911,7 @@ function requireTier(minTier, featureName){
     'AI Schematics':'Generate detailed field strip instructions, assembly guides, and full parts lists for any firearm.',
     'Schematics & Parts':'Built-in field strip guides, assembly instructions, and full parts lists for popular firearms.',
     'Bill of Sale':'Generate professional bills of sale with buyer/seller info, attestations, signatures, and PDF export.',
+    'Transfer Worksheet':'Print a 4473-aligned worksheet with your firearm data and seller info pre-filled. Hand it to the buyer or FFL dealer.',
     'Drop-Off Receipt':'Generate a signed two-copy receipt when handing firearms to a dealer for valuation, consignment, or inspection. Protects you with a paper trail.',
     'Print & Export':'Print detail sheets and export your inventory to CSV.',
     'Multiple Collections':'Organize your firearms into separate collections for different owners, purposes, or categories.',
@@ -7986,6 +8200,187 @@ function bosStepContent(){
       +'</div>';
   }
   return '';
+}
+
+
+// ── TRANSFER WORKSHEET (-U) ──────────────────────────────────────────
+// Printable worksheet aligned to ATF Form 4473 Section D column order.
+// Pre-fills seller info + firearm data; buyer section is blank lines.
+// NOT an ATF form — no OMB number, no government logos. Read-only
+// convenience print, no data model changes, no persistence.
+function printTransferWorksheet(gunId){
+  if(!requirePro('Transfer Worksheet')) return;
+  var g=guns.find(function(x){return x.id===gunId;});
+  if(!g){toast('Firearm not found','err');return;}
+  var p=(appSettings&&appSettings.ownerProfile)||{};
+  var esc=function(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+  var blankLine='______________________________';
+  var blankShort='__________________';
+  var today=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  var css=[
+    '*{margin:0;padding:0;box-sizing:border-box}',
+    'body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;padding:24px;max-width:800px;margin:0 auto;line-height:1.5}',
+    '.no-print-ws{margin-bottom:16px;display:flex;gap:10px}',
+    '.no-print-ws button{padding:10px 20px;font-size:13px;font-weight:bold;cursor:pointer;border-radius:4px}',
+    'h1{font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}',
+    '.subtitle{font-size:12px;color:#555;margin-bottom:2px}',
+    '.not-official{font-size:11px;font-weight:700;color:#c00;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}',
+    '.date-line{font-size:11px;color:#666;margin-bottom:20px}',
+    '.section{margin-bottom:18px}',
+    '.sec-head{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #111;padding-bottom:4px;margin-bottom:10px}',
+    '.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px}',
+    '.info-row{display:flex;gap:6px;align-items:baseline;min-height:22px}',
+    '.info-label{font-size:11px;font-weight:700;color:#444;white-space:nowrap;min-width:70px}',
+    '.info-value{font-size:13px;color:#111}',
+    '.info-blank{border-bottom:1px solid #888;flex:1;min-width:120px;height:18px}',
+    '.full-width{grid-column:span 2}',
+    'table{width:100%;border-collapse:collapse;margin-bottom:4px}',
+    'th{background:#222;color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:6px 8px;text-align:left;font-weight:700}',
+    'td{border:1px solid #ccc;padding:6px 8px;font-size:12px}',
+    'td.sn{font-weight:800;font-size:13px;letter-spacing:.04em}',
+    '.tx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-top:6px}',
+    '.tx-check{display:flex;align-items:center;gap:6px;font-size:12px}',
+    '.tx-box{display:inline-block;width:13px;height:13px;border:1.5px solid #333;border-radius:2px;vertical-align:middle;margin-right:4px}',
+    '.sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:10px}',
+    '.sig-block{display:flex;flex-direction:column;gap:18px}',
+    '.sig-line{border-top:1px solid #333;padding-top:4px;font-size:11px;color:#555;margin-top:24px}',
+    '.sig-pre{font-size:12px;color:#111;margin-top:2px}',
+    '.footer{margin-top:24px;padding-top:10px;border-top:1px solid #ccc;font-size:10px;color:#888;line-height:1.6}',
+    '.footer-brand{font-size:10px;color:#aaa;margin-top:6px}',
+    '@media print{.no-print-ws{display:none}body{padding:16px}}'
+  ].join('');
+
+  var W=window.open('','_blank');
+  if(!W){toast('Pop-up blocked. Allow pop-ups for this page.','err');return;}
+  W.document.open();
+  W.document.write(_printLoadingHtml('Transfer Worksheet'));
+  W.document.close();
+
+  // Build seller info rows — pre-filled from ownerProfile
+  var sellerName=esc(p.name)||'';
+  var sellerAddr=esc(p.address)||'';
+  var sellerCityStateZip=[esc(p.city),esc(p.state),esc(p.zip)].filter(Boolean).join(', ')||'';
+  var sellerPhone=esc(p.phone)||'';
+  var sellerEmail=esc(p.email)||'';
+  var sellerDL=(esc(p.dlNumber)&&esc(p.dlState))?(esc(p.dlNumber)+' ('+esc(p.dlState)+')'):(esc(p.dlNumber)||'');
+
+  function infoRow(label,value){
+    if(value) return '<div class="info-row"><span class="info-label">'+label+':</span><span class="info-value">'+value+'</span></div>';
+    return '<div class="info-row"><span class="info-label">'+label+':</span><span class="info-blank"></span></div>';
+  }
+  function blankRow(label){
+    return '<div class="info-row"><span class="info-label">'+label+':</span><span class="info-blank"></span></div>';
+  }
+
+  // Firearm table — 4473 Section D column order + bonus columns
+  var gunRow='<tr>'
+    +'<td>1</td>'
+    +'<td>'+esc(g.make)+'</td>'
+    +'<td>'+esc(g.model)+'</td>'
+    +'<td class="sn">'+esc(g.serialNumber||'N/A')+'</td>'
+    +'<td>'+esc(g.type)+'</td>'
+    +'<td>'+esc(g.caliber)+'</td>'
+    +'<td>'+(g.barrelLength?esc(g.barrelLength)+'″':'—')+'</td>'
+    +'<td>'+esc(g.condition||'—')+'</td>'
+    +'<td>'+(g.currentValue?'$'+Number(g.currentValue).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'
+    +'</tr>';
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Transfer Worksheet — '+esc(g.make)+' '+esc(g.model)+'</title><style>'+css+'</style></head><body>';
+
+  // Print / Close buttons
+  html+='<div class="no-print-ws">'
+    +'<button onclick="window.print()" style="background:#1a1d24;color:#e8c46a;border:none;letter-spacing:.05em">PRINT / SAVE PDF</button>'
+    +'<button onclick="window.close()" style="background:#eee;color:#333;border:1px solid #ccc">Close</button>'
+    +'</div>';
+
+  // Header
+  html+='<div class="section">'
+    +'<h1>Firearms Transfer Worksheet</h1>'
+    +'<div class="subtitle">For use with ATF Form 4473 — Section D</div>'
+    +'<div class="not-official">This is NOT an official ATF document</div>'
+    +'<div class="date-line">Date Generated: '+esc(today)+'</div>'
+    +'</div>';
+
+  // Seller Information
+  html+='<div class="section">'
+    +'<div class="sec-head">Seller Information</div>'
+    +'<div class="info-grid">'
+    +infoRow('Name',sellerName)
+    +infoRow('Phone',sellerPhone)
+    +infoRow('Address',sellerAddr)
+    +infoRow('Email',sellerEmail)
+    +'<div class="info-row full-width"><span class="info-label">City/State/ZIP:</span><span class="info-value">'+(sellerCityStateZip||'<span class="info-blank" style="display:inline-block;width:200px"></span>')+'</span></div>'
+    +infoRow('Driver License',sellerDL)
+    +'</div>'
+    +'</div>';
+
+  // Buyer Information — all blank
+  html+='<div class="section">'
+    +'<div class="sec-head">Buyer Information</div>'
+    +'<div class="info-grid">'
+    +blankRow('Name')
+    +blankRow('Phone')
+    +blankRow('Address')
+    +blankRow('Email')
+    +blankRow('City/State/ZIP')
+    +blankRow('Driver License')
+    +'</div>'
+    +'</div>';
+
+  // Firearm Description Table
+  html+='<div class="section">'
+    +'<div class="sec-head">Firearm Description &mdash; 4473 Section D Order</div>'
+    +'<table>'
+    +'<thead><tr><th>#</th><th>Manufacturer /<br/>Importer</th><th>Model</th><th>Serial Number</th><th>Type</th><th>Caliber /<br/>Gauge</th><th>Barrel<br/>Length</th><th>Condition</th><th>Value</th></tr></thead>'
+    +'<tbody>'+gunRow+'</tbody>'
+    +'</table>'
+    +'</div>';
+
+  // Transaction Details
+  html+='<div class="section">'
+    +'<div class="sec-head">Transaction Details</div>'
+    +'<div class="tx-grid">'
+    +'<div><span style="font-size:11px;font-weight:700;color:#444">Transfer Type:</span><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">'
+      +'<span class="tx-check"><span class="tx-box"></span>Private Sale</span>'
+      +'<span class="tx-check"><span class="tx-box"></span>FFL-Facilitated</span>'
+      +'<span class="tx-check"><span class="tx-box"></span>Gift</span>'
+      +'<span class="tx-check"><span class="tx-box"></span>Other: '+blankShort+'</span>'
+    +'</div></div>'
+    +'<div>'+blankRow('Sale Price ($)')+'</div>'
+    +'<div>'+blankRow('FFL Dealer Name')+'</div>'
+    +'<div>'+blankRow('FFL License #')+'</div>'
+    +'<div class="full-width">'+blankRow('Date of Transfer')+'</div>'
+    +'</div>'
+    +'</div>';
+
+  // Attestation & Signatures
+  html+='<div class="section">'
+    +'<div class="sec-head">Attestation &amp; Signatures</div>'
+    +'<div style="font-size:12px;color:#333;line-height:1.6;margin-bottom:6px">Seller certifies that the information above is accurate and that they are the lawful owner of the described firearm(s).</div>'
+    +'<div class="sig-grid">'
+    +'<div class="sig-block">'
+      +'<div><div class="sig-line">Seller Signature</div>'+(sellerName?'<div class="sig-pre">'+sellerName+'</div>':'')+'</div>'
+      +'<div><div class="sig-line">Date</div></div>'
+    +'</div>'
+    +'<div class="sig-block">'
+      +'<div><div class="sig-line">Buyer Signature</div></div>'
+      +'<div><div class="sig-line">Date</div></div>'
+    +'</div>'
+    +'</div>'
+    +'</div>';
+
+  // Footer
+  html+='<div class="footer">'
+    +'This worksheet is a private record to assist with firearms transfers. It does not replace ATF Form 4473 or any required federal, state, or local documentation. Both parties should retain a copy.'
+    +'<div class="footer-brand">Generated by ArsenalDB &mdash; arsenaldb.com</div>'
+    +'</div>';
+
+  html+='</body></html>';
+
+  W.document.open();
+  W.document.write(html);
+  W.document.close();
 }
 
 
@@ -10763,6 +11158,11 @@ function rDet(){
     +'<button onclick="_reportFromDetail(\''+g.id+'\',\'ins\')" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #a0c0ff40;border-radius:8px;color:#a0c0ff;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('document')+' Insurance</button>'
     +'<button onclick="_reportFromDetail(\''+g.id+'\',\'theft\')" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #ff707040;border-radius:8px;color:#ff7070;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('lock')+' Theft</button>'
     +'<button onclick="_reportFromDetail(\''+g.id+'\',\'custody\')" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #e8c46a40;border-radius:8px;color:#e8c46a;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('lock-open')+' Custody</button>'
+  +'</div>'+
+  // -U: Transfer Documents row — Transfer Worksheet (Pro)
+  '<div style="font-size:10px;color:#7a8598;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;padding-left:2px">Transfer Documents</div>'+
+  '<div style="display:flex;gap:6px;margin-bottom:14px">'
+    +'<button onclick="printTransferWorksheet(\''+g.id+'\')" style="flex:0 1 auto;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 14px;background:#1a1d24;border:1px solid #8a95a850;border-radius:8px;color:#c8d4e8;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('document')+' Transfer Worksheet</button>'
   +'</div>'+
   '<div class="tabs"><button class="tab'+(dTab==='mnt'?' on':'')+'" onclick="dTab=\'mnt\';rnd()"><span class="tab-icon">'+_iM('wrench')+'</span>Maintenance</button><button class="tab'+(dTab==='info'?' on':'')+'" onclick="dTab=\'info\';rnd()"><span class="tab-icon">'+_iM('info')+'</span>Details</button><button class="tab'+(dTab==='sch'?' on':'')+'" onclick="dTab=\'sch\';rnd()"><span class="tab-icon">'+_iM('bolt-nut')+'</span>Schematics</button><button class="tab'+(dTab==='range'?' on':'')+'" onclick="dTab=\'range\';rnd()"><span class="tab-icon">'+_iM('target')+'</span>Range</button><button class="tab'+(dTab==='coc'?' on':'')+'" onclick="dTab=\'coc\';rnd()"><span class="tab-icon">'+_iM('lock-open')+'</span>Custody</button></div>'+tc;
 }
