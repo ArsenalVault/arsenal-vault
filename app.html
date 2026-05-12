@@ -5740,7 +5740,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-05-11-W';   // bump on every revision
+var BUILD_TAG   = '2026-05-11-X';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -12551,6 +12551,346 @@ function valLookup(make,model,caliber,condition,year){
     return price(300,420,600,'Savage firearm');
   }
 
+  // -W: Expanded price database — 25+ additional manufacturers
+
+  // Benelli
+  if(m.indexOf('benelli')>=0){
+    if(md.indexOf('m4')>=0) return price(1700,1950,2300,'Benelli M4 tactical shotgun');
+    if(md.indexOf('m2')>=0) return price(1100,1350,1600,'Benelli M2 semi-auto shotgun');
+    if(md.indexOf('super black eagle')>=0||md.indexOf('sbe')>=0) return price(1400,1700,2000,'Benelli Super Black Eagle');
+    if(md.indexOf('nova')>=0) return price(350,430,550,'Benelli Nova pump shotgun');
+    if(md.indexOf('supernova')>=0) return price(400,520,650,'Benelli SuperNova pump');
+    if(md.indexOf('ethos')>=0) return price(1500,1800,2100,'Benelli Ethos semi-auto');
+    if(md.indexOf('vinci')>=0) return price(1100,1350,1600,'Benelli Vinci semi-auto');
+    if(md.indexOf('montefeltro')>=0) return price(900,1100,1350,'Benelli Montefeltro');
+    return price(700,1000,1500,'Benelli firearm');
+  }
+
+  // Bergara
+  if(m.indexOf('bergara')>=0){
+    if(md.indexOf('b-14')>=0&&md.indexOf('hmr')>=0) return price(850,1000,1200,'Bergara B-14 HMR precision rifle');
+    if(md.indexOf('b-14')>=0) return price(700,850,1050,'Bergara B-14 bolt action');
+    if(md.indexOf('bxr')>=0) return price(700,850,1000,'Bergara BXR semi-auto');
+    if(md.indexOf('premier')>=0) return price(1400,1700,2100,'Bergara Premier series');
+    return price(700,900,1200,'Bergara firearm');
+  }
+
+  // Bond Arms
+  if(m.indexOf('bond arms')>=0||m.indexOf('bond')>=0){
+    if(md.indexOf('roughneck')>=0) return price(250,320,400,'Bond Arms Roughneck derringer');
+    if(md.indexOf('snake slayer')>=0) return price(450,550,680,'Bond Arms Snake Slayer');
+    if(md.indexOf('texas defender')>=0) return price(400,500,620,'Bond Arms Texas Defender');
+    if(md.indexOf('patriot')>=0) return price(300,380,470,'Bond Arms Patriot');
+    return price(350,450,580,'Bond Arms derringer');
+  }
+
+  // Browning
+  if(m.indexOf('browning')>=0){
+    if(md.indexOf('citori')>=0) return price(1500,1900,2500,'Browning Citori O/U shotgun');
+    if(md.indexOf('a5')>=0||md.indexOf('auto-5')>=0) return price(1200,1500,1900,'Browning A5 semi-auto shotgun');
+    if(md.indexOf('bps')>=0) return price(450,580,750,'Browning BPS pump shotgun');
+    if(md.indexOf('maxus')>=0) return price(1200,1500,1800,'Browning Maxus semi-auto');
+    if(md.indexOf('x-bolt')>=0) return price(750,950,1250,'Browning X-Bolt rifle');
+    if(md.indexOf('hi-power')>=0||md.indexOf('hi power')>=0) return price(900,1200,1600,'Browning Hi-Power 9mm — classic');
+    if(md.indexOf('buckmark')>=0||md.indexOf('buck mark')>=0) return price(350,450,580,'Browning Buck Mark .22 pistol');
+    if(md.indexOf('bar')>=0) return price(800,1050,1350,'Browning BAR semi-auto rifle');
+    if(md.indexOf('ab3')>=0) return price(500,630,780,'Browning AB3 bolt action');
+    if(md.indexOf('1885')>=0) return price(1000,1350,1800,'Browning 1885 single shot');
+    if(md.indexOf('superposed')>=0) return price(1500,2200,3500,'Browning Superposed O/U — collectible');
+    return price(600,900,1300,'Browning firearm');
+  }
+
+  // Canik
+  if(m.indexOf('canik')>=0){
+    if(md.indexOf('rival')>=0) return price(450,550,680,'Canik Rival competition pistol');
+    if(md.indexOf('mete')>=0) return price(380,470,580,'Canik METE series');
+    if(md.indexOf('tp9sf')>=0) return price(300,380,470,'Canik TP9SF');
+    if(md.indexOf('tp9')>=0&&md.indexOf('elite')>=0) return price(380,470,580,'Canik TP9 Elite');
+    if(md.indexOf('tp9')>=0) return price(300,400,520,'Canik TP9 series');
+    return price(300,420,560,'Canik pistol');
+  }
+
+  // Charter Arms
+  if(m.indexOf('charter')>=0){
+    if(md.indexOf('bulldog')>=0) return price(300,380,480,'Charter Arms Bulldog .44 Spl');
+    if(md.indexOf('undercover')>=0) return price(280,360,450,'Charter Arms Undercover .38');
+    if(md.indexOf('pathfinder')>=0) return price(280,360,450,'Charter Arms Pathfinder .22');
+    if(md.indexOf('pitbull')>=0) return price(320,400,500,'Charter Arms Pitbull');
+    return price(260,350,460,'Charter Arms revolver');
+  }
+
+  // Chiappa
+  if(m.indexOf('chiappa')>=0){
+    if(md.indexOf('rhino')>=0) return price(900,1100,1400,'Chiappa Rhino revolver');
+    if(md.indexOf('1892')>=0||md.indexOf('mare')>=0) return price(500,650,850,'Chiappa lever action');
+    if(md.indexOf('little badger')>=0) return price(200,260,340,'Chiappa Little Badger');
+    return price(350,500,700,'Chiappa firearm');
+  }
+
+  // CMMG
+  if(m.indexOf('cmmg')>=0){
+    if(md.indexOf('banshee')>=0) return price(1200,1450,1750,'CMMG Banshee PCC');
+    if(md.indexOf('resolute')>=0) return price(1000,1250,1550,'CMMG Resolute rifle');
+    if(md.indexOf('dissent')>=0) return price(1400,1700,2100,'CMMG Dissent');
+    return price(900,1200,1600,'CMMG firearm');
+  }
+
+  // CZ
+  if(m.indexOf('cz')>=0||m.indexOf('ceska')>=0||m.indexOf('česká')>=0){
+    if(md.indexOf('shadow 2')>=0||md.indexOf('shadow2')>=0) return price(1100,1350,1650,'CZ Shadow 2 competition pistol');
+    if(md.indexOf('75')>=0&&md.indexOf('sp-01')>=0) return price(600,750,920,'CZ 75 SP-01');
+    if(md.indexOf('75')>=0) return price(500,650,800,'CZ 75 9mm pistol');
+    if(md.indexOf('p-01')>=0) return price(550,680,830,'CZ P-01 compact');
+    if(md.indexOf('p-07')>=0) return price(400,500,620,'CZ P-07');
+    if(md.indexOf('p-09')>=0) return price(420,530,650,'CZ P-09');
+    if(md.indexOf('p-10')>=0) return price(380,480,600,'CZ P-10 series');
+    if(md.indexOf('scorpion')>=0) return price(800,950,1150,'CZ Scorpion EVO PCC');
+    if(md.indexOf('bren')>=0) return price(1500,1800,2200,'CZ Bren 2');
+    if(md.indexOf('457')>=0) return price(400,500,620,'CZ 457 .22 bolt action');
+    if(md.indexOf('527')>=0) return price(600,750,920,'CZ 527 bolt action');
+    if(md.indexOf('550')>=0||md.indexOf('600')>=0) return price(700,880,1080,'CZ bolt action rifle');
+    if(md.indexOf('drake')>=0||md.indexOf('redhead')>=0) return price(500,650,850,'CZ over/under shotgun');
+    return price(450,650,900,'CZ firearm');
+  }
+
+  // Daniel Defense
+  if(m.indexOf('daniel defense')>=0||m.indexOf('daniel')>=0&&m.indexOf('defense')>=0){
+    if(md.indexOf('mk18')>=0) return price(1600,1900,2300,'Daniel Defense MK18');
+    if(md.indexOf('ddm4')>=0||md.indexOf('dd4')>=0) return price(1500,1800,2200,'Daniel Defense DDM4 rifle');
+    if(md.indexOf('dd5')>=0) return price(1800,2200,2700,'Daniel Defense DD5 .308');
+    if(md.indexOf('delta 5')>=0) return price(1600,1900,2400,'Daniel Defense Delta 5 bolt action');
+    return price(1400,1800,2300,'Daniel Defense firearm');
+  }
+
+  // Diamondback
+  if(m.indexOf('diamondback')>=0){
+    if(md.indexOf('db15')>=0) return price(500,650,820,'Diamondback DB15 AR rifle');
+    if(md.indexOf('db9')>=0||md.indexOf('db380')>=0) return price(200,270,360,'Diamondback micro pistol');
+    if(md.indexOf('sidekick')>=0) return price(200,270,350,'Diamondback Sidekick revolver');
+    return price(350,500,700,'Diamondback firearm');
+  }
+
+  // FN Herstal
+  if(m.indexOf('fn')>=0||m.indexOf('fnh')>=0){
+    if(md.indexOf('scar 17')>=0||md.indexOf('scar17')>=0) return price(3000,3400,4000,'FN SCAR 17S .308 — premium');
+    if(md.indexOf('scar 16')>=0||md.indexOf('scar16')>=0) return price(2600,3000,3600,'FN SCAR 16S 5.56');
+    if(md.indexOf('five-seven')>=0||md.indexOf('fiveseven')>=0||md.indexOf('five seven')>=0) return price(1100,1350,1600,'FN Five-seveN pistol');
+    if(md.indexOf('fnx-45')>=0||md.indexOf('fnx45')>=0||md.indexOf('fnx 45')>=0) return price(800,950,1150,'FN FNX-45');
+    if(md.indexOf('fnx')>=0) return price(550,700,880,'FN FNX pistol');
+    if(md.indexOf('509')>=0&&md.indexOf('tactical')>=0) return price(700,850,1050,'FN 509 Tactical');
+    if(md.indexOf('509')>=0) return price(500,650,800,'FN 509 pistol');
+    if(md.indexOf('fal')>=0) return price(1200,1600,2200,'FN FAL rifle');
+    if(md.indexOf('ps90')>=0) return price(1400,1700,2100,'FN PS90');
+    if(md.indexOf('slp')>=0) return price(900,1150,1400,'FN SLP shotgun');
+    return price(700,1000,1400,'FN firearm');
+  }
+
+  // Heckler & Koch
+  if(m.indexOf('heckler')>=0||m.indexOf('h&k')>=0||m.indexOf('hk')>=0){
+    if(md.indexOf('vp9')>=0) return price(550,680,830,'HK VP9 9mm');
+    if(md.indexOf('vp70')>=0) return price(800,1100,1500,'HK VP70 — collectible');
+    if(md.indexOf('usp')>=0&&md.indexOf('compact')>=0) return price(800,1000,1250,'HK USP Compact');
+    if(md.indexOf('usp')>=0) return price(800,1000,1250,'HK USP');
+    if(md.indexOf('p30')>=0) return price(600,750,920,'HK P30');
+    if(md.indexOf('p2000')>=0) return price(550,700,880,'HK P2000');
+    if(md.indexOf('hk45')>=0||md.indexOf('45c')>=0) return price(700,880,1080,'HK45');
+    if(md.indexOf('mark 23')>=0||md.indexOf('mk23')>=0) return price(1800,2200,2800,'HK Mark 23 — premium');
+    if(md.indexOf('sp5')>=0) return price(2600,3000,3600,'HK SP5 — MP5 civilian');
+    if(md.indexOf('mp5')>=0) return price(2600,3000,3600,'HK MP5 clone/variant');
+    if(md.indexOf('mr556')>=0||md.indexOf('mr762')>=0) return price(2200,2700,3300,'HK MR-series rifle');
+    if(md.indexOf('sl8')>=0) return price(1500,1900,2400,'HK SL8');
+    return price(700,1000,1500,'Heckler & Koch firearm');
+  }
+
+  // Henry
+  if(m.indexOf('henry')>=0){
+    if(md.indexOf('big boy')>=0) return price(700,880,1080,'Henry Big Boy lever action');
+    if(md.indexOf('golden boy')>=0) return price(450,580,720,'Henry Golden Boy lever action');
+    if(md.indexOf('all-weather')>=0||md.indexOf('all weather')>=0) return price(650,800,1000,'Henry All-Weather lever action');
+    if(md.indexOf('long ranger')>=0) return price(850,1050,1300,'Henry Long Ranger');
+    if(md.indexOf('homesteader')>=0) return price(500,620,760,'Henry Homesteader carbine');
+    if(md.indexOf('mare')>=0) return price(550,700,880,'Henry Mare\'s Leg');
+    if(md.indexOf('single shot')>=0||md.indexOf('single-shot')>=0) return price(350,450,570,'Henry single shot rifle');
+    if(md.indexOf('lever')>=0&&(md.indexOf('.22')>=0||md.indexOf('22')>=0)) return price(280,360,460,'Henry .22 lever action');
+    if(md.indexOf('x model')>=0||md.indexOf('model x')>=0) return price(800,1000,1250,'Henry Model X lever action');
+    return price(450,650,900,'Henry firearm');
+  }
+
+  // Heritage Manufacturing
+  if(m.indexOf('heritage')>=0){
+    if(md.indexOf('rough rider')>=0||md.indexOf('barkeep')>=0) return price(120,170,240,'Heritage Rough Rider .22 revolver');
+    if(md.indexOf('rancher')>=0) return price(250,330,420,'Heritage Rancher carbine');
+    return price(120,180,270,'Heritage firearm');
+  }
+
+  // Hi-Point
+  if(m.indexOf('hi-point')>=0||m.indexOf('hipoint')>=0||m.indexOf('hi point')>=0){
+    if(md.indexOf('c9')>=0||md.indexOf('cf380')>=0) return price(130,180,250,'Hi-Point pistol — budget');
+    if(md.indexOf('jcp')>=0||md.indexOf('jhp')>=0||md.indexOf('jxp')>=0) return price(150,200,280,'Hi-Point .40/.45 pistol');
+    if(md.indexOf('carbine')>=0||md.indexOf('995')>=0||md.indexOf('1095')>=0||md.indexOf('4095')>=0||md.indexOf('4595')>=0) return price(250,330,430,'Hi-Point carbine');
+    return price(140,200,300,'Hi-Point firearm');
+  }
+
+  // IWI
+  if(m.indexOf('iwi')>=0){
+    if(md.indexOf('tavor')>=0||md.indexOf('x95')>=0) return price(1500,1800,2200,'IWI Tavor/X95 bullpup rifle');
+    if(md.indexOf('galil')>=0) return price(1400,1700,2100,'IWI Galil ACE');
+    if(md.indexOf('jericho')>=0||md.indexOf('941')>=0||md.indexOf('baby eagle')>=0) return price(500,650,820,'IWI Jericho 941');
+    if(md.indexOf('masada')>=0) return price(380,480,600,'IWI Masada pistol');
+    if(md.indexOf('zion')>=0) return price(600,750,920,'IWI Zion-15 AR rifle');
+    if(md.indexOf('ts12')>=0) return price(1000,1250,1500,'IWI TS12 bullpup shotgun');
+    return price(700,950,1300,'IWI firearm');
+  }
+
+  // Kel-Tec
+  if(m.indexOf('kel-tec')>=0||m.indexOf('keltec')>=0||m.indexOf('kel tec')>=0){
+    if(md.indexOf('sub-2000')>=0||md.indexOf('sub2000')>=0||md.indexOf('sub 2000')>=0) return price(400,500,620,'Kel-Tec Sub-2000 folding carbine');
+    if(md.indexOf('ksg')>=0) return price(500,650,800,'Kel-Tec KSG bullpup shotgun');
+    if(md.indexOf('pmr-30')>=0||md.indexOf('pmr30')>=0) return price(350,440,550,'Kel-Tec PMR-30 .22 WMR');
+    if(md.indexOf('rdb')>=0) return price(650,820,1000,'Kel-Tec RDB bullpup rifle');
+    if(md.indexOf('rfb')>=0) return price(1000,1300,1600,'Kel-Tec RFB .308 bullpup');
+    if(md.indexOf('p-17')>=0||md.indexOf('p17')>=0) return price(180,230,300,'Kel-Tec P17 .22 pistol');
+    if(md.indexOf('p-32')>=0||md.indexOf('p32')>=0||md.indexOf('p-3at')>=0||md.indexOf('p3at')>=0) return price(200,260,340,'Kel-Tec pocket pistol');
+    if(md.indexOf('cp33')>=0) return price(400,500,620,'Kel-Tec CP33 .22 pistol');
+    return price(350,480,650,'Kel-Tec firearm');
+  }
+
+  // Magnum Research
+  if(m.indexOf('magnum research')>=0||(m.indexOf('desert eagle')>=0)){
+    if(md.indexOf('desert eagle')>=0||md.indexOf('de')>=0||m.indexOf('desert eagle')>=0) return price(1500,1900,2500,'Desert Eagle — iconic large caliber pistol');
+    if(md.indexOf('bfr')>=0) return price(850,1050,1300,'Magnum Research BFR revolver');
+    if(md.indexOf('baby eagle')>=0) return price(500,650,800,'Magnum Research Baby Eagle');
+    return price(800,1100,1500,'Magnum Research firearm');
+  }
+
+  // Marlin
+  if(m.indexOf('marlin')>=0){
+    if(md.indexOf('1895')>=0) return price(700,900,1150,'Marlin 1895 lever action');
+    if(md.indexOf('336')>=0) return price(550,700,880,'Marlin 336 .30-30 lever action');
+    if(md.indexOf('1894')>=0) return price(650,820,1020,'Marlin 1894 lever action');
+    if(md.indexOf('model 60')>=0||md.indexOf('60')>=0) return price(150,220,300,'Marlin Model 60 .22 semi-auto');
+    if(md.indexOf('795')>=0) return price(150,200,270,'Marlin 795 .22 LR');
+    if(md.indexOf('xt-22')>=0||md.indexOf('xt22')>=0) return price(200,280,370,'Marlin XT-22 bolt action');
+    if(md.indexOf('dark')>=0) return price(750,950,1200,'Marlin Dark series lever action');
+    return price(400,580,800,'Marlin firearm');
+  }
+
+  // North American Arms
+  if(m.indexOf('north american')>=0||m.indexOf('naa')>=0){
+    if(md.indexOf('pug')>=0) return price(280,350,440,'NAA Pug .22 Mag mini revolver');
+    if(md.indexOf('ranger')>=0||md.indexOf('sidewinder')>=0) return price(300,380,470,'NAA Ranger mini revolver');
+    return price(200,280,370,'North American Arms mini revolver');
+  }
+
+  // Rock Island Armory / Armscor
+  if(m.indexOf('rock island')>=0||m.indexOf('armscor')>=0||m.indexOf('ria')>=0){
+    if(md.indexOf('tac ultra')>=0||md.indexOf('tac')>=0&&md.indexOf('ultra')>=0) return price(500,650,820,'RIA TAC Ultra 1911');
+    if(md.indexOf('1911')>=0&&(md.indexOf('match')>=0||md.indexOf('target')>=0)) return price(450,580,730,'RIA 1911 match/target');
+    if(md.indexOf('1911')>=0) return price(350,450,570,'Rock Island 1911 GI — great value');
+    if(md.indexOf('vrpa40')>=0||md.indexOf('vrbp')>=0||md.indexOf('vr')>=0) return price(350,450,580,'RIA VR-series shotgun');
+    if(md.indexOf('stk100')>=0||md.indexOf('5.0')>=0) return price(450,580,730,'RIA STK100/5.0 pistol');
+    return price(300,430,600,'Rock Island Armory firearm');
+  }
+
+  // Rossi
+  if(m.indexOf('rossi')>=0){
+    if(md.indexOf('r92')>=0||md.indexOf('92')>=0) return price(450,580,730,'Rossi R92 lever action');
+    if(md.indexOf('rs22')>=0) return price(100,150,210,'Rossi RS22 .22 rifle');
+    if(md.indexOf('rio bravo')>=0) return price(280,360,460,'Rossi Rio Bravo lever .22');
+    if(md.indexOf('brawler')>=0) return price(200,280,370,'Rossi Brawler break action');
+    return price(200,300,430,'Rossi firearm');
+  }
+
+  // SCCY
+  if(m.indexOf('sccy')>=0){
+    if(md.indexOf('dvg')>=0) return price(220,290,370,'SCCY DVG striker-fired');
+    if(md.indexOf('cpx')>=0) return price(180,240,320,'SCCY CPX compact pistol');
+    return price(170,230,310,'SCCY pistol');
+  }
+
+  // Stoeger
+  if(m.indexOf('stoeger')>=0){
+    if(md.indexOf('m3000')>=0) return price(400,520,650,'Stoeger M3000 semi-auto shotgun');
+    if(md.indexOf('m3500')>=0) return price(500,630,780,'Stoeger M3500 semi-auto');
+    if(md.indexOf('m3020')>=0) return price(380,480,600,'Stoeger M3020 20ga');
+    if(md.indexOf('condor')>=0) return price(350,450,570,'Stoeger Condor O/U shotgun');
+    if(md.indexOf('p3000')>=0) return price(250,330,420,'Stoeger P3000 pump');
+    if(md.indexOf('str-9')>=0) return price(280,360,450,'Stoeger STR-9 pistol');
+    return price(300,420,570,'Stoeger firearm');
+  }
+
+  // Thompson Center
+  if(m.indexOf('thompson')>=0||m.indexOf('t/c')>=0){
+    if(md.indexOf('compass')>=0) return price(300,400,520,'Thompson Center Compass rifle');
+    if(md.indexOf('encore')>=0) return price(500,650,850,'Thompson Center Encore');
+    if(md.indexOf('contender')>=0) return price(400,550,720,'Thompson Center Contender');
+    if(md.indexOf('venture')>=0) return price(400,520,650,'Thompson Center Venture rifle');
+    return price(350,500,680,'Thompson Center firearm');
+  }
+
+  // Tikka
+  if(m.indexOf('tikka')>=0){
+    if(md.indexOf('t3x')>=0&&md.indexOf('tac')>=0) return price(1500,1800,2200,'Tikka T3x TAC precision rifle');
+    if(md.indexOf('t3x')>=0) return price(650,800,1000,'Tikka T3x bolt action');
+    if(md.indexOf('t1x')>=0) return price(350,440,550,'Tikka T1x rimfire bolt action');
+    return price(600,780,1000,'Tikka firearm');
+  }
+
+  // Walther
+  if(m.indexOf('walther')>=0){
+    if(md.indexOf('pdp')>=0) return price(500,620,760,'Walther PDP striker pistol');
+    if(md.indexOf('ppq')>=0) return price(500,620,760,'Walther PPQ');
+    if(md.indexOf('ppk')>=0||md.indexOf('ppk/s')>=0) return price(600,780,980,'Walther PPK/S — iconic');
+    if(md.indexOf('pps')>=0) return price(350,440,550,'Walther PPS slim');
+    if(md.indexOf('ccp')>=0) return price(300,380,480,'Walther CCP');
+    if(md.indexOf('p22')>=0) return price(250,320,400,'Walther P22 .22 LR');
+    if(md.indexOf('p99')>=0) return price(400,520,660,'Walther P99');
+    if(md.indexOf('creed')>=0) return price(350,440,550,'Walther Creed');
+    return price(400,550,750,'Walther firearm');
+  }
+
+  // Weatherby
+  if(m.indexOf('weatherby')>=0){
+    if(md.indexOf('mark v')>=0||md.indexOf('mkv')>=0) return price(1200,1600,2200,'Weatherby Mark V bolt action — premium');
+    if(md.indexOf('vanguard')>=0) return price(500,650,830,'Weatherby Vanguard bolt action');
+    if(md.indexOf('element')>=0) return price(500,630,780,'Weatherby Element shotgun');
+    if(md.indexOf('orion')>=0) return price(900,1150,1450,'Weatherby Orion O/U');
+    if(md.indexOf('sa-08')>=0||md.indexOf('sa08')>=0) return price(500,630,780,'Weatherby SA-08 semi-auto shotgun');
+    return price(550,750,1100,'Weatherby firearm');
+  }
+
+  // Wilson Combat
+  if(m.indexOf('wilson')>=0&&m.indexOf('combat')>=0){
+    if(md.indexOf('cqb')>=0) return price(2500,3000,3600,'Wilson Combat CQB 1911 — premium');
+    if(md.indexOf('edc x9')>=0||md.indexOf('edcx9')>=0) return price(2200,2700,3300,'Wilson Combat EDC X9');
+    if(md.indexOf('protector')>=0) return price(2200,2700,3300,'Wilson Combat Protector');
+    if(md.indexOf('ar')>=0||md.indexOf('recon')>=0) return price(2000,2500,3200,'Wilson Combat AR rifle');
+    return price(2000,2600,3300,'Wilson Combat firearm — premium');
+  }
+
+  // Zastava
+  if(m.indexOf('zastava')>=0){
+    if(md.indexOf('zpap')>=0&&md.indexOf('m70')>=0) return price(700,880,1080,'Zastava ZPAP M70 AK rifle');
+    if(md.indexOf('zpap')>=0&&md.indexOf('m92')>=0) return price(750,920,1120,'Zastava ZPAP M92 AK pistol');
+    if(md.indexOf('zpap')>=0) return price(700,880,1080,'Zastava ZPAP AK');
+    return price(600,800,1050,'Zastava firearm');
+  }
+
+  // Christensen Arms
+  if(m.indexOf('christensen')>=0){
+    if(md.indexOf('ridgeline')>=0) return price(1500,1900,2400,'Christensen Ridgeline bolt action');
+    if(md.indexOf('mesa')>=0) return price(1100,1400,1750,'Christensen Mesa bolt action');
+    if(md.indexOf('mpr')>=0||md.indexOf('modern precision')>=0) return price(1800,2300,2900,'Christensen Modern Precision Rifle');
+    return price(1300,1700,2200,'Christensen Arms firearm');
+  }
+
+  // Auto-Ordnance / Kahr
+  if(m.indexOf('auto-ordnance')>=0||m.indexOf('auto ordnance')>=0||m.indexOf('kahr')>=0){
+    if(md.indexOf('tommy')>=0||md.indexOf('thompson')>=0||md.indexOf('m1')>=0) return price(1200,1500,1900,'Auto-Ordnance Thompson/M1 carbine');
+    if(md.indexOf('pm')>=0||md.indexOf('cm')>=0||md.indexOf('cw')>=0) return price(300,400,520,'Kahr pistol');
+    return price(400,600,850,'Auto-Ordnance/Kahr firearm');
+  }
+
   // AR platform generic
   if(md.indexOf('ar-15')>=0||md.indexOf('ar15')>=0||md.indexOf('m4')>=0||md.indexOf('m16')>=0){
     return price(550,750,1100,'AR-15 platform rifle');
@@ -12561,22 +12901,39 @@ function valLookup(make,model,caliber,condition,year){
     return price(600,800,1200,'AK platform rifle');
   }
 
-  // Generic by type
+  // Generic by caliber/type (when no manufacturer match)
   if(caliber){
     var cal=caliber.toLowerCase();
-    if(cal.indexOf('.22')>=0) return price(200,300,450,'Rimfire firearm');
-    if(cal.indexOf('12 gauge')>=0) return price(300,450,650,'12 gauge shotgun');
-    if(cal.indexOf('9mm')>=0) return price(350,500,700,'9mm pistol');
-    if(cal.indexOf('.45')>=0) return price(450,650,900,'.45 ACP pistol');
-    if(cal.indexOf('.357')>=0) return price(500,700,950,'.357 Magnum revolver');
-    if(cal.indexOf('.44')>=0) return price(600,800,1100,'.44 Magnum revolver');
-    if(cal.indexOf('.308')>=0||cal.indexOf('7.62')>=0) return price(600,900,1400,'.308/7.62 rifle');
-    if(cal.indexOf('.223')>=0||cal.indexOf('5.56')>=0) return price(500,750,1100,'.223/5.56 rifle');
-    if(cal.indexOf('6.5')>=0) return price(700,950,1400,'6.5 Creedmoor rifle');
-    if(cal.indexOf('.30-06')>=0) return price(500,750,1100,'.30-06 rifle');
+    if(cal.indexOf('.22')>=0||cal.indexOf('22 lr')>=0||cal.indexOf('22lr')>=0) return price(200,300,450,'Rimfire firearm — category estimate');
+    if(cal.indexOf('.17 hmr')>=0||cal.indexOf('17hmr')>=0) return price(250,350,500,'.17 HMR rimfire — category estimate');
+    if(cal.indexOf('12 gauge')>=0||cal.indexOf('12 ga')>=0||cal.indexOf('12ga')>=0) return price(300,450,650,'12 gauge shotgun — category estimate');
+    if(cal.indexOf('20 gauge')>=0||cal.indexOf('20 ga')>=0||cal.indexOf('20ga')>=0) return price(280,420,600,'20 gauge shotgun — category estimate');
+    if(cal.indexOf('.410')>=0) return price(250,380,550,'.410 bore shotgun — category estimate');
+    if(cal.indexOf('9mm')>=0) return price(350,500,700,'9mm pistol — category estimate');
+    if(cal.indexOf('.380')>=0) return price(250,380,520,'.380 ACP pistol — category estimate');
+    if(cal.indexOf('.40')>=0&&cal.indexOf('s&w')>=0||cal.indexOf('.40 s')>=0) return price(350,480,650,'.40 S&W pistol — category estimate');
+    if(cal.indexOf('10mm')>=0) return price(500,700,950,'10mm pistol — category estimate');
+    if(cal.indexOf('.45 acp')>=0||cal.indexOf('.45 auto')>=0||(cal.indexOf('.45')>=0&&cal.indexOf('colt')< 0)) return price(450,650,900,'.45 ACP pistol — category estimate');
+    if(cal.indexOf('.45 colt')>=0||cal.indexOf('.45 lc')>=0) return price(500,700,950,'.45 Colt revolver — category estimate');
+    if(cal.indexOf('.357')>=0&&cal.indexOf('sig')< 0) return price(500,700,950,'.357 Magnum — category estimate');
+    if(cal.indexOf('.357 sig')>=0) return price(400,550,720,'.357 SIG pistol — category estimate');
+    if(cal.indexOf('.44')>=0) return price(600,800,1100,'.44 Magnum — category estimate');
+    if(cal.indexOf('.38')>=0) return price(350,500,680,'.38 Special — category estimate');
+    if(cal.indexOf('.308')>=0||cal.indexOf('7.62x51')>=0) return price(600,900,1400,'.308/7.62x51 rifle — category estimate');
+    if(cal.indexOf('7.62x39')>=0) return price(500,750,1050,'7.62x39 rifle — category estimate');
+    if(cal.indexOf('.223')>=0||cal.indexOf('5.56')>=0) return price(500,750,1100,'.223/5.56 rifle — category estimate');
+    if(cal.indexOf('6.5')>=0&&cal.indexOf('creed')>=0) return price(700,950,1400,'6.5 Creedmoor rifle — category estimate');
+    if(cal.indexOf('6.5')>=0&&cal.indexOf('grendel')>=0) return price(600,850,1200,'6.5 Grendel rifle — category estimate');
+    if(cal.indexOf('.300')>=0&&cal.indexOf('black')>=0) return price(600,850,1200,'.300 Blackout rifle — category estimate');
+    if(cal.indexOf('.300')>=0&&cal.indexOf('win')>=0) return price(700,1000,1500,'.300 Win Mag rifle — category estimate');
+    if(cal.indexOf('.30-06')>=0||cal.indexOf('30-06')>=0) return price(500,750,1100,'.30-06 rifle — category estimate');
+    if(cal.indexOf('.270')>=0) return price(500,750,1100,'.270 Win rifle — category estimate');
+    if(cal.indexOf('.243')>=0) return price(450,650,950,'.243 Win rifle — category estimate');
+    if(cal.indexOf('.30-30')>=0||cal.indexOf('30-30')>=0) return price(400,600,850,'.30-30 lever action — category estimate');
+    if(cal.indexOf('.50')>=0&&(cal.indexOf('bmg')>=0||cal.indexOf('beowulf')>=0)) return price(2000,3500,5500,'.50 caliber — category estimate');
   }
 
-  return{low:300,mid:500,high:900,notes:'Could not find specific model — showing general estimate. Enter value manually for accuracy.'};
+  return{low:300,mid:500,high:900,notes:'No specific data for this make/model — showing broad estimate. For a more accurate figure, enter value manually or upgrade to Pro+ for AI-powered estimates.'};
 }
 
 // ── AUTOCOMPLETE ──────────────────────────────────────────────────────
