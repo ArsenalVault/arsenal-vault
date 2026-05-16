@@ -4744,9 +4744,16 @@ function rList(){
       +'<option value="model"'+(srtBy==='model'?' selected':'')+'>Sort: Model</option>'
       +'<option value="caliber"'+(srtBy==='caliber'?' selected':'')+'>Sort: Caliber</option>'
       +'<option value="value"'+(srtBy==='value'?' selected':'')+'>Sort: Value</option></select>'
-    +'<button class="btn-g" onclick="toggleBulkMode()" style="font-size:11px">'+(bulkMode?'✓ Done':'⬡ Bulk Edit')+'</button>'+'<button class="btn-ex" onclick="expCSV()">&#8595; CSV</button>'+'<button class="btn-pr" onclick="pAll()">Print</button>'
-    +'<button class="btn-ai" onclick="go(\'pic\')" style="font-size:11px">'+_iM('camera')+' View Inventory</button>'
-    +'<button class="btn-g" onclick="openTransferWorksheetModal()" style="font-size:11px">'+_iM('document')+' Transfer Worksheet</button>'
+    // -C: Inventory toolbar — two-row five-button layout, styled to match Single Firearm page
+    +'<div style="display:flex;gap:6px;margin-bottom:6px">'
+      +'<button onclick="toggleBulkMode()" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #e8c46a40;border-radius:8px;color:#e8c46a;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+(bulkMode?'✓ Done':'⬡ Bulk Edit')+'</button>'
+      +'<button onclick="expCSV()" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #60e88040;border-radius:8px;color:#60e880;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('save')+' CSV</button>'
+      +'<button onclick="pAll()" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #70c0ff40;border-radius:8px;color:#70c0ff;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('printer')+' Print</button>'
+    +'</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:14px">'
+      +'<button onclick="go(\'pic\')" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #a0c0ff40;border-radius:8px;color:#a0c0ff;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('camera')+' View Inventory</button>'
+      +'<button onclick="openTransferWorksheetModal()" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #8a95a840;border-radius:8px;color:#c8d4e8;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('document')+' Transfer Worksheet</button>'
+    +'</div>'
     
     +'</div>'
     +'<div style="font-size:12px;color:#8a95a8;margin-bottom:10px">Showing '+f.length+' of '+guns.length+' firearms'+(bulkMode?' — tap to select':' — tap to view')+'</div>'+(bulkMode?'<div style="background:#1a2e1a;border:2px solid #60e88050;border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span id="bulk_count" style="color:#60e880;font-weight:700;font-size:14px">'+bulkSelected.length+' selected</span><button onclick="openBulkEdit()" style="background:#e8c46a;color:#1a1d24;border:none;padding:9px 18px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Edit Selected</button></div>':'')
@@ -5943,7 +5950,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-05-12-Z';   // bump on every revision
+var BUILD_TAG   = '2026-05-16-F';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -6112,7 +6119,7 @@ function requireTier(minTier, featureName){
   var features={
     'AI Gun Identifier':'Snap a photo and instantly identify any firearm\'s make, model, type, and caliber.',
     'AI Diagnosis':'Get expert analysis of issues, severity rating, and repair recommendations.',
-    'AI Schematics':'Generate detailed field strip instructions, assembly guides, and full parts lists for any firearm.',
+    'Schematics & Parts':'Access detailed field strip guides, assembly instructions, and complete parts lists from the built-in database.',
     'Schematics & Parts':'Built-in field strip guides, assembly instructions, and full parts lists for popular firearms.',
     'Bill of Sale':'Generate professional bills of sale with buyer/seller info, attestations, signatures, and PDF export.',
     'Transfer Worksheet':'Print a 4473-aligned worksheet with your firearm data and seller info pre-filled. Hand it to the buyer or FFL dealer.',
@@ -6127,7 +6134,7 @@ function requireTier(minTier, featureName){
   // -N: Pro+ inherits everything from Pro. Make that explicit so users
   // don't have to wonder whether the higher tier loses Pro features.
   var tierDetails=isProPlus
-    ?'Everything in Pro, plus: AI Gun Identifier &bull; AI Diagnosis &bull; AI Schematics &bull; 2-device installs &bull; Early access'
+    ?'Everything in Pro, plus: AI Gun Identifier &bull; AI Diagnosis &bull; 2-device installs &bull; Early access'
     :'Unlimited firearms &bull; Schematics &amp; parts &bull; Bill of Sale &bull; Print &amp; export';
   // -N: "Get launch updates" via mailto. No backend; user's email client
   // handles delivery; Gmail vacation responder handles auto-reply. The
@@ -7629,6 +7636,8 @@ function checkNFCScan(){
 
 // ── CHAIN OF CUSTODY ─────────────────────────────────────────────────
 var CUSTODY_TYPES=['Sale','Gift','Loan','Consignment','Repair','Appraisal','Return','Inheritance','Storage Change','Location Change','Other'];
+// -A: Types where a return is expected — controls Expected Return Date visibility + Print Agreement button
+var _TEMP_CUSTODY_TYPES=['Loan','Consignment','Repair','Appraisal'];
 
 // Helper: detect a firearm whose custody log contains only the auto-generated
 // inventory anchor. Matches both the new 'Acquisition' type and the legacy
@@ -7834,9 +7843,25 @@ function rCustodyTab(gunId){
         '<input type="text" id="coc_name" value="'+(editing?eh(editing.recipientName||''):'')+'" placeholder="Full legal name" style="'+inpStyle+'"/>')
       +fld('State',
         '<input type="text" id="coc_state" value="'+stateVal+'" placeholder="OK" style="'+inpStyle+'"/>')
+      +'<div style="display:flex;gap:8px">'
+        +fld('Phone',
+          '<input type="tel" id="coc_phone" value="'+(editing?eh(editing.recipientPhone||''):'')+'" placeholder="(555) 555-1234" style="'+inpStyle+'"/>')
+        +fld('Email',
+          '<input type="email" id="coc_email" value="'+(editing?eh(editing.recipientEmail||''):'')+'" placeholder="email@example.com" style="'+inpStyle+'"/>')
+      +'</div>'
       +fld('Price / Value',
         '<input type="number" id="coc_price" value="'+(editing?eh(editing.price||''):'')+'" placeholder="0.00 (optional)" style="'+inpStyle+'"/>',
         18)
+
+      // ── SECTION 2B: CUSTODY TERMS ───────────────────────────────
+      +hdr('Custody Terms','Condition snapshot and return expectations')
+      +fld('Condition at Transfer',
+        '<select id="coc_condition" style="'+inpStyle+'"><option value="">Select condition...</option>'+CONDITIONS.map(function(c){return '<option value="'+c+'"'+(editing&&editing.conditionAtTransfer===c?' selected':'')+'>'+c+'</option>';}).join('')+'</select>')
+      +'<div id="coc_return_wrap" style="'+(editing&&editing.expectedReturnDate?'':'')+'margin-bottom:14px">'
+        +'<label style="display:block;font-size:13px;color:#d8e0f0;margin-bottom:6px;font-weight:600">Expected Return Date</label>'
+        +'<input type="date" id="coc_return" value="'+(editing?eh(editing.expectedReturnDate||''):'')+'" style="'+dateStyle+'"/>'
+        +'<div style="font-size:11px;color:#6a7280;margin-top:4px">Applies to loans, consignment, repairs, and appraisals</div>'
+      +'</div>'
 
       // ── SECTION 3: FFL TRANSFER DETAILS (collapsible) ─────────
       +'<div onclick="_toggleCocFfl()" style="background:#13161d;border:1px solid #3a4455;border-radius:8px;padding:12px 14px;margin-bottom:'+(_cocFflOpen?'14':'18')+'px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;-webkit-tap-highlight-color:rgba(232,196,106,0.1)">'
@@ -7881,6 +7906,8 @@ function rCustodyTab(gunId){
   var events='';
   if(custody.length){
     events=custody.slice().reverse().map(function(evt){
+      var isTemp=_TEMP_CUSTODY_TYPES.indexOf(evt.type)!==-1;
+      var condColor=evt.conditionAtTransfer&&CC[evt.conditionAtTransfer]?CC[evt.conditionAtTransfer]:'#8a95a8';
       return '<div class="custody-event'+(evt.editedAt?' edited':'')+'">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
           +'<div class="custody-type">'+evt.type+'</div>'
@@ -7888,7 +7915,11 @@ function rCustodyTab(gunId){
         +'</div>'
         +(evt.recipientName?'<div class="custody-name">'+eh(evt.recipientName)+'</div>':'')
         +(evt.recipientState?'<div class="custody-detail">&#127963; '+eh(evt.recipientState)+'</div>':'')
+        +(evt.recipientPhone?'<div class="custody-detail">&#128222; '+eh(evt.recipientPhone)+'</div>':'')
+        +(evt.recipientEmail?'<div class="custody-detail">&#9993; '+eh(evt.recipientEmail)+'</div>':'')
         +(evt.price?'<div class="custody-detail">&#128176; $'+eh(evt.price)+'</div>':'')
+        +(evt.conditionAtTransfer?'<div class="custody-detail">Condition: <span style="color:'+condColor+';font-weight:600">'+eh(evt.conditionAtTransfer)+'</span></div>':'')
+        +(evt.expectedReturnDate?'<div class="custody-detail">&#128197; Return by: '+new Date(evt.expectedReturnDate+'T00:00:00').toLocaleDateString()+'</div>':'')
         +(evt.fflDealer?'<div class="custody-detail">&#128220; FFL: '+eh(evt.fflDealer)+(evt.fflLicense?' #'+eh(evt.fflLicense):'')+'</div>':'')
         +(evt.notes?'<div class="custody-detail" style="color:#c0c8d8;margin-top:6px;font-style:italic">'+eh(evt.notes)+'</div>':'')
         +(evt.acknowledged?'<div class="custody-ack">&#10003; Legal eligibility acknowledged</div>':'')
@@ -7896,6 +7927,7 @@ function rCustodyTab(gunId){
         +'<div style="margin-top:10px;border-top:1px solid #252c38;padding-top:10px">'
           +'<button onclick="editCustodyEvent(\''+gunId+'\',\''+evt.id+'\')" class="custody-btn">'+_iM('pencil')+' Edit</button>'
           +'<button onclick="deleteCustodyEvent(\''+gunId+'\',\''+evt.id+'\')" class="custody-btn danger">'+_iM('trash')+' Delete</button>'
+          +(isTemp?'<button onclick="printCustodyAgreement(\''+gunId+'\',\''+evt.id+'\')" class="custody-btn" style="color:#e8c46a;border-color:#e8c46a40">'+_iM('document')+' Agreement</button>':'')
         +'</div>'
         +'</div>';
     }).join('');
@@ -7952,6 +7984,11 @@ function saveCustodyEvent(gunId){
   var ffln=document.getElementById('coc_ffln').value.trim();
   var notes=document.getElementById('coc_notes').value.trim();
   var ack=document.getElementById('coc_ack').checked;
+  // -A: #12C new per-event fields
+  var phone=document.getElementById('coc_phone').value.trim();
+  var email=document.getElementById('coc_email').value.trim();
+  var condAtTx=document.getElementById('coc_condition').value;
+  var returnDate=document.getElementById('coc_return').value;
 
   if(!type){toast('Select a transfer type','err');return;}
   if(!date){toast('Enter a date','err');return;}
@@ -7967,7 +8004,9 @@ function saveCustodyEvent(gunId){
         if(e.id!==editingCustodyId) return e;
         return Object.assign({},e,{
           type:type,date:date,recipientName:name,recipientState:state,
+          recipientPhone:phone,recipientEmail:email,
           price:price,fflDealer:ffl,fflLicense:ffln,notes:notes,
+          conditionAtTransfer:condAtTx,expectedReturnDate:returnDate,
           acknowledged:ack,editedAt:now
         });
       });
@@ -7975,7 +8014,9 @@ function saveCustodyEvent(gunId){
       // New event
       custody.push({
         id:gidCustody(),type:type,date:date,recipientName:name,
-        recipientState:state,price:price,fflDealer:ffl,fflLicense:ffln,
+        recipientState:state,recipientPhone:phone,recipientEmail:email,
+        price:price,fflDealer:ffl,fflLicense:ffln,
+        conditionAtTransfer:condAtTx,expectedReturnDate:returnDate,
         notes:notes,acknowledged:ack,createdAt:now,editedAt:null
       });
     }
@@ -8006,7 +8047,7 @@ function editCustodyEvent(gunId, evtId){
 function _toggleCocFfl(){
   // Snapshot current field values so they survive the re-render
   var snapshot={};
-  ['coc_type','coc_date','coc_name','coc_state','coc_price','coc_ffl','coc_ffln','coc_notes'].forEach(function(id){
+  ['coc_type','coc_date','coc_name','coc_state','coc_phone','coc_email','coc_price','coc_condition','coc_return','coc_ffl','coc_ffln','coc_notes'].forEach(function(id){
     var el=document.getElementById(id);
     if(el) snapshot[id]=el.value;
   });
@@ -8072,7 +8113,11 @@ function printCustodyRecord(gunId){
       +'</div>'
       +(e.recipientName?'<div style="font-weight:700;font-size:14px;margin-bottom:4px">'+e.recipientName+'</div>':'')
       +(e.recipientState?'<div style="font-size:12px;color:#444">State: '+e.recipientState+'</div>':'')
+      +(e.recipientPhone?'<div style="font-size:12px;color:#444">Phone: '+e.recipientPhone+'</div>':'')
+      +(e.recipientEmail?'<div style="font-size:12px;color:#444">Email: '+e.recipientEmail+'</div>':'')
       +(e.price?'<div style="font-size:12px;color:#444">Value: $'+e.price+'</div>':'')
+      +(e.conditionAtTransfer?'<div style="font-size:12px;color:#444">Condition at Transfer: '+e.conditionAtTransfer+'</div>':'')
+      +(e.expectedReturnDate?'<div style="font-size:12px;color:#444">Expected Return: '+new Date(e.expectedReturnDate+'T00:00:00').toLocaleDateString()+'</div>':'')
       +(e.fflDealer?'<div style="font-size:12px;color:#444">FFL: '+e.fflDealer+(e.fflLicense?' #'+e.fflLicense:'')+'</div>':'')
       +(e.notes?'<div style="font-size:12px;color:#555;margin-top:6px;font-style:italic">'+e.notes+'</div>':'')
       +(e.acknowledged?'<div style="font-size:11px;color:#2a7a2a;margin-top:6px">&#10003; Legal eligibility acknowledged</div>':'')
@@ -8105,8 +8150,128 @@ function printCustodyRecord(gunId){
   W.print();
 }
 
+// -A: #12C Temporary Custody Agreement — printable agreement for a single custody event.
+// Only for temporary custody types (Loan, Consignment, Repair, Appraisal).
+function printCustodyAgreement(gunId, evtId){
+  if(!requirePro('Temporary Custody Agreement')) return;
+  var g=guns.find(function(x){return x.id===gunId;})||transferredGuns.find(function(x){return x.id===gunId;});
+  if(!g) return;
+  var evt=(g.custody||[]).find(function(e){return e.id===evtId;});
+  if(!evt){toast('Custody event not found','err');return;}
 
-// ── BILL OF SALE ──────────────────────────────────────────────────────
+  var op=(appSettings&&appSettings.ownerProfile)||{};
+  var ownerName=op.ownerName||'';
+  var ownerAddr=[op.address,op.city,(op.state||'')+' '+(op.zip||'')].filter(Boolean).join(', ').trim();
+  var ownerPhone=op.phone||'';
+  var ownerEmail=op.email||'';
+
+  // Determine agreement type label
+  var typeLabel=evt.type||'Temporary Custody';
+
+  var W=window.open('','_blank');
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Temporary Custody Agreement — '+g.make+' '+g.model+'</title>'
+    +'<style>'
+    +'body{font-family:Georgia,serif;padding:40px;max-width:750px;margin:0 auto;color:#000;line-height:1.6}'
+    +'h1{margin:0;font-size:22px;color:#1a1d24;text-align:center}'
+    +'h2{font-size:14px;color:#666;margin:4px 0 20px;font-weight:400;text-align:center}'
+    +'.section{margin-bottom:20px}'
+    +'.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#8b6914;border-bottom:2px solid #e8c46a;padding-bottom:4px;margin-bottom:12px}'
+    +'.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;font-size:13px}'
+    +'.info-label{color:#666;font-size:11px;text-transform:uppercase;letter-spacing:.05em}'
+    +'.info-value{font-weight:600;margin-bottom:8px}'
+    +'.serial-hero{font-size:20px;font-weight:800;letter-spacing:.08em;border:2px solid #000;padding:8px 16px;display:inline-block;border-radius:4px;margin:8px 0}'
+    +'.terms{background:#faf8f0;border:1px solid #e0d8c0;border-radius:6px;padding:16px;font-size:13px;line-height:1.7;margin-bottom:20px}'
+    +'.terms p{margin:0 0 10px}'
+    +'.sig-block{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:30px;page-break-inside:avoid}'
+    +'.sig-col{}'
+    +'.sig-line{border-bottom:1px solid #000;height:40px;margin-bottom:4px}'
+    +'.sig-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.06em}'
+    +'.sig-name{font-size:13px;font-weight:600;margin-top:12px}'
+    +'footer{margin-top:30px;font-size:10px;color:#999;border-top:1px solid #ccc;padding-top:10px;text-align:center}'
+    +'@media print{body{padding:20px}}'
+    +'</style></head><body>';
+
+  // ── HEADER ──
+  html+='<h1>TEMPORARY CUSTODY AGREEMENT</h1>';
+  html+='<h2>'+typeLabel+' &mdash; '+new Date().toLocaleDateString()+' &mdash; Prepared with ArsenalDB</h2>';
+
+  // ── FIREARM DESCRIPTION ──
+  html+='<div class="section"><div class="section-title">Firearm Description</div>';
+  html+='<div class="info-grid">';
+  html+='<div><div class="info-label">Make</div><div class="info-value">'+(g.make||'—')+'</div></div>';
+  html+='<div><div class="info-label">Model</div><div class="info-value">'+(g.model||'—')+'</div></div>';
+  html+='<div><div class="info-label">Type</div><div class="info-value">'+(g.type||'—')+'</div></div>';
+  html+='<div><div class="info-label">Caliber / Gauge</div><div class="info-value">'+(g.caliber||'—')+'</div></div>';
+  html+='<div><div class="info-label">Barrel Length</div><div class="info-value">'+(g.barrelLength?g.barrelLength+'"':'—')+'</div></div>';
+  html+='<div><div class="info-label">Year</div><div class="info-value">'+(g.year||'—')+'</div></div>';
+  html+='</div>';
+  html+='<div style="margin-top:8px"><div class="info-label">Serial Number</div><div class="serial-hero">'+(g.serialNumber||'N/A')+'</div></div>';
+  if(evt.conditionAtTransfer) html+='<div style="margin-top:8px"><div class="info-label">Condition at Transfer</div><div class="info-value">'+evt.conditionAtTransfer+'</div></div>';
+  html+='</div>';
+
+  // ── OWNER / TRANSFEROR ──
+  html+='<div class="section"><div class="section-title">Owner / Transferor</div>';
+  html+='<div class="info-grid">';
+  html+='<div><div class="info-label">Name</div><div class="info-value">'+(ownerName||'________________________')+'</div></div>';
+  html+='<div><div class="info-label">Phone</div><div class="info-value">'+(ownerPhone||'________________________')+'</div></div>';
+  if(ownerAddr) html+='<div style="grid-column:1/-1"><div class="info-label">Address</div><div class="info-value">'+ownerAddr+'</div></div>';
+  if(ownerEmail) html+='<div style="grid-column:1/-1"><div class="info-label">Email</div><div class="info-value">'+ownerEmail+'</div></div>';
+  html+='</div></div>';
+
+  // ── RECIPIENT / CUSTODIAN ──
+  html+='<div class="section"><div class="section-title">Recipient / Custodian</div>';
+  html+='<div class="info-grid">';
+  html+='<div><div class="info-label">Name</div><div class="info-value">'+(evt.recipientName||'________________________')+'</div></div>';
+  html+='<div><div class="info-label">State</div><div class="info-value">'+(evt.recipientState||'________________________')+'</div></div>';
+  html+='<div><div class="info-label">Phone</div><div class="info-value">'+(evt.recipientPhone||'________________________')+'</div></div>';
+  html+='<div><div class="info-label">Email</div><div class="info-value">'+(evt.recipientEmail||'________________________')+'</div></div>';
+  html+='</div></div>';
+
+  // ── CUSTODY TERMS ──
+  html+='<div class="section"><div class="section-title">Custody Terms</div>';
+  html+='<div class="info-grid">';
+  html+='<div><div class="info-label">Type of Custody</div><div class="info-value">'+typeLabel+'</div></div>';
+  html+='<div><div class="info-label">Date of Transfer</div><div class="info-value">'+new Date(evt.date).toLocaleDateString()+'</div></div>';
+  if(evt.expectedReturnDate) html+='<div><div class="info-label">Expected Return Date</div><div class="info-value" style="color:#8b0000;font-weight:700">'+new Date(evt.expectedReturnDate+'T00:00:00').toLocaleDateString()+'</div></div>';
+  if(evt.price) html+='<div><div class="info-label">Estimated Value</div><div class="info-value">$'+evt.price+'</div></div>';
+  html+='</div>';
+  if(evt.notes) html+='<div style="margin-top:10px"><div class="info-label">Notes</div><div class="info-value" style="font-style:italic">'+evt.notes+'</div></div>';
+  if(evt.fflDealer) html+='<div style="margin-top:8px"><div class="info-label">FFL Dealer</div><div class="info-value">'+evt.fflDealer+(evt.fflLicense?' — License #'+evt.fflLicense:'')+'</div></div>';
+  html+='</div>';
+
+  // ── STANDARD TERMS ──
+  html+='<div class="terms">';
+  html+='<p><strong>1. Care &amp; Responsibility.</strong> The Custodian agrees to exercise reasonable care in the storage, handling, and safekeeping of the above-described firearm for the duration of this custody period. The firearm shall be stored securely and in compliance with all applicable federal, state, and local laws.</p>';
+  html+='<p><strong>2. Return Condition.</strong> The Custodian agrees to return the firearm in substantially the same condition as received, normal wear excepted.'+(evt.expectedReturnDate?' The firearm shall be returned on or before the Expected Return Date listed above, unless both parties agree in writing to an extension.':'')+'</p>';
+  html+='<p><strong>3. No Transfer.</strong> The Custodian shall not sell, loan, gift, transfer, or otherwise convey the firearm to any third party without the prior written consent of the Owner.</p>';
+  html+='<p><strong>4. Loss or Damage.</strong> The Custodian shall immediately notify the Owner of any loss, theft, damage, or legal seizure of the firearm. In the event of theft, the Custodian shall file a police report and provide the Owner with the report number.</p>';
+  html+='<p><strong>5. Legal Eligibility.</strong> '+(evt.acknowledged?'The Custodian has affirmed that they are legally eligible to possess this firearm under applicable law.':'Both parties should confirm that the Custodian is legally eligible to possess this firearm under all applicable federal, state, and local law.')+'</p>';
+  html+='</div>';
+
+  // ── SIGNATURES ──
+  html+='<div class="sig-block">';
+  html+='<div class="sig-col">';
+  html+='<div class="sig-line"></div>';
+  html+='<div class="sig-label">Owner / Transferor Signature</div>';
+  if(ownerName) html+='<div class="sig-name">'+ownerName+'</div>';
+  html+='<div style="margin-top:16px"><div class="sig-line"></div><div class="sig-label">Date</div></div>';
+  html+='</div>';
+  html+='<div class="sig-col">';
+  html+='<div class="sig-line"></div>';
+  html+='<div class="sig-label">Custodian Signature</div>';
+  if(evt.recipientName) html+='<div class="sig-name">'+evt.recipientName+'</div>';
+  html+='<div style="margin-top:16px"><div class="sig-line"></div><div class="sig-label">Date</div></div>';
+  html+='</div>';
+  html+='</div>';
+
+  // ── FOOTER ──
+  html+='<footer>This document is a private record prepared with ArsenalDB and is not a legal contract. Consult an attorney for legally binding agreements. &mdash; arsenaldb.com</footer>';
+  html+='</body></html>';
+
+  W.document.write(html);
+  W.document.close();
+  W.print();
+}
 var QR_SCAN_MODE=false;
 var billsOfSale=[];
 var bosStep=1;
@@ -9324,7 +9489,11 @@ function printAllCustody(){
       html+='</div>';
       if(e.recipientName) html+='<div style="font-weight:700">'+e.recipientName+'</div>';
       if(e.recipientState) html+='<div style="font-size:12px;color:#444">State: '+e.recipientState+'</div>';
+      if(e.recipientPhone) html+='<div style="font-size:12px;color:#444">Phone: '+e.recipientPhone+'</div>';
+      if(e.recipientEmail) html+='<div style="font-size:12px;color:#444">Email: '+e.recipientEmail+'</div>';
       if(e.price) html+='<div style="font-size:12px;color:#444">Value: $'+e.price+'</div>';
+      if(e.conditionAtTransfer) html+='<div style="font-size:12px;color:#444">Condition at Transfer: '+e.conditionAtTransfer+'</div>';
+      if(e.expectedReturnDate) html+='<div style="font-size:12px;color:#444">Expected Return: '+new Date(e.expectedReturnDate+'T00:00:00').toLocaleDateString()+'</div>';
       if(e.fflDealer) html+='<div style="font-size:12px;color:#444">FFL: '+e.fflDealer+(e.fflLicense?' #'+e.fflLicense:'')+'</div>';
       if(e.notes) html+='<div style="font-size:12px;color:#555;margin-top:4px;font-style:italic">'+e.notes+'</div>';
       if(e.acknowledged) html+='<div style="font-size:11px;color:#2a7a2a;margin-top:4px">&#10003; Legal eligibility acknowledged</div>';
@@ -10474,7 +10643,7 @@ function rPicturePage(){
     // Action buttons
     +'<div class="pic-actions">'
       +'<button onclick="editGun(\''+g.id+'\')" style="flex:1;background:#e8c46a;color:#1a1d24;border:none;padding:14px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">'+_iM('pencil')+' Edit Firearm</button>'
-      +'<button onclick="openQR(\''+g.id+'\')" style="background:#1e2535;border:2px solid #3a4455;color:#c0c8d8;padding:14px 16px;border-radius:8px;font-size:16px;cursor:pointer">&#9646;&#9646;</button>'
+      +'<button onclick="openQR(\''+g.id+'\')" style="background:#1e2535;border:2px solid #3a4455;color:#c0c8d8;padding:14px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px">'+_qrSvg(16)+' QR Code</button>'
     +'</div>'
 
     // Swipe detection overlay
@@ -11336,11 +11505,11 @@ function rDet(){
       var notes=SCH.notes?'<div class="panel" style="margin-top:16px"><div class="sec-title">📝 Technical Notes</div><div style="font-size:14px;color:#c0c8d8;line-height:1.7">'+eh(SCH.notes)+'</div></div>':'';
       sc=warns+tools+'<div class="panel"><div class="tabs-h"><button class="tab-h'+(scTab==='dis'?' on':'')+'" onclick="scTab=\'dis\';rnd()">🔩 Field Strip</button><button class="tab-h'+(scTab==='dgm'?' on':'')+'" onclick="scTab=\'dgm\';rnd()">📐 Diagram</button><button class="tab-h'+(scTab==='asm'?' on':'')+'" onclick="scTab=\'asm\';rnd()">⚙ Assembly</button><button class="tab-h'+(scTab==='pts'?' on':'')+'" onclick="scTab=\'pts\';rnd()">📋 Parts List</button></div>'+sub+'</div>'+notes;
     } else if(SCH&&SCH._notFound){
-      sc='<div class="empty" style="padding:30px 0"><div style="font-size:15px;line-height:1.9;color:#b0bac8">'+SCH.make+' '+SCH.model+' is not in the built-in database.<br><br>'+(navigator.onLine?'<span style="color:#ff7070">AI lookup failed — try again.</span>':'Connect to <strong style="color:#e8c46a">wifi</strong> and tap the button above to look it up with AI.')+'</div></div>';
+      sc='<div class="empty" style="padding:30px 0"><div style="font-size:15px;line-height:1.9;color:#b0bac8">'+SCH.make+' '+SCH.model+' is not in the built-in database.<br><br>You can tap <strong style="color:#d0d8e8">📎 Upload My Schematic</strong> to attach your own PDF or image.</div></div>';
     } else if(!g.uploadedSchematic){
-      sc='<div class="empty" style="padding:30px 0"><div style="font-size:15px;line-height:1.9;color:#b0bac8">Tap <strong style="color:#60e880">🔩 Load Breakdown</strong> to load from built-in database.<br><br>If not found, connect to wifi and AI will generate it for any firearm.<br><br>Or tap <strong style="color:#d0d8e8">📎 Upload My Schematic</strong> to attach your own PDF or image.</div></div>';
+      sc='<div class="empty" style="padding:30px 0"><div style="font-size:15px;line-height:1.9;color:#b0bac8">Tap <strong style="color:#60e880">🔩 Load Breakdown</strong> to load from the built-in database.<br><br>Or tap <strong style="color:#d0d8e8">📎 Upload My Schematic</strong> to attach your own PDF or image.</div></div>';
     }    var upSch=g.uploadedSchematic?'<div class="panel"><div class="sec-title">📎 '+eh(g.uploadedSchematicName||'Uploaded Schematic')+'</div>'+(g.uploadedSchematic.indexOf('data:image')===0?'<img src="'+g.uploadedSchematic+'" style="width:100%;border-radius:6px;border:1px solid #3a4455"/>':(  '<div style="font-size:14px;color:#b0bac8">PDF: '+eh(g.uploadedSchematicName||'file')+'</div>'))+'<button class="btn-d" style="margin-top:12px;font-size:12px" onclick="remSch(\''+g.id+'\')">Remove Schematic</button></div>':'';
-    tc='<div class="btn-row"><button class="btn-ai" onclick="loadSch(\''+g.id+'\')"'+(scLoad?' disabled':'')+'>'+( scLoad?'<span class=\'spinning\'>⟳</span> Generating...':'✦ AI: Generate Breakdown &amp; Parts')+'</button><button class="btn-g" onclick="document.getElementById(\'schIn\').click()">📎 Upload My Schematic</button></div>'+upSch+sc;
+    tc='<div class="btn-row"><button class="btn-g" onclick="loadSch(\''+g.id+'\')"'+(scLoad?' disabled':'')+'>'+(scLoad?'<span class=\'spinning\'>⟳</span> Loading...':'🔩 Load Breakdown')+'</button><button class="btn-g" onclick="document.getElementById(\'schIn\').click()">📎 Upload My Schematic</button></div>'+upSch+sc;
   } else if(dTab==='coc'){
     tc=rCustodyTab(g.id);
   } else if(dTab==='range'){
@@ -12146,8 +12315,9 @@ function _BYO_renderSettingsSection(){
     +(hasKey
       ? '<div style="background:#0f1218;border:1px solid #2e3545;border-radius:6px;padding:10px 12px;margin-bottom:10px;font-family:monospace;font-size:12px;color:#c0c8d8">'+eh(masked)+'</div>'
       +'<button onclick="_BYO_uiTestConnection()" style="width:100%;background:transparent;border:1px solid #60e88060;color:#60e880;padding:9px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">Test Connection</button>'
+      +'<a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener" style="display:block;width:100%;background:transparent;border:1px solid #a0c0ff40;color:#a0c0ff;padding:9px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;text-align:center;text-decoration:none;box-sizing:border-box">Check Balance &amp; Billing &#8250;</a>'
       +'<button onclick="_BYO_uiClearKey()" style="width:100%;background:transparent;border:1px solid #ff904060;color:#ff9040;padding:9px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Remove Key</button>'
-      : '<input type="password" id="byo_key_input" placeholder="sk-ant-..." autocomplete="off" style="width:100%;background:#0f1218;border:1px solid #3a4455;color:#f0f2f5;padding:10px 12px;border-radius:6px;font-size:13px;font-family:monospace;margin-bottom:10px;box-sizing:border-box"/>'
+      : '<input type="password" id="byo_key_input" placeholder="sk-ant-..." autocomplete="off" onpaste="_BYO_onPaste()" style="width:100%;background:#0f1218;border:1px solid #3a4455;color:#f0f2f5;padding:10px 12px;border-radius:6px;font-size:13px;font-family:monospace;margin-bottom:10px;box-sizing:border-box"/>'
       +'<button onclick="_BYO_uiSaveKey()" style="width:100%;background:linear-gradient(135deg,#a0c0ff,#7090dd);color:#1a1d24;border:none;padding:10px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px">Save Key</button>'
       +'<div style="font-size:11px;color:#6a7488;line-height:1.6;margin-top:4px"><strong style="color:#a0c0ff">Need a key?</strong> <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:#a0c0ff;text-decoration:underline">Get one from Anthropic</a> (requires a credit card and ~$5 prepay). <a onclick="_BYO_uiShowWalkthrough()" style="color:#a0c0ff;text-decoration:underline;cursor:pointer">Walkthrough &rsaquo;</a></div>'
     )
@@ -12221,6 +12391,24 @@ function _BYO_uiShowWalkthrough(){
     +'</div>';
   document.body.appendChild(modal);
 }
+// -E: Auto-detect valid key on paste — saves the user from hunting for the Save button.
+// Waits one tick for the paste value to populate, validates format, then auto-saves.
+function _BYO_onPaste(){
+  setTimeout(function(){
+    var input = document.getElementById('byo_key_input');
+    if(!input) return;
+    var key = input.value;
+    if(_BYO_validateKeyFormat(key)){
+      if(_BYO_saveKey(key)){
+        toast('API key detected and saved');
+        haptic('ok');
+        var m = document.getElementById('settings_modal');
+        if(m){ m.remove(); openSettings(); }
+      }
+    }
+  }, 50);
+}
+
 // ── END BYO-T1 ───────────────────────────────────────────────────────
 
 // ── BEGIN ONBOARD-T1 GUIDED TOURS ────────────────────────────────────
@@ -13956,41 +14144,17 @@ function doDiag(){
 
 function loadSch(id){
   var g=guns.find(function(x){return x.id===id;});if(!g)return;
-  // Check built-in database first
+  // Check built-in database
   var db=schDB(g.make,g.model,g.caliber,g.type);
   if(db){
     if(!requirePro('Schematics & Parts')) return;
     SCH=db;scLoad=false;rnd();return;
   }
-  // Not in database — AI lookup requires Pro+
-  if(!requireProPlus('AI Schematics')) return;
-  if(!_BYO_requireKey('AI Schematics')) return;
-  // Not in database — try AI if online
-  if(!navigator.onLine){
-    scLoad=false;
-    SCH={_notFound:true,make:g.make,model:g.model};
-    rnd();return;
-  }
-  scLoad=true;SCH=null;rnd();
-  var done=false;
-  var timer=setTimeout(function(){
-    if(!done){
-      done=true;
-      scLoad=false; // always clear spinner
-      if(VIEW==='detail'&&selId===id){
-        SCH={_notFound:true,make:g.make,model:g.model};
-        rnd();
-        toast('Schematic lookup timed out','err');
-      }
-    }
-  },20000);
-  claude('Firearms technical expert. For the '+g.make+' '+g.model+' ('+g.caliber+' '+(g.type||'')+'), provide detailed field strip and assembly info. Respond ONLY with JSON no markdown: {"assemblySteps":[{"step":1,"title":"title","description":"detail","caution":null}],"disassemblySteps":[{"step":1,"title":"title","description":"detail","caution":null}],"partsList":[{"partNumber":"1","name":"name","description":"function","replaceable":true}],"safetyWarnings":["warning"],"toolsRequired":["tool"],"notes":"notes"} Include 7+ disassembly steps, 7+ assembly steps, 18+ parts.',2500,function(e,txt){
-    clearTimeout(timer);if(done)return;done=true;
-    scLoad=false; // always clear spinner
-    if(VIEW!=='detail'||selId!==id)return; // skip state+render if user navigated away
-    if(e){SCH={_notFound:true,make:g.make,model:g.model};rnd();toast('Could not load schematics','err');}
-    else{try{SCH=JSON.parse(txt);}catch(ex){SCH={_notFound:true,make:g.make,model:g.model};}rnd();}
-  });
+  // Not in database — show not-found state
+  SCH={_notFound:true,make:g.make,model:g.model};
+  scLoad=false;
+  rnd();
+  toast(g.make+' '+g.model+' not in database — upload your own schematic');
 }
 
 // ── FILE UPLOADS ──────────────────────────────────────────────────────
