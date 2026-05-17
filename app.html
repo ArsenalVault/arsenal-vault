@@ -5955,7 +5955,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-05-16-G';   // bump on every revision
+var BUILD_TAG   = '2026-05-16-H';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -9781,6 +9781,7 @@ function createCollection(){
   var _prevLnCC=(guns||[]).length;
   guns=[];
   _logSetGuns('createCollection:reset-to-empty:'+id, 0, _prevLnCC);
+  sv(); // -G fix: flush empty array to main firearms store so refresh doesn't reload old collection
   milestones={};totalCleanings=0;transferredGuns=[];
   VIEW='dashboard';
   FORM=ef();
