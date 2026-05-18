@@ -1522,6 +1522,8 @@ var CALIBERS=[
 var TYPES=['Semi-Auto Pistol','Single Action Pistol','Double Action Pistol','Single Action Revolver','Double Action Revolver','Semi-Auto Rifle','Bolt-Action Rifle','Lever-Action Rifle','Pump-Action Rifle','Single Shot Rifle','Break-Action Rifle','AR-Style Rifle','Bullpup Rifle','Pump-Action Shotgun','Semi-Auto Shotgun','Over/Under Shotgun','Side-by-Side Shotgun','Single Shot Shotgun','Break-Action Shotgun','Lever-Action Shotgun','Semi-Auto Carbine','Lever-Action Carbine','Pistol Caliber Carbine','Full-Auto','Select-Fire','Suppressor','SBR','SBS','AOW','Destructive Device','Antique','Black Powder','Flintlock','Other'];
 
 var guns=[];
+var _lastSavedCount=0;   // -H: save guard — tracks last known good gun count
+var _allowEmptySave=false; // -H: save guard — explicit flag for legitimate empty saves
 var VIEW='dashboard';
 var selId=null;
 var editId=null;
@@ -2125,6 +2127,35 @@ function sv(){
   // -J: instrument first, before any state changes
   _svLog((guns||[]).length);
 
+  // ── SAVE GUARD (-H) ─────────────────────────────────────────────────
+  // Prevents accidental data wipe: if guns is empty but we previously had
+  // data, block the save unless explicitly authorized by createCollection,
+  // loadGunsFromCollection, or clearAllData.
+  var _newCount = (guns||[]).length;
+  if(_newCount === 0 && _lastSavedCount > 0 && !_allowEmptySave){
+    console.warn('[SV-GUARD] Blocked empty save. Previous count: ' + _lastSavedCount + ', activeCollection: ' + activeCollection);
+    try{localStorage.setItem('av_sv_guard_blocked', JSON.stringify({
+      time: new Date().toISOString(),
+      prevCount: _lastSavedCount,
+      collection: activeCollection
+    }));}catch(e){}
+    toast('Save blocked \u2014 data protection prevented empty overwrite', 'err');
+    return;
+  }
+  // Guard against drastic unexplained drops (>50% in one save, from 5+ guns)
+  if(_newCount > 0 && _lastSavedCount > 5 && _newCount < _lastSavedCount * 0.5 && !_allowEmptySave){
+    console.warn('[SV-GUARD] Suspicious drop: ' + _lastSavedCount + ' \u2192 ' + _newCount);
+    try{localStorage.setItem('av_sv_guard_warning', JSON.stringify({
+      time: new Date().toISOString(),
+      prevCount: _lastSavedCount,
+      newCount: _newCount,
+      collection: activeCollection
+    }));}catch(e){}
+  }
+  _allowEmptySave = false;
+  _lastSavedCount = _newCount;
+  // ── END SAVE GUARD ──────────────────────────────────────────────────
+
   saveGunsToCollection(activeCollection);
   var data=guns;
   // Always keep in-memory backup
@@ -2135,6 +2166,8 @@ function sv(){
       try{
         var tx=db.transaction([STORE,'meta'],'readwrite');
         var store=tx.objectStore(STORE);
+        // -H: write-ahead backup — if crash interrupts clear+write cycle, this survives
+        tx.objectStore('meta').put({count:data.length,time:Date.now(),coll:activeCollection},'_sv_checkpoint');
         store.clear();
         data.forEach(function(g){store.put(g);});
         tx.objectStore('meta').put(customPrices,'customPrices');
@@ -2160,6 +2193,19 @@ function svFallback(data){
 }
 
 function ld(){
+  // -H: helper — after main store loads, check if a non-default collection
+  // is active and load its data instead. Fixes stale-data-on-refresh bug
+  // where the main 'firearms' store holds the wrong collection's guns.
+  function _ldCollAware(){
+    _lastSavedCount = (guns||[]).length; // -H: save guard init
+    if(activeCollection && activeCollection !== 'default'){
+      loadGunsFromCollection(activeCollection);
+      // loadGunsFromCollection calls rnd() on completion
+    } else {
+      rnd();
+    }
+    _ONB_afterLoadHook();
+  }
   // Try IndexedDB first
   openDB(function(db){
     if(db){
@@ -2178,15 +2224,13 @@ function ld(){
             ldFallback();
           }
           loadMetaFromDB(db);
-          rnd();
-          _ONB_afterLoadHook();
+          _ldCollAware();
         };
-        req.onerror=function(){ldFallback();rnd();_ONB_afterLoadHook();};
-      }catch(e){ldFallback();rnd();_ONB_afterLoadHook();}
+        req.onerror=function(){ldFallback();_ldCollAware();};
+      }catch(e){ldFallback();_ldCollAware();}
     } else {
       ldFallback();
-      rnd();
-      _ONB_afterLoadHook();
+      _ldCollAware();
     }
   });
 }
@@ -9721,6 +9765,7 @@ function saveGunsToCollection(collId){
 
 function loadGunsFromCollection(collId){
   var _prevLn=(guns||[]).length;
+  _allowEmptySave=true; // -H: save guard — collection load is always legitimate
   // Try IndexedDB first
   openDB(function(db){
     if(db){
@@ -9779,9 +9824,10 @@ function createCollection(){
   activeCollection=id;
   try{localStorage.setItem('av_active_coll',id);}catch(e){}
   var _prevLnCC=(guns||[]).length;
+  _allowEmptySave=true; // -H: save guard — legitimate empty for new collection
   guns=[];
   _logSetGuns('createCollection:reset-to-empty:'+id, 0, _prevLnCC);
-  sv(); // -G fix: flush empty array to main firearms store so refresh doesn't reload old collection
+  saveGunsToCollection(id); // -H: persist empty array for NEW collection only (don't touch main firearms store)
   milestones={};totalCleanings=0;transferredGuns=[];
   VIEW='dashboard';
   FORM=ef();
@@ -16267,6 +16313,7 @@ document.addEventListener('keydown', function(e){
 function clearAllData(){
   if(!confirm('Delete ALL firearms from inventory? This cannot be undone.\n\nTip: tap Backup first to save your data.'))return;
   var _prevLnClr=(guns||[]).length;
+  _allowEmptySave=true; // -H: save guard — user explicitly clearing all data
   guns=[];
   _logSetGuns('clearAllData:user-initiated', 0, _prevLnClr);
   // Clear IndexedDB
