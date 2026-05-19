@@ -4839,14 +4839,19 @@ function rAdd(){
       : '<button onclick="_saveEstimateToHistory()" style="background:transparent;border:1px solid #60e88060;color:#60e880;padding:5px 11px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">&#128190; Save Est.</button>';
     avb='<div class="ai-box">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap">'
-        +'<div style="font-size:12px;color:#a0b8ff;letter-spacing:.1em;font-weight:700">&#10022; MARKET ESTIMATE</div>'
+        +'<div style="display:flex;align-items:center;gap:8px"><div style="font-size:12px;color:#a0b8ff;letter-spacing:.1em;font-weight:700">&#10022; MARKET ESTIMATE</div>'
+        +'<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.05em;'+(aiVal.source==='ai'?'background:#a0c0ff25;color:#a0c0ff':'background:#60e88025;color:#60e880')+'">'+(aiVal.source==='ai'?'AI':'LOCAL')+'</span></div>'
         +'<div style="display:flex;gap:6px;align-items:center">'+_saveEstBtn+_applyBtn+'</div>'
       +'</div>'
       +'<div style="display:flex;gap:24px;margin-bottom:9px">'
       +'<div><div style="font-size:11px;color:#8a95a8;margin-bottom:2px">LOW</div><div style="font-size:16px;color:#d0d8e8;font-weight:600">'+fm(aiVal.low)+'</div></div>'
       +'<div><div style="font-size:11px;color:#8a95a8;margin-bottom:2px">MID</div><div style="font-size:18px;color:#e8c46a;font-weight:700">'+fm(aiVal.mid)+'</div></div>'
       +'<div><div style="font-size:11px;color:#8a95a8;margin-bottom:2px">HIGH</div><div style="font-size:16px;color:#d0d8e8;font-weight:600">'+fm(aiVal.high)+'</div></div>'
-      +'</div><div style="font-size:13px;color:#b0bac8;line-height:1.5">'+eh(aiVal.notes||'')+'</div></div>';
+      +'</div>'
+      +(aiVal.adjustmentReason?'<div style="font-size:12px;color:#a0c0ff;line-height:1.4;margin-bottom:6px;font-style:italic">&#9650; '+eh(aiVal.adjustmentReason)+'</div>':'')
+      +'<div style="font-size:13px;color:#b0bac8;line-height:1.5">'+eh(aiVal.notes||'')+'</div>'
+      +(aiVal.caveats?'<div style="font-size:11px;color:#8a95a8;margin-top:4px;font-style:italic">'+eh(aiVal.caveats)+'</div>':'')
+      +'</div>';
   }
 
   var adb=aiDiag?'<div class="ai-box"><div style="font-size:12px;color:#a0b8ff;letter-spacing:.1em;margin-bottom:10px;font-weight:700">✦ AI GUNSMITH DIAGNOSIS</div>'
@@ -4935,7 +4940,7 @@ function rAdd(){
 
   var valueHtml='<div class="form-grid">'
     +'<div class="form-group"><label class="lbl">Purchase Price ($)</label><input type="number" id="f_pp" value="'+eh(f.purchasePrice)+'" placeholder="0.00" oninput="FORM.purchasePrice=this.value"/></div>'
-    +'<div class="form-group"><label class="lbl">Current Value ($)</label><div style="display:flex;gap:8px"><input type="number" id="f_cv" value="'+eh(f.currentValue)+'" placeholder="0.00" style="flex:1" oninput="FORM.currentValue=this.value"/><button id="val_btn" class="btn-ai" onclick="doVal()">&#10022; '+(((appSettings.tier||'free')==='proplus' && _BYO_hasKey())?'AI Est.':'Est. Value')+'</button></div></div>'
+    +'<div class="form-group"><label class="lbl">Current Value ($)</label><div style="display:flex;gap:8px"><input type="number" id="f_cv" value="'+eh(f.currentValue)+'" placeholder="0.00" style="flex:1" oninput="FORM.currentValue=this.value"/><button id="val_btn_local" class="btn-ai" onclick="doValLocal()" style="font-size:11px;padding:6px 10px">&#128202; DB Est.</button>'+(((appSettings.tier||'free')==='proplus')?'<button id="val_btn_ai" class="btn-ai" onclick="doValAI()" style="font-size:11px;padding:6px 10px">&#10022; AI Est.</button>':'')+'</div></div>'
     +'<div class="form-group"><label class="lbl">Insurance Value ($)</label><input type="number" id="f_ins" value="'+eh(f.insuranceValue)+'" placeholder="For coverage records" oninput="FORM.insuranceValue=this.value"/></div>'
     +'</div>'+avb;
 
@@ -5999,7 +6004,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-05-16-H';   // bump on every revision
+var BUILD_TAG   = '2026-05-19-I';   // bump on every revision
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -11874,9 +11879,8 @@ function _isEstimateSaved(est){
 function _saveEstimateToHistory(){
   if(!aiVal) return;
   if(!FORM.estimateHistory) FORM.estimateHistory = [];
-  var tier = appSettings.tier || 'free';
-  var source = (tier === 'proplus' && _BYO_hasKey()) ? 'ai' : 'local';
-  if((aiVal.notes || '').indexOf('category') >= 0 || (aiVal.notes || '').indexOf('local') >= 0) source = 'local';
+  // -I: source now set directly on aiVal by doValLocal/doValAI
+  var source = aiVal.source || 'local';
 
   var entry = {
     id: 'est_' + Date.now(),
@@ -12512,6 +12516,7 @@ function _BYO_claudeCall(messages, options){
     messages: messages
   };
   if(options.system) body.system = options.system;
+  if(options.temperature != null) body.temperature = options.temperature;
 
   return fetch(_BYO_API_URL, {
     method: 'POST',
@@ -12962,70 +12967,94 @@ function claude(prompt,mt,cb){
 }
 
 function doVal(){
+  // -I: Legacy shim — calls local path. Kept for any stale references.
+  doValLocal();
+}
+
+// -I: Local database estimate — available to all tiers
+function doValLocal(){
   collect();
   if(!FORM.make||!FORM.model){toast('Enter make and model first','err');return;}
 
-  // Hybrid: Pro+ with API key → real AI; otherwise → local lookup baseline
-  var tier = appSettings.tier || 'free';
-  var canUseAI = (tier === 'proplus') && _BYO_hasKey();
+  aiLoad='val';
+  var valBtn=document.getElementById('val_btn_local');
+  if(valBtn){valBtn.disabled=true;valBtn.innerHTML='<span class="spinning">&#8635;</span> ...';}
+
+  setTimeout(function(){
+    var result=valLookup(FORM.make,FORM.model,FORM.caliber,FORM.condition,FORM.year);
+    result.source = 'local';
+    aiLoad=null;
+    aiVal=result;
+    if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#128202; DB Est.';}
+    rnd();
+  },800);
+}
+
+// -I: AI-enhanced estimate — Pro+ with BYO key only. Anchored on local DB values.
+function doValAI(){
+  collect();
+  if(!FORM.make||!FORM.model){toast('Enter make and model first','err');return;}
+  if(!requireProPlus('AI Estimate')) return;
+  if(!_BYO_requireKey('AI Estimate')) return;
 
   aiLoad='val';
-  var valBtn=document.getElementById('val_btn');
-  var valBox=document.getElementById('val_box');
-  if(valBtn){valBtn.disabled=true;valBtn.innerHTML='<span class="spinning">&#8635;</span> Estimating...';}
-  if(valBox){valBox.style.display='none';}
+  var valBtn=document.getElementById('val_btn_ai');
+  if(valBtn){valBtn.disabled=true;valBtn.innerHTML='<span class="spinning">&#8635;</span> ...';}
 
-  if(canUseAI){
-    // Real AI path — build prompt, call Claude, parse JSON shape matching valLookup output
-    var prompt = 'You are a firearms market valuation expert. Estimate current US retail market value for this firearm based on general market knowledge. Your estimate is based on training-time knowledge, not live pricing — the user understands this is an approximation.\n\n'
-      + 'Firearm: ' + FORM.make + ' ' + FORM.model
-      + (FORM.caliber ? ' (' + FORM.caliber + ')' : '')
-      + (FORM.year ? ', year ' + FORM.year : '')
-      + ', condition: ' + (FORM.condition || 'Good')
-      + '.\n\nRespond ONLY with valid JSON in this exact shape, no markdown, no extra text:\n'
-      + '{"low": 450, "mid": 550, "high": 700, "notes": "Brief description and collector context under 80 chars", "caveats": "Optional note on factors that could shift this significantly"}\n\n'
-      + 'Use USD. Round to sensible increments ($5 or $10). Notes must be under 80 chars. If you cannot estimate confidently, return conservative ranges with a clear caveat.';
+  // Step 1: Get local DB baseline to anchor the AI
+  var baseline = valLookup(FORM.make,FORM.model,FORM.caliber,FORM.condition,FORM.year);
 
-    _BYO_claudeCall([{role:'user', content: prompt}], {max_tokens:400})
-      .then(function(res){
-        var txt = (res.text || '').replace(/```json|```/g,'').trim();
-        var result;
-        try { result = JSON.parse(txt); }
-        catch(ex){
-          // Fallback to local on parse failure
-          result = valLookup(FORM.make,FORM.model,FORM.caliber,FORM.condition,FORM.year);
-          result.notes = (result.notes||'') + ' (AI parse failed — using local estimate)';
-        }
+  // Step 2: Build anchored prompt
+  var details = FORM.make + ' ' + FORM.model
+    + (FORM.caliber ? ', ' + FORM.caliber : '')
+    + (FORM.year ? ', year ' + FORM.year : '')
+    + ', condition: ' + (FORM.condition || 'Good');
+  var extras = [];
+  if(FORM.repairNotes) extras.push('Condition notes: ' + FORM.repairNotes);
+  if(FORM.barrelLength) extras.push('Barrel length: ' + FORM.barrelLength + '"');
+
+  var prompt = 'You are a firearms market valuation expert. A local database estimates the following firearm at:\n'
+    + '  Low: $' + baseline.low + ' | Mid: $' + baseline.mid + ' | High: $' + baseline.high + '\n'
+    + '  Database note: ' + (baseline.notes || 'N/A') + '\n\n'
+    + 'Firearm: ' + details + '\n'
+    + (extras.length ? extras.join('\n') + '\n' : '')
+    + '\nYour job: Using the database values as an anchor, apply adjustment factors based on the specific details above — rarity, collector demand, variant premiums or discounts, condition specifics, year of manufacture, and any modifications.\n\n'
+    + 'Respond ONLY with valid JSON, no markdown, no extra text:\n'
+    + '{"low": 450, "mid": 550, "high": 700, "adjustmentReason": "Brief explanation of why you adjusted up/down from the database baseline, under 120 chars", "notes": "Brief description and collector context under 80 chars", "caveats": "Optional note on factors that could shift this significantly"}\n\n'
+    + 'Use USD. Round to nearest $5 or $10. If the database values look reasonable and no strong adjustment factors apply, return values close to the database baseline. Do NOT invent dramatic swings without cause.';
+
+  _BYO_claudeCall([{role:'user', content: prompt}], {max_tokens:400, temperature:0})
+    .then(function(res){
+      var txt = (res.text || '').replace(/```json|```/g,'').trim();
+      var result;
+      try { result = JSON.parse(txt); }
+      catch(ex){
+        // Fallback to local on parse failure
+        result = baseline;
+        result.notes = (result.notes||'') + ' (AI parse failed — using local estimate)';
+        result.source = 'local';
         aiLoad=null;
         aiVal=result;
-        // -P: do NOT overwrite FORM.currentValue. User applies via the
-        // explicit "Use $X" button in the estimate box (see avb).
         if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
         rnd();
-      })
-      .catch(function(err){
-        _BYO_showError(err);
-        // Graceful fallback to local lookup
-        var result = valLookup(FORM.make,FORM.model,FORM.caliber,FORM.condition,FORM.year);
-        result.notes = (result.notes||'') + ' (AI failed — using local estimate)';
-        aiLoad=null;
-        aiVal=result;
-        // -P: do NOT overwrite FORM.currentValue. User applies via "Use $X".
-        if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
-        rnd();
-      });
-  } else {
-    // Local path — same as before (800ms delay for perceived work)
-    setTimeout(function(){
-      var result=valLookup(FORM.make,FORM.model,FORM.caliber,FORM.condition,FORM.year);
+        return;
+      }
+      result.source = 'ai';
       aiLoad=null;
       aiVal=result;
-      // -P: do NOT overwrite FORM.currentValue. User applies via "Use $X".
-      // Honest label for non-AI path
-      if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; Est. Value';}
+      if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
       rnd();
-    },800);
-  }
+    })
+    .catch(function(err){
+      _BYO_showError(err);
+      // Graceful fallback to local lookup
+      baseline.notes = (baseline.notes||'') + ' (AI failed — using local estimate)';
+      baseline.source = 'local';
+      aiLoad=null;
+      aiVal=baseline;
+      if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
+      rnd();
+    });
 }
 
 function valLookup(make,model,caliber,condition,year){
