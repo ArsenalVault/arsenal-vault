@@ -6005,6 +6005,11 @@ function printLabelSheet(){
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
 var BUILD_TAG   = '2026-05-19-J';   // bump on every revision
+var PDB_UPDATE_URL = 'https://arsenalvault.github.io/arsenal-vault/pricedb.json';
+var PDB_VERSION    = '2026-05-19';     // inline baseline version
+var _cachedPDB     = null;             // populated from localStorage on boot
+// Boot-time PDB cache load (synchronous — ready before any valLookup call)
+try{var _pdbRaw=localStorage.getItem('av_pricedb');if(_pdbRaw){_cachedPDB=JSON.parse(_pdbRaw);console.log('[PDB] Loaded cached DB v'+(_cachedPDB.version||'?')+' ('+(_cachedPDB.models?Object.keys(_cachedPDB.models).length:0)+' mfgs)');}}catch(e){_cachedPDB=null;console.log('[PDB] No cached DB or parse error');}
 var appSettings = {
   haptic: true,
   sounds: true,
@@ -6373,6 +6378,19 @@ function openSettings(){
         +'<button onclick="document.getElementById(\'settings_modal\').remove();_openSvLog()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#a0aab8;padding:10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">View Save Log (diagnostic)</button>'
       +'</div>'
     +'<button onclick="document.getElementById(\'settings_modal\').remove()" style="width:100%;background:#1a1d24;border:1px solid #3a4455;color:#f0f2f5;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Done</button>'
+    +'<div style="margin:16px 0;padding:14px;background:#1a2332;border:1px solid #2d3748;border-radius:8px">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:16px">&#128202;</span><span style="font-weight:600;color:#e2e8f0;font-size:14px">Price Database</span></div>'
+    +'<div style="font-size:12px;color:#a0aec0;line-height:1.6">'
+    +'<div>Source: <span style="color:#68d391">'+_pdbInfo().src+'</span></div>'
+    +'<div>Version: <span style="color:#e2e8f0">'+_pdbInfo().ver+'</span></div>'
+    +'<div>Coverage: <span style="color:#e2e8f0">'+_pdbInfo().entries+' models across '+_pdbInfo().mfgs+' manufacturers</span></div>'
+    +'<div>Updated: <span style="color:#e2e8f0">'+_pdbInfo().updated+'</span></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;margin-top:12px">'
+    +'<button id="pdb_update_btn" onclick="_pdbCheckUpdate()" class="btn-sec" style="font-size:12px;padding:8px 14px;flex:1">&#128260; Check for Update</button>'
+    +(_cachedPDB?'<button onclick="_pdbClearCache()" class="btn-sec" style="font-size:12px;padding:8px 14px;color:#fc8181">Clear Cache</button>':'')
+    +'</div>'
+    +'</div>'
     +'<div id="settings_ver" onclick="_devTap()" style="text-align:center;font-size:11px;color:#4a5568;margin-top:10px;cursor:default;-webkit-tap-highlight-color:transparent;user-select:none">ArsenalDB v'+APP_VERSION+' &middot; '+BUILD_TAG+'</div>'
     +'</div>';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
@@ -13144,6 +13162,33 @@ var PDB_ALIASES = {
   'bravo company':'bcm','bravo company manufacturing':'bcm',
   // LWRC
   'lwrc international':'lwrc','lwrci':'lwrc',
+  // Phase 2 additions
+  'tanfoglio':'eaa','european american':'eaa','european american armory':'eaa',
+  'taylor':'taylors and co','taylors':'taylors and co',
+  'kac':'knights armament','knight':'knights armament','knights':'knights armament',
+  'dan wesson':'dan wesson','dw':'dan wesson',
+  'barrett firearms':'barrett',
+  'howa legacy':'howa','legacy sports':'howa',
+  'sarsilmaz':'sar usa','sar':'sar usa',
+  'girsan':'girsan',
+  'tisas':'tisas',
+  'eaa':'eaa','tanfoglio':'eaa',
+  'franchi':'franchi',
+  'tristar':'tristar','tri-star':'tristar','tri star':'tristar',
+  'crickett':'keystone','chipmunk':'keystone',
+  'noveske rifleworks':'noveske',
+  'seekins':'seekins precision',
+  'jp':'jp enterprises',
+  'geissele automatics':'geissele',
+  'del-ton':'del-ton','delton':'del-ton',
+  'radical':'radical firearms',
+  'high standard':'high standard',
+  'volquartsen custom':'volquartsen','volquartsen firearms':'volquartsen',
+  'windham':'windham weaponry',
+  'larue':'larue tactical',
+  'cooper':'cooper firearms',
+  'citadel':'citadel',
+
 };
 
 // ── MANUFACTURER TIERS (for Tier 3 fallback) ─────────────────
@@ -13188,6 +13233,40 @@ var PDB_TIERS = {
   'ed brown':       {t:'custom',  c:{handgun:[2400,3000,3800]}},
   'les baer':       {t:'custom',  c:{handgun:[1800,2300,3000]}},
   'staccato':       {t:'custom',  c:{handgun:[1800,2400,3200]}},
+  // Phase 2 additions
+  'eaa':            {t:'value',   c:{handgun:[350,470,620]}},
+  'girsan':         {t:'value',   c:{handgun:[320,420,550]}},
+  'tisas':          {t:'value',   c:{handgun:[300,400,530]}},
+  'sar usa':        {t:'value',   c:{handgun:[300,400,530]}},
+  'citadel':        {t:'budget',  c:{handgun:[280,380,500], shotgun:[250,350,480]}},
+  'kahr':           {t:'mid',     c:{handgun:[400,530,700]}},
+  'franchi':        {t:'premium', c:{shotgun:[600,800,1050], rifle:[500,650,850]}},
+  'howa':           {t:'mid',     c:{rifle:[450,600,780]}},
+  'tristar':        {t:'value',   c:{shotgun:[400,520,670]}},
+  'dan wesson':     {t:'custom',  c:{handgun:[1200,1550,2000]}},
+  'barrett':        {t:'luxury',  c:{rifle:[3000,4500,7000]}},
+  'noveske':        {t:'custom',  c:{rifle:[2200,2700,3400]}},
+  'knights armament':{t:'custom', c:{rifle:[3000,3600,4500]}},
+  'jp enterprises': {t:'custom',  c:{rifle:[2500,3100,4000]}},
+  'larue tactical': {t:'custom',  c:{rifle:[2000,2500,3200]}},
+  'geissele':       {t:'custom',  c:{rifle:[1600,2000,2500]}},
+  'seekins precision':{t:'luxury',c:{rifle:[1400,1800,2300]}},
+  'volquartsen':    {t:'custom',  c:{handgun:[900,1200,1600], rifle:[900,1200,1600]}},
+  'cooper firearms':{t:'luxury',  c:{rifle:[1800,2300,2900]}},
+  'anschutz':       {t:'luxury',  c:{rifle:[900,1200,1700]}},
+  'high standard':  {t:'mid',     c:{handgun:[350,520,750]}},
+  'armalite':       {t:'premium', c:{rifle:[700,950,1250]}},
+  'bushmaster':     {t:'mid',     c:{rifle:[500,700,950]}},
+  'windham weaponry':{t:'mid',    c:{rifle:[550,720,920]}},
+  'radical firearms':{t:'budget', c:{rifle:[380,500,650]}},
+  'del-ton':        {t:'budget',  c:{rifle:[400,530,700]}},
+  'adams arms':     {t:'mid',     c:{rifle:[600,800,1050]}},
+  'keystone':       {t:'budget',  c:{rifle:[130,170,230]}},
+  'nosler':         {t:'luxury',  c:{rifle:[1400,1800,2300]}},
+  'ithaca':         {t:'mid',     c:{shotgun:[400,570,780]}},
+  'pedersoli':      {t:'premium', c:{rifle:[700,950,1300]}},
+  'taylors and co': {t:'mid',     c:{handgun:[400,550,730], rifle:[500,650,830]}},
+
 };
 
 // ── MAIN PRICE DATABASE ──────────────────────────────────────
@@ -13276,6 +13355,32 @@ var PDB_MODELS = {
   [['performance center'],700,950,1300,'S&W Performance Center'],
   [['performance'],650,850,1150,'S&W Performance Center model'],
   // Catch-all
+  [['model','41'],800,1050,1350,'S&W Model 41 .22 target pistol — premium'],
+  [['41'],700,950,1250,'S&W Model 41 .22 target'],
+  [['model','52'],700,950,1300,'S&W Model 52 .38 Spl target — collectible'],
+  [['model','17'],500,680,880,'S&W Model 17 K-22 Masterpiece'],
+  [['model','48'],500,680,880,'S&W Model 48 K-frame .22 WMR'],
+  [['model','586'],550,720,920,'S&W Model 586 blued .357 L-frame'],
+  [['model','610'],700,900,1150,'S&W Model 610 10mm revolver'],
+  [['model','617'],600,780,980,'S&W Model 617 .22 LR 10-shot'],
+  [['model','625'],750,950,1200,'S&W Model 625 .45 ACP N-frame'],
+  [['model','329'],700,900,1150,'S&W Model 329 PD .44 Mag Scandium'],
+  [['model','327'],700,900,1150,'S&W Model 327 .357 Mag 8-shot'],
+  [['model','351'],500,650,830,'S&W Model 351 PD .22 Mag Airlite'],
+  [['model','63'],500,650,830,'S&W Model 63 .22 LR stainless'],
+  [['model','65'],400,550,720,'S&W Model 65 .357 Mag stainless'],
+  [['model','64'],350,480,640,'S&W Model 64 .38 Spl stainless — LE classic'],
+  [['model','67'],400,550,720,'S&W Model 67 Combat Masterpiece stainless'],
+  [['sw22','victory'],350,440,560,'S&W SW22 Victory .22 LR target'],
+  [['victory'],350,440,560,'S&W Victory .22 target'],
+  [['m&p','fpc'],550,700,880,'S&W M&P FPC folding 9mm carbine'],
+  [['fpc'],550,700,880,'S&W FPC folding carbine'],
+  [['m&p','r8'],1000,1250,1550,'S&W M&P R8 Performance Center 8-shot .357'],
+  [['m&p','sport','ii'],550,700,880,'S&W M&P15 Sport II AR'],
+  [['m&p','12'],500,630,790,'S&W M&P 12 bullpup shotgun'],
+  [['model','442','performance'],500,630,790,'S&W 442 Performance Center'],
+  [['model','69'],650,820,1030,'S&W Model 69 Combat Magnum .44 Mag L-frame'],
+  [['m&p','shield','9','ez'],380,460,560,'S&W M&P9 Shield EZ 9mm'],
   [[''],300,500,700,'Smith & Wesson firearm'],
 ],
 
@@ -13363,6 +13468,20 @@ var PDB_MODELS = {
   [['le6920'],900,1150,1450,'Colt LE6920 law enforcement carbine'],
   [['mustang'],500,650,820,'Colt Mustang .380'],
   [['woodsman'],600,850,1200,'Colt Woodsman .22 — collectible'],
+  [['official police'],500,750,1100,'Colt Official Police .38 — collectible'],
+  [['police positive'],400,600,900,'Colt Police Positive .38 — collectible'],
+  [['new service'],800,1200,1800,'Colt New Service — large frame collectible'],
+  [['agent'],400,600,900,'Colt Agent .38 snub — collectible'],
+  [['lawman'],400,600,900,'Colt Lawman MK III .357'],
+  [['viper'],500,700,1000,'Colt Viper .38 — rare collectible'],
+  [['pocket positive'],400,600,900,'Colt Pocket Positive — antique'],
+  [['new army'],500,800,1300,'Colt New Army/Navy revolver — antique'],
+  [['1903'],600,900,1400,'Colt 1903 Pocket Hammerless .32 — collectible'],
+  [['vest pocket'],500,750,1100,'Colt 1908 Vest Pocket .25 — collectible'],
+  [['combat commander'],700,950,1300,'Colt Combat Commander'],
+  [['lightweight commander'],700,950,1300,'Colt Lightweight Commander'],
+  [['rail gun'],800,1050,1350,'Colt Rail Gun 1911'],
+  [['wiley clapp'],900,1150,1450,'Colt Wiley Clapp 1911 — special edition'],
   [[''],600,900,1400,'Colt firearm'],
 ],
 
@@ -13450,6 +13569,30 @@ var PDB_MODELS = {
   // Shotguns
   [['red label'],900,1200,1600,'Ruger Red Label O/U shotgun — discontinued, collectible'],
   // Catch-all
+  [['lcr','.357'],450,570,720,'Ruger LCR .357 Mag lightweight revolver'],
+  [['lcr','.38'],400,510,640,'Ruger LCR .38 Spl lightweight'],
+  [['lcrx'],430,540,680,'Ruger LCRx exposed hammer'],
+  [['lcr'],400,510,640,'Ruger LCR lightweight revolver'],
+  [['bearcat'],450,570,720,'Ruger Bearcat .22 SA revolver'],
+  [['super bearcat'],500,630,790,'Ruger Super Bearcat .22 SA'],
+  [['security six'],400,530,680,'Ruger Security-Six .357 — discontinued classic'],
+  [['speed six'],400,530,680,'Ruger Speed-Six .357 — discontinued'],
+  [['service six'],380,500,650,'Ruger Service-Six .38 — discontinued'],
+  [['gp100','44'],650,820,1030,'Ruger GP100 .44 Special'],
+  [['redhawk','.45'],800,1000,1250,'Ruger Redhawk .45 Colt/.45 ACP'],
+  [['sr1911','lightweight'],650,820,1030,'Ruger SR1911 Lightweight Commander'],
+  [['sr1911'],600,760,950,'Ruger SR1911 full-size'],
+  [['ar-556','mpr'],600,760,950,'Ruger AR-556 MPR — best value AR'],
+  [['ar-556','free float'],550,700,880,'Ruger AR-556 Free Float Handguard'],
+  [['ar-556'],500,630,790,'Ruger AR-556 AR rifle'],
+  [['sfar'],700,880,1100,'Ruger SFAR .308 compact AR — innovative'],
+  [['marlin','1895','sbl'],900,1150,1450,'Ruger/Marlin 1895 SBL .45-70'],
+  [['hawkeye','african'],1000,1250,1550,'Ruger Hawkeye African .375 H&H'],
+  [['hawkeye','alaskan'],1000,1250,1550,'Ruger Hawkeye Alaskan .375 Ruger'],
+  [['hawkeye','long range'],850,1050,1300,'Ruger Hawkeye Long Range Target'],
+  [['hawkeye'],700,880,1100,'Ruger Hawkeye bolt action'],
+  [['5.7'],550,700,880,'Ruger LC Charger 5.7x28mm'],
+  [['mini-14','ranch'],700,880,1080,'Ruger Mini-14 Ranch Rifle stainless'],
   [[''],350,500,700,'Ruger firearm'],
 ],
 
@@ -13499,6 +13642,22 @@ var PDB_MODELS = {
   [['716'],1600,2000,2500,'Sig 716i .308 rifle'],
   [['m400','tread'],800,1000,1250,'Sig M400 Tread AR rifle'],
   [['m400'],700,900,1150,'Sig M400 AR rifle'],
+  [['p322'],350,440,560,'Sig P322 .22 LR — high capacity rimfire'],
+  [['p365','rose'],500,620,770,'Sig P365 Rose (female-focused)'],
+  [['p320','flux'],600,760,950,'Sig P320 Flux brace'],
+  [['p320','nitron'],500,630,790,'Sig P320 Nitron full-size'],
+  [['p320','carry'],520,650,810,'Sig P320 Carry'],
+  [['p226','tacops'],850,1050,1300,'Sig P226 TacOps'],
+  [['p226','rx'],800,1000,1250,'Sig P226 RX w/ Romeo optic'],
+  [['p229','enhanced elite'],750,950,1200,'Sig P229 Enhanced Elite'],
+  [['p227'],650,820,1030,'Sig P227 .45 ACP — double stack'],
+  [['1911','nightmare'],900,1100,1380,'Sig 1911 Nightmare'],
+  [['1911','fastback'],850,1050,1300,'Sig 1911 Fastback Nightmare'],
+  [['1911','emperor scorpion'],900,1100,1380,'Sig 1911 Emperor Scorpion'],
+  [['1911','traditional'],850,1050,1300,'Sig 1911 Traditional Match'],
+  [['1911'],800,1000,1250,'Sig Sauer 1911'],
+  [['mosquito'],300,380,480,'Sig Mosquito .22 — discontinued'],
+  [['556xi'],1000,1250,1550,'Sig 556xi piston rifle'],
   [[''],550,750,1000,'Sig Sauer firearm'],
 ],
 
@@ -13543,6 +13702,12 @@ var PDB_MODELS = {
   [['saint'],800,1000,1300,'Springfield SAINT AR rifle'],
   [['1903'],800,1100,1600,'Springfield 1903 bolt action — milsurp'],
   [['trapdoor'],800,1200,2000,'Springfield Trapdoor — antique'],
+  [['waypoint'],1600,2000,2500,'Springfield Waypoint bolt action rifle'],
+  [['2020','waypoint'],1600,2000,2500,'Springfield 2020 Waypoint'],
+  [['2020','redline'],1400,1750,2200,'Springfield 2020 Redline bolt action'],
+  [['model 2020'],1400,1750,2200,'Springfield Model 2020 bolt action'],
+  [['emissary'],1000,1250,1550,'Springfield Emissary 1911'],
+  [['1911','ds','prodigy'],1300,1600,2000,'Springfield DS Prodigy 2011 — double stack'],
   [[''],450,650,900,'Springfield Armory firearm'],
 ],
 
@@ -13585,6 +13750,22 @@ var PDB_MODELS = {
   [['552'],250,370,520,'Remington 552 Speedmaster .22'],
   [['572'],250,370,520,'Remington 572 Fieldmaster .22 pump'],
   [['597'],200,280,380,'Remington 597 .22 semi-auto'],
+  [['model 8'],500,750,1100,'Remington Model 8 semi-auto rifle — antique'],
+  [['model 14'],400,600,900,'Remington Model 14 pump rifle — antique'],
+  [['woodsmaster'],350,500,700,'Remington Woodsmaster semi-auto rifle'],
+  [['gamemaster'],350,480,650,'Remington Gamemaster pump rifle'],
+  [['fieldmaster'],300,420,570,'Remington Fieldmaster pump .22'],
+  [['speedmaster'],250,370,520,'Remington Speedmaster semi-auto .22'],
+  [['targetmaster'],250,370,520,'Remington Targetmaster .22 bolt action'],
+  [['model 32'],2000,3000,4500,'Remington Model 32 O/U — rare collectible'],
+  [['model 31'],400,600,850,'Remington Model 31 pump shotgun — classic'],
+  [['model 58'],300,420,570,'Remington Sportsman 58 semi-auto shotgun'],
+  [['spt 48'],350,480,650,'Remington Sportsman 48 semi-auto shotgun'],
+  [['model 740'],350,480,650,'Remington 740 Woodsmaster semi-auto rifle'],
+  [['model 760'],380,510,680,'Remington 760 Gamemaster pump rifle'],
+  [['788'],400,550,750,'Remington 788 bolt action — discontinued, excellent accuracy'],
+  [['model 600'],400,570,780,'Remington Model 600 carbine — collectible'],
+  [['mohawk'],250,370,520,'Remington Mohawk — various models'],
   [[''],350,500,700,'Remington firearm'],
 ],
 
@@ -13619,6 +13800,21 @@ var PDB_MODELS = {
   [['101'],1200,1600,2200,'Winchester Model 101 O/U shotgun'],
   [['xpr'],400,530,680,'Winchester XPR bolt action'],
   [['wildcat'],200,270,360,'Winchester Wildcat .22 semi-auto'],
+  [['model 42'],1200,1800,2800,'Winchester Model 42 .410 pump — collectible'],
+  [['model 21'],3000,5000,8000,'Winchester Model 21 SxS — premium collectible'],
+  [['model 61'],600,900,1400,'Winchester Model 61 .22 pump — collectible'],
+  [['model 62'],500,750,1100,'Winchester Model 62 .22 pump — collectible'],
+  [['model 63'],800,1200,1800,'Winchester Model 63 .22 semi-auto — collectible'],
+  [['model 52'],800,1200,1800,'Winchester Model 52 .22 target — collectible'],
+  [['model 71'],1200,1800,2800,'Winchester Model 71 lever action .348 — collectible'],
+  [['model 88'],600,900,1300,'Winchester Model 88 lever action — collectible'],
+  [['model 100'],400,600,900,'Winchester Model 100 semi-auto rifle'],
+  [['model 9422'],500,750,1100,'Winchester 9422 .22 lever action — collectible'],
+  [['9422'],500,750,1100,'Winchester 9422 .22 lever action'],
+  [['model 1887'],1000,1400,2000,'Winchester Model 1887 lever shotgun'],
+  [['model 1890'],800,1200,1800,'Winchester Model 1890 .22 pump — antique'],
+  [['model 1906'],500,800,1200,'Winchester Model 1906 .22 pump — antique'],
+  [['ranger'],300,420,570,'Winchester Ranger bolt action rifle'],
   [[''],500,750,1100,'Winchester firearm'],
 ],
 
@@ -13658,6 +13854,16 @@ var PDB_MODELS = {
   [['686'],1400,1800,2400,'Beretta 686 O/U shotgun'],
   [['694'],3000,3800,4800,'Beretta 694 Sporting O/U'],
   [['1301'],1000,1250,1550,'Beretta 1301 Tactical semi-auto'],
+  [['neos'],250,330,430,'Beretta U22 Neos .22 — modular'],
+  [['stampede'],500,650,830,'Beretta Stampede SAA revolver'],
+  [['storm','cx4'],700,900,1130,'Beretta Cx4 Storm PCC'],
+  [['a350','xtrema'],1100,1400,1750,'Beretta A350 Xtrema semi-auto 3.5"'],
+  [['dt11'],5000,6500,8500,'Beretta DT11 Sporting O/U — competition premium'],
+  [['silver pigeon','v'],2800,3500,4500,'Beretta Silver Pigeon V O/U — premium'],
+  [['silver pigeon','iii'],2200,2800,3600,'Beretta Silver Pigeon III O/U'],
+  [['silver pigeon'],1600,2100,2700,'Beretta Silver Pigeon O/U'],
+  [['al391'],700,900,1150,'Beretta AL391 semi-auto shotgun — discontinued'],
+  [['690'],2200,2800,3600,'Beretta 690 Sporting O/U'],
   [[''],450,650,900,'Beretta firearm'],
 ],
 
@@ -13751,6 +13957,18 @@ var PDB_MODELS = {
   [['66'],320,430,570,'Taurus Model 66 .357 Mag'],
   [['65'],300,400,530,'Taurus Model 65 .357 Mag'],
   [['82'],280,380,500,'Taurus Model 82 .38 Spl'],
+  [['raging','judge'],700,900,1150,'Taurus Raging Judge .454 Casull'],
+  [['public defender'],380,500,650,'Taurus Public Defender poly .410/.45'],
+  [['942'],350,440,560,'Taurus 942 .22 Mag revolver'],
+  [['model 94'],300,380,480,'Taurus Model 94 .22 LR revolver'],
+  [['608'],450,570,720,'Taurus 608 .357 Mag 8-shot'],
+  [['44'],450,570,720,'Taurus Model 44 .44 Mag revolver'],
+  [['692'],500,630,790,'Taurus 692 multi-caliber .357/.38/9mm'],
+  [['1911','officer'],350,450,570,'Taurus 1911 Officer compact'],
+  [['1911'],380,480,600,'Taurus 1911 full-size'],
+  [['th45'],320,410,530,'Taurus TH45 full-size .45'],
+  [['spectrum'],200,270,360,'Taurus Spectrum .380 — ultra-compact'],
+  [['curve'],200,270,360,'Taurus Curve .380 — unique curved design'],
   [[''],250,380,550,'Taurus firearm'],
 ],
 
@@ -13857,6 +14075,17 @@ var PDB_MODELS = {
   [['drake'],500,630,790,'CZ Drake O/U shotgun'],
   [['redhead'],700,880,1100,'CZ Redhead Premier O/U'],
   [['sharp-tail'],700,880,1100,'CZ Sharp-Tail SxS shotgun'],
+  [['97b'],750,950,1200,'CZ 97B .45 ACP — full size'],
+  [['82'],300,420,570,'CZ 82 9x18 Makarov — milsurp classic'],
+  [['83'],300,420,570,'CZ 83 .380 — European classic'],
+  [['52'],250,370,520,'CZ 52 7.62x25 Tokarev — milsurp'],
+  [['vz','58'],800,1050,1350,'CZ vz.58 rifle — Czech military'],
+  [['455'],400,510,640,'CZ 455 .22 bolt action — discontinued'],
+  [['512'],400,510,640,'CZ 512 .22 semi-auto'],
+  [['1012'],500,650,830,'CZ 1012 semi-auto shotgun'],
+  [['620'],550,700,880,'CZ 620 pump shotgun'],
+  [['ts','orange'],1400,1750,2200,'CZ TS Orange competition'],
+  [['accushadow'],1300,1650,2050,'CZ Accushadow 2 competition'],
   [[''],450,650,900,'CZ firearm'],
 ],
 
@@ -13895,6 +14124,15 @@ var PDB_MODELS = {
   [['mr762'],2400,2900,3500,'HK MR762A1 .308 rifle'],
   [['sl8'],1500,1900,2400,'HK SL8 rifle'],
   [['hk416'],2400,2900,3500,'HK416 civilian variant'],
+  [['p7'],1500,2200,3200,'HK P7 squeeze-cocker — premium collectible'],
+  [['p7m8'],1800,2500,3500,'HK P7M8 — premium collectible squeeze-cocker'],
+  [['p9s'],600,850,1200,'HK P9S — discontinued, collectible'],
+  [['hk91'],2000,2800,3800,'HK91 .308 rifle — classic roller-delayed'],
+  [['hk93'],2200,3000,4000,'HK93 5.56 rifle — classic roller-delayed'],
+  [['hk94'],3000,4000,5500,'HK94 9mm carbine — scarce'],
+  [['psg1'],5000,7000,10000,'HK PSG1 sniper — extremely rare, premium collectible'],
+  [['mp7'],2000,2500,3200,'HK MP7 clone/variant'],
+  [['usc'],900,1200,1550,'HK USC .45 carbine — civilian UMP'],
   [[''],700,1000,1500,'Heckler & Koch firearm'],
 ],
 
@@ -14050,6 +14288,19 @@ var PDB_MODELS = {
   [['silver'],800,1050,1350,'Browning Silver semi-auto shotgun'],
   [['t-bolt'],600,780,980,'Browning T-Bolt .22 bolt action'],
   [['sa-22'],600,780,1000,'Browning SA-22 semi-auto .22 — takedown'],
+  [['auto-5'],500,750,1100,'Browning Auto-5 semi-auto shotgun — Brownings original'],
+  [['sweet sixteen'],600,900,1300,'Browning Sweet Sixteen Auto-5 — collectible'],
+  [['b-ss'],800,1100,1500,'Browning B-SS side-by-side shotgun'],
+  [['bl-22'],500,650,830,'Browning BL-22 lever .22'],
+  [['safari'],1000,1400,1900,'Browning Safari bolt action — collectible'],
+  [['medallion'],800,1100,1500,'Browning Medallion bolt action — collectible'],
+  [['micro midas'],700,880,1080,'Browning Micro Midas — youth/compact'],
+  [['x-bolt','speed'],850,1050,1300,'Browning X-Bolt Speed bolt action'],
+  [['x-bolt','pro','mcmillan'],1200,1500,1900,'Browning X-Bolt Pro McMillan'],
+  [['1885'],1000,1300,1650,'Browning 1885 single shot — traditional'],
+  [['b2000'],400,570,780,'Browning B2000 semi-auto shotgun — discontinued'],
+  [['gold hunter'],700,900,1150,'Browning Gold Hunter semi-auto shotgun'],
+  [['gold'],600,800,1050,'Browning Gold semi-auto shotgun'],
   [[''],600,850,1200,'Browning firearm'],
 ],
 
@@ -14589,6 +14840,300 @@ var PDB_MODELS = {
   [[''],500,750,1100,'Mauser firearm'],
 ],
 
+'adams arms': [
+  [['p2'],800,1000,1250,'Adams Arms P2 piston AR-15'],
+  [['p1'],650,820,1020,'Adams Arms P1 piston AR-15'],
+  [[''],600,800,1050,'Adams Arms piston AR'],
+],
+
+'anschutz': [
+  [['1416'],700,880,1100,'Anschutz 1416 .22 bolt action — German precision'],
+  [['1710'],1200,1500,1900,'Anschutz 1710 .22 bolt action'],
+  [['1761'],1000,1250,1550,'Anschutz 1761 .22 bolt action'],
+  [['54'],2000,2600,3400,'Anschutz Match 54 target rifle'],
+  [['1903'],1500,1900,2400,'Anschutz 1903 smallbore target'],
+  [[''],900,1200,1700,'Anschutz rimfire rifle — premium'],
+],
+
+'armalite': [
+  [['ar-10','tactical'],1200,1500,1900,'Armalite AR-10 Tactical .308'],
+  [['ar-10'],1000,1300,1650,'Armalite AR-10 .308 rifle'],
+  [['m-15','tactical'],800,1000,1250,'Armalite M-15 Tactical'],
+  [['m-15'],700,900,1150,'Armalite M-15 AR rifle'],
+  [[''],700,950,1250,'Armalite firearm'],
+],
+
+'bushmaster': [
+  [['acr'],1600,2000,2500,'Bushmaster ACR — adaptive combat rifle'],
+  [['xm-15'],600,780,980,'Bushmaster XM-15 AR rifle'],
+  [['qrc'],500,650,830,'Bushmaster QRC Quick Response Carbine'],
+  [[''],500,700,950,'Bushmaster AR rifle'],
+],
+
+'citadel': [
+  [['1911','a1'],350,440,550,'Citadel 1911-A1 full-size — budget'],
+  [['1911','compact'],350,440,550,'Citadel 1911 Compact'],
+  [['1911'],330,420,530,'Citadel 1911 — great budget 1911'],
+  [['boss','25'],350,450,570,'Citadel Boss 25 AR shotgun'],
+  [['atac'],250,330,430,'Citadel ATAC shotgun'],
+  [[''],280,380,500,'Citadel firearm'],
+],
+
+'cooper firearms': [
+  [['model 52'],1800,2300,2900,'Cooper Model 52 bolt action — precision'],
+  [['model 54'],2000,2500,3200,'Cooper Model 54 bolt action — premium'],
+  [['model 57m'],1600,2000,2500,'Cooper Model 57M .22 bolt action'],
+  [['model 21'],1800,2300,2900,'Cooper Model 21 varminter'],
+  [[''],1800,2300,2900,'Cooper Firearms bolt action — Montana made'],
+],
+
+'del-ton': [
+  [['echo','316h'],500,630,790,'Del-Ton Echo 316H AR carbine'],
+  [['echo'],450,570,720,'Del-Ton Echo AR rifle'],
+  [['sierra','316'],550,700,880,'Del-Ton Sierra 316 AR rifle'],
+  [['sport'],400,510,650,'Del-Ton Sport AR rifle — budget'],
+  [[''],400,530,700,'Del-Ton AR rifle'],
+],
+
+'eaa': [
+  [['witness','elite','match'],600,760,950,'EAA Witness Elite Match'],
+  [['witness','elite','stock'],550,700,880,'EAA Witness Elite Stock II'],
+  [['witness','polymer'],350,450,570,'EAA Witness Polymer'],
+  [['witness','hunter'],550,700,880,'EAA Witness Hunter 10mm'],
+  [['witness'],400,520,660,'EAA Tanfoglio Witness'],
+  [['girsan','regard'],350,440,560,'EAA Girsan Regard MC Beretta clone'],
+  [['mc','p35'],400,510,640,'EAA Girsan MC P35 Hi-Power clone'],
+  [['mc9'],300,380,480,'EAA Girsan MC9 compact 9mm'],
+  [['windicator'],280,360,460,'EAA Windicator .357 revolver'],
+  [[''],350,470,620,'EAA/Tanfoglio firearm'],
+],
+
+'franchi': [
+  [['affinity','3.5'],850,1050,1300,'Franchi Affinity 3.5 semi-auto shotgun'],
+  [['affinity','3','sport'],900,1100,1380,'Franchi Affinity 3 Sporting'],
+  [['affinity','3'],700,880,1100,'Franchi Affinity 3 semi-auto shotgun'],
+  [['affinity'],650,820,1030,'Franchi Affinity semi-auto'],
+  [['instinct','l'],1200,1500,1900,'Franchi Instinct L O/U shotgun'],
+  [['instinct'],1000,1250,1550,'Franchi Instinct O/U shotgun'],
+  [['momentum','elite'],600,760,950,'Franchi Momentum Elite bolt action'],
+  [['momentum'],500,630,790,'Franchi Momentum bolt action'],
+  [[''],600,800,1050,'Franchi firearm'],
+],
+
+'geissele': [
+  [['super duty'],1800,2200,2700,'Geissele Super Duty AR rifle'],
+  [['urgi'],1600,2000,2500,'Geissele URGI clone AR'],
+  [[''],1600,2000,2500,'Geissele AR rifle'],
+],
+
+'girsan': [
+  [['mc','p35','match'],500,630,790,'Girsan MC P35 Match — Hi-Power clone'],
+  [['mc','p35'],400,510,640,'Girsan MC P35 — excellent Hi-Power tribute'],
+  [['mc9'],300,380,480,'Girsan MC9 compact 9mm'],
+  [['regard','mc'],350,440,560,'Girsan Regard MC — Beretta 92 clone'],
+  [['mc28','sa'],300,380,480,'Girsan MC28 SA striker-fired'],
+  [['mc312'],400,520,660,'Girsan MC312 semi-auto shotgun'],
+  [[''],320,420,550,'Girsan firearm'],
+],
+
+'high standard': [
+  [['supermatic','trophy'],600,850,1200,'High Standard Supermatic Trophy .22 — collectible'],
+  [['supermatic','citation'],500,700,1000,'High Standard Supermatic Citation .22'],
+  [['supermatic'],450,650,950,'High Standard Supermatic .22'],
+  [['victor'],700,950,1300,'High Standard Victor .22 target'],
+  [['sport king'],350,500,700,'High Standard Sport King .22'],
+  [['sentinel'],200,320,470,'High Standard Sentinel revolver'],
+  [['derringer'],200,300,430,'High Standard derringer'],
+  [[''],350,520,750,'High Standard firearm — collectible'],
+],
+
+'howa': [
+  [['1500','hogue'],500,630,790,'Howa 1500 Hogue bolt action'],
+  [['1500','mini'],450,570,720,'Howa 1500 Mini Action bolt action'],
+  [['1500','oryx'],700,880,1100,'Howa 1500 Oryx chassis rifle'],
+  [['1500','kuiu'],600,760,950,'Howa 1500 KUIU camo'],
+  [['1500'],450,570,720,'Howa 1500 bolt action — Hogue stock'],
+  [['mini','bolt'],400,510,640,'Howa Mini Bolt'],
+  [['carbon','stalker'],800,1000,1250,'Howa Carbon Stalker'],
+  [['superlite'],600,760,950,'Howa Superlite bolt action'],
+  [[''],450,600,780,'Howa bolt action rifle'],
+],
+
+'ithaca': [
+  [['model 37','defense'],500,650,830,'Ithaca Model 37 Defense pump shotgun'],
+  [['model 37','featherlight'],500,680,900,'Ithaca Model 37 Featherlight'],
+  [['model 37'],450,620,830,'Ithaca Model 37 pump shotgun — American classic'],
+  [['37'],450,620,830,'Ithaca 37 pump shotgun'],
+  [['deerslayer'],600,780,1000,'Ithaca Deerslayer slug gun'],
+  [[''],400,570,780,'Ithaca firearm'],
+],
+
+'jp enterprises': [
+  [['jp-15'],2500,3000,3800,'JP Enterprises JP-15 precision AR'],
+  [['lrp-07'],3000,3600,4500,'JP LRP-07 .308 precision rifle'],
+  [[''],2500,3100,4000,'JP Enterprises precision rifle'],
+],
+
+'kahr': [
+  [['cw9'],300,380,480,'Kahr CW9 compact 9mm — value'],
+  [['cw380'],300,380,480,'Kahr CW380 pocket .380'],
+  [['cm9'],350,440,560,'Kahr CM9 micro compact 9mm'],
+  [['pm9'],600,760,950,'Kahr PM9 premium micro 9mm'],
+  [['pm45'],650,820,1020,'Kahr PM45 premium micro .45'],
+  [['k9'],700,880,1100,'Kahr K9 stainless 9mm — premium'],
+  [['ct9'],350,440,560,'Kahr CT9 full-size 9mm'],
+  [['st9'],450,570,720,'Kahr ST9 stainless full-size'],
+  [['p9'],600,760,950,'Kahr P9 premium polymer 9mm'],
+  [['p380'],550,700,880,'Kahr P380 premium pocket .380'],
+  [[''],400,530,700,'Kahr pistol'],
+],
+
+'keystone': [
+  [['crickett'],130,170,230,'Crickett .22 youth rifle — single shot'],
+  [[''],130,170,230,'Keystone/Crickett youth rifle'],
+],
+
+'knights armament': [
+  [['sr-25'],3500,4200,5200,'KAC SR-25 .308 precision rifle'],
+  [['sr-15'],2800,3400,4200,'KAC SR-15 5.56 rifle'],
+  [['sr25'],3500,4200,5200,'KAC SR-25'],
+  [['sr15'],2800,3400,4200,'KAC SR-15'],
+  [[''],3000,3600,4500,'Knights Armament rifle'],
+],
+
+'nosler': [
+  [['model 21'],1600,2000,2500,'Nosler Model 21 bolt action'],
+  [['model 48'],1400,1750,2200,'Nosler Model 48 bolt action'],
+  [[''],1400,1800,2300,'Nosler bolt action rifle'],
+],
+
+'noveske': [
+  [['ghetto blaster'],2800,3400,4200,'Noveske Ghetto Blaster AR SBR/pistol'],
+  [['infidel'],2200,2700,3400,'Noveske Infidel AR rifle'],
+  [['gen 4'],2200,2700,3400,'Noveske Gen 4 AR rifle'],
+  [['diplomat'],2600,3200,4000,'Noveske Diplomat'],
+  [[''],2200,2700,3400,'Noveske AR rifle — premium'],
+],
+
+'pedersoli': [
+  [['sharps'],1200,1600,2100,'Pedersoli Sharps reproduction rifle'],
+  [['1874'],1200,1600,2100,'Pedersoli 1874 Sharps'],
+  [['rolling block'],800,1050,1350,'Pedersoli Rolling Block reproduction'],
+  [['howdah'],600,780,980,'Pedersoli Howdah pistol reproduction'],
+  [['kodiak'],900,1150,1450,'Pedersoli Kodiak double rifle'],
+  [[''],700,950,1300,'Pedersoli reproduction firearm'],
+],
+
+'radical firearms': [
+  [['rf-15'],400,520,660,'Radical Firearms RF-15 AR — budget build'],
+  [['fr16'],420,540,680,'Radical Firearms FR16 AR rifle'],
+  [[''],380,500,650,'Radical Firearms AR'],
+],
+
+'sar usa': [
+  [['sar9'],350,440,560,'SAR USA SAR9 striker-fired 9mm'],
+  [['sar9x'],400,510,640,'SAR USA SAR9X compact'],
+  [['b6','hawk'],280,360,460,'SAR USA B6 Hawk 9mm'],
+  [['b6'],250,330,430,'SAR USA B6 compact 9mm — budget'],
+  [['k2p'],300,380,480,'SAR USA K2P compact 9mm'],
+  [['109t'],350,440,560,'SAR USA 109T shotgun'],
+  [[''],300,400,530,'SAR USA firearm'],
+],
+
+'seekins precision': [
+  [['havak','ph2'],1500,1850,2300,'Seekins Havak PH2 bolt action'],
+  [['havak','element'],2000,2500,3200,'Seekins Havak Element ultralight'],
+  [['havak','pro hunter'],1400,1750,2200,'Seekins Havak Pro Hunter'],
+  [['havak'],1400,1750,2200,'Seekins Havak bolt action'],
+  [['nx15'],1500,1850,2300,'Seekins NX15 AR rifle'],
+  [['sp10'],2000,2500,3200,'Seekins SP10 .308 AR'],
+  [[''],1400,1800,2300,'Seekins Precision firearm'],
+],
+
+'taylors and co': [
+  [['cattleman'],400,520,660,'Taylors Cattleman SAA reproduction'],
+  [['1873'],500,650,830,'Taylors 1873 lever action'],
+  [['smoke wagon'],450,580,740,'Taylors Smoke Wagon SAA'],
+  [['runnin iron'],500,630,790,'Taylors Runnin Iron SAA'],
+  [['1866'],700,900,1150,'Taylors 1866 Yellowboy'],
+  [[''],400,550,730,'Taylors & Co reproduction firearm'],
+],
+
+'tisas': [
+  [['1911','duty'],350,440,560,'Tisas 1911 Duty — excellent budget 1911'],
+  [['1911','carry'],380,480,600,'Tisas 1911 Carry commander'],
+  [['1911','stingray'],400,510,640,'Tisas 1911 Stingray — officer size'],
+  [['1911','a1'],300,380,480,'Tisas 1911 A1 US Army — budget GI'],
+  [['1911'],330,420,540,'Tisas 1911 — Turkish quality, budget price'],
+  [['px-9'],350,440,560,'Tisas PX-9 duty pistol'],
+  [['fatih','13'],250,330,430,'Tisas Fatih 13 compact .380'],
+  [[''],300,400,530,'Tisas firearm'],
+],
+
+'tristar': [
+  [['viper','g2'],500,630,790,'TriStar Viper G2 semi-auto shotgun'],
+  [['viper','max'],550,700,880,'TriStar Viper G2 Max'],
+  [['viper'],450,570,720,'TriStar Viper semi-auto shotgun'],
+  [['raptor'],600,760,950,'TriStar Raptor semi-auto shotgun'],
+  [['cobra','iii'],350,450,570,'TriStar Cobra III pump shotgun'],
+  [['cobra'],300,400,520,'TriStar Cobra pump shotgun'],
+  [['tt-15'],450,580,730,'TriStar TT-15 O/U shotgun'],
+  [['trinity'],500,650,830,'TriStar Trinity O/U shotgun'],
+  [[''],400,520,670,'TriStar shotgun'],
+],
+
+'volquartsen': [
+  [['scorpion'],1200,1500,1900,'Volquartsen Scorpion .22 pistol — precision'],
+  [['black mamba'],1400,1750,2200,'Volquartsen Black Mamba .22 pistol'],
+  [['summit'],1200,1500,1900,'Volquartsen Summit .22 rifle'],
+  [['if-5'],1000,1250,1550,'Volquartsen IF-5 .22 takedown rifle'],
+  [['env'],700,880,1100,'Volquartsen ENV .22 pistol'],
+  [[''],900,1200,1600,'Volquartsen rimfire — precision custom'],
+],
+
+'windham weaponry': [
+  [['src'],600,760,950,'Windham SRC AR carbine'],
+  [['mpc'],550,700,880,'Windham MPC AR rifle'],
+  [['cdm'],650,820,1020,'Windham CDM varmint AR'],
+  [['300','blackout'],650,820,1020,'Windham .300 BLK AR'],
+  [[''],550,720,920,'Windham Weaponry AR rifle'],
+],
+
+'larue tactical': [
+  [['obr'],2200,2700,3400,'LaRue OBR .308 precision rifle'],
+  [['predatar'],1800,2200,2700,'LaRue PredatAR 5.56 rifle'],
+  [['ultimate','upper'],2000,2500,3200,'LaRue Ultimate Upper AR'],
+  [[''],2000,2500,3200,'LaRue Tactical AR rifle'],
+],
+
+'dan wesson': [
+  [['specialist'],1600,2000,2500,'Dan Wesson Specialist 1911 — CZ premium'],
+  [['discretion'],2000,2500,3200,'Dan Wesson Discretion 1911'],
+  [['pointman','7'],1400,1750,2200,'Dan Wesson Pointman Seven 1911'],
+  [['pointman'],1300,1650,2050,'Dan Wesson Pointman 1911'],
+  [['valor'],1400,1750,2200,'Dan Wesson Valor 1911'],
+  [['v-bob'],1400,1750,2200,'Dan Wesson V-Bob commander 1911'],
+  [['guardian'],1200,1500,1900,'Dan Wesson Guardian .38 Spl 1911'],
+  [['wraith'],1500,1900,2400,'Dan Wesson Wraith suppressor-ready 1911'],
+  [['vigil'],1100,1400,1750,'Dan Wesson Vigil 1911 — lightweight'],
+  [['tcp'],1500,1900,2400,'Dan Wesson TCP compact 9mm 1911'],
+  [['dwx','compact'],1400,1750,2200,'Dan Wesson DWX Compact'],
+  [['dwx'],1400,1750,2200,'Dan Wesson DWX — CZ/1911 hybrid'],
+  [[''],1200,1550,2000,'Dan Wesson firearm — CZ Custom Shop'],
+],
+
+'barrett': [
+  [['m82a1'],8500,10000,12500,'Barrett M82A1 .50 BMG — iconic anti-materiel'],
+  [['m82'],8000,9500,12000,'Barrett M82 .50 BMG'],
+  [['m107a1'],11000,13000,16000,'Barrett M107A1 .50 BMG — military grade'],
+  [['m107'],10000,12000,15000,'Barrett M107 .50 BMG'],
+  [['mrad'],4500,5500,7000,'Barrett MRAD multi-caliber precision'],
+  [['rec7'],1400,1750,2200,'Barrett REC7 DI AR rifle'],
+  [['m95'],5500,6500,8000,'Barrett M95 .50 BMG bolt action'],
+  [['fieldcraft'],1600,2000,2500,'Barrett Fieldcraft ultralight bolt action'],
+  [[''],3000,4500,7000,'Barrett firearm'],
+],
+
 };
 
 // ── CALIBER-BASED FALLBACK ───────────────────────────────────
@@ -14705,19 +15250,26 @@ function valLookup(make, model, caliber, condition, year) {
     };
   }
 
+  // ── Resolve data source: cached external DB or inline baseline ──
+  var _pdb_aliases = (_cachedPDB && _cachedPDB.aliases) ? _cachedPDB.aliases : PDB_ALIASES;
+  var _pdb_models  = (_cachedPDB && _cachedPDB.models)  ? _cachedPDB.models  : PDB_MODELS;
+  var _pdb_tiers   = (_cachedPDB && _cachedPDB.tiers)   ? _cachedPDB.tiers   : PDB_TIERS;
+  var _pdb_caliber = (_cachedPDB && _cachedPDB.caliber) ? _cachedPDB.caliber : PDB_CALIBER;
+  var _pdb_platform= (_cachedPDB && _cachedPDB.platform)? _cachedPDB.platform: PDB_PLATFORM;
+
   // ── Resolve manufacturer alias → canonical key ──
   var canonical = m;
-  if (PDB_ALIASES[m]) {
-    canonical = PDB_ALIASES[m];
+  if (_pdb_aliases[m]) {
+    canonical = _pdb_aliases[m];
   } else {
     // Try substring match for multi-word aliases
-    for (var alias in PDB_ALIASES) {
-      if (m.indexOf(alias) >= 0) { canonical = PDB_ALIASES[alias]; break; }
+    for (var alias in _pdb_aliases) {
+      if (m.indexOf(alias) >= 0) { canonical = _pdb_aliases[alias]; break; }
     }
   }
 
   // ── TIER 1: Exact model match ──
-  var models = PDB_MODELS[canonical];
+  var models = _pdb_models[canonical];
   if (models) {
     for (var i = 0; i < models.length; i++) {
       var entry = models[i];
@@ -14738,9 +15290,9 @@ function valLookup(make, model, caliber, condition, year) {
   // ── TIER 2: Check if make matches any model key by substring ──
   // (handles cases where user types "smith" which might not be in aliases)
   if (!models) {
-    for (var mfg in PDB_MODELS) {
+    for (var mfg in _pdb_models) {
       if (m.indexOf(mfg) >= 0 || mfg.indexOf(m) >= 0) {
-        models = PDB_MODELS[mfg];
+        models = _pdb_models[mfg];
         canonical = mfg;
         // Re-run model matching
         for (var j = 0; j < models.length; j++) {
@@ -14758,11 +15310,11 @@ function valLookup(make, model, caliber, condition, year) {
   }
 
   // ── TIER 3: Manufacturer-tier estimation ──
-  var tierInfo = PDB_TIERS[canonical];
+  var tierInfo = _pdb_tiers[canonical];
   if (!tierInfo) {
     // Try substring match in tiers
-    for (var tk in PDB_TIERS) {
-      if (m.indexOf(tk) >= 0 || tk.indexOf(m) >= 0) { tierInfo = PDB_TIERS[tk]; canonical = tk; break; }
+    for (var tk in _pdb_tiers) {
+      if (m.indexOf(tk) >= 0 || tk.indexOf(m) >= 0) { tierInfo = _pdb_tiers[tk]; canonical = tk; break; }
     }
   }
 
@@ -14781,8 +15333,8 @@ function valLookup(make, model, caliber, condition, year) {
   }
 
   // ── TIER 4: Platform-based matching ──
-  for (var pl = 0; pl < PDB_PLATFORM.length; pl++) {
-    var platEntry = PDB_PLATFORM[pl];
+  for (var pl = 0; pl < _pdb_platform.length; pl++) {
+    var platEntry = _pdb_platform[pl];
     for (var pk = 0; pk < platEntry[0].length; pk++) {
       if (md.indexOf(platEntry[0][pk]) >= 0) {
         return price(platEntry[1], platEntry[2], platEntry[3], platEntry[4]);
@@ -14793,8 +15345,8 @@ function valLookup(make, model, caliber, condition, year) {
   // ── TIER 5: Caliber-based fallback ──
   if (caliber) {
     var cal = caliber.toLowerCase();
-    for (var ci = 0; ci < PDB_CALIBER.length; ci++) {
-      var calEntry = PDB_CALIBER[ci];
+    for (var ci = 0; ci < _pdb_caliber.length; ci++) {
+      var calEntry = _pdb_caliber[ci];
       for (var ck = 0; ck < calEntry[0].length; ck++) {
         if (cal.indexOf(calEntry[0][ck]) >= 0) {
           return price(calEntry[1], calEntry[2], calEntry[3], calEntry[4]);
@@ -14854,6 +15406,75 @@ tests.forEach(function(t) {
 });
 console.log('\nVerification: ' + pass + ' passed, ' + fail + ' failed out of ' + tests.length + ' tests');
 
+
+
+// ── PRICE DATABASE UPDATE ────────────────────────────────────────
+function _pdbCheckUpdate(){
+  var btn=document.getElementById('pdb_update_btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinning">&#8635;</span> Checking...';}
+
+  fetch(PDB_UPDATE_URL,{cache:'no-store'})
+  .then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  })
+  .then(function(data){
+    if(!data||!data.version||!data.models){
+      throw new Error('Invalid database format');
+    }
+
+    var currentVer = (_cachedPDB && _cachedPDB.version) ? _cachedPDB.version : PDB_VERSION;
+    if(data.version <= currentVer){
+      toast('Database is up to date (v'+currentVer+')');
+      if(btn){btn.disabled=false;btn.innerHTML='&#128260; Check for Update';}
+      return;
+    }
+
+    // New version available — cache it
+    var cacheObj = {
+      version: data.version,
+      models: data.models,
+      aliases: data.aliases || null,
+      tiers: data.tiers || null,
+      caliber: data.caliber || null,
+      platform: data.platform || null,
+      updated: new Date().toISOString()
+    };
+
+    try{
+      localStorage.setItem('av_pricedb', JSON.stringify(cacheObj));
+      _cachedPDB = cacheObj;
+      var mfgCount = data.models ? Object.keys(data.models).length : 0;
+      var entryCount = 0;
+      if(data.models){for(var k in data.models){entryCount += data.models[k].length;}}
+      toast('Updated to v'+data.version+' — '+entryCount+' models, '+mfgCount+' manufacturers');
+      rnd(); // re-render settings to show new version
+    }catch(e){
+      toast('Update downloaded but cache write failed — storage may be full','err');
+    }
+
+    if(btn){btn.disabled=false;btn.innerHTML='&#128260; Check for Update';}
+  })
+  .catch(function(err){
+    toast('Could not reach update server — using current database','err');
+    if(btn){btn.disabled=false;btn.innerHTML='&#128260; Check for Update';}
+  });
+}
+
+function _pdbClearCache(){
+  try{localStorage.removeItem('av_pricedb');_cachedPDB=null;toast('Cache cleared — using inline baseline v'+PDB_VERSION);rnd();}
+  catch(e){toast('Could not clear cache','err');}
+}
+
+function _pdbInfo(){
+  var src = _cachedPDB ? 'External (cached)' : 'Inline baseline';
+  var ver = (_cachedPDB && _cachedPDB.version) ? _cachedPDB.version : PDB_VERSION;
+  var mfgCount = 0, entryCount = 0;
+  var db = (_cachedPDB && _cachedPDB.models) ? _cachedPDB.models : PDB_MODELS;
+  for(var k in db){mfgCount++; entryCount += db[k].length;}
+  var updated = (_cachedPDB && _cachedPDB.updated) ? new Date(_cachedPDB.updated).toLocaleDateString() : 'Built-in';
+  return {src:src, ver:ver, mfgs:mfgCount, entries:entryCount, updated:updated};
+}
 
 // ── AUTOCOMPLETE ──────────────────────────────────────────────────────
 var MAKES=[
