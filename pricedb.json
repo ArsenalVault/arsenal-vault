@@ -1,6 +1,6 @@
 {
   "version": "2026-05-20",
-  "generated": "2026-05-20T17:18:16.678Z",
+  "generated": "2026-05-20T23:53:16.665Z",
   "models": {
     "smith & wesson": [
       [
@@ -9128,6 +9128,631 @@
         400,
         500,
         "Mossberg MC2c compact 9mm"
+      ],
+      [
+        [
+          "mossberg",
+          "940",
+          "pro",
+          "tactical"
+        ],
+        600,
+        750,
+        900,
+        "Mossberg 940 Pro Tactical"
+      ],
+      [
+        [
+          "mossberg",
+          "940",
+          "pro",
+          "waterfowl"
+        ],
+        550,
+        700,
+        850,
+        "Mossberg 940 Pro Waterfowl"
+      ],
+      [
+        [
+          "mossberg",
+          "940",
+          "pro",
+          "field"
+        ],
+        500,
+        650,
+        800,
+        "Mossberg 940 Pro Field"
+      ],
+      [
+        [
+          "mossberg",
+          "940",
+          "jm",
+          "pro"
+        ],
+        650,
+        800,
+        950,
+        "Mossberg 940 JM Pro"
+      ],
+      [
+        [
+          "mossberg",
+          "590",
+          "shockwave",
+          "spx"
+        ],
+        400,
+        500,
+        600,
+        "Mossberg 590 Shockwave SPX"
+      ],
+      [
+        [
+          "mossberg",
+          "590",
+          "shockwave"
+        ],
+        300,
+        400,
+        500,
+        "Mossberg 590 Shockwave"
+      ],
+      [
+        [
+          "mossberg",
+          "590m",
+          "mag-fed"
+        ],
+        500,
+        625,
+        750,
+        "Mossberg 590M Mag-Fed"
+      ],
+      [
+        [
+          "mossberg",
+          "590a1",
+          "retrograde"
+        ],
+        450,
+        575,
+        700,
+        "Mossberg 590A1 Retrograde"
+      ],
+      [
+        [
+          "mossberg",
+          "590a1",
+          "tactical"
+        ],
+        450,
+        575,
+        700,
+        "Mossberg 590A1"
+      ],
+      [
+        [
+          "mossberg",
+          "590",
+          "tactical"
+        ],
+        350,
+        450,
+        550,
+        "Mossberg 590 Tactical"
+      ],
+      [
+        [
+          "mossberg",
+          "590",
+          "mariner"
+        ],
+        400,
+        500,
+        600,
+        "Mossberg 590 Mariner"
+      ],
+      [
+        [
+          "mossberg",
+          "590",
+          "nightstick"
+        ],
+        350,
+        450,
+        550,
+        "Mossberg 590 Nightstick"
+      ],
+      [
+        [
+          "mossberg",
+          "500",
+          "tactical"
+        ],
+        250,
+        325,
+        400,
+        "Mossberg 500 Tactical"
+      ],
+      [
+        [
+          "mossberg",
+          "500",
+          "persuader"
+        ],
+        250,
+        325,
+        400,
+        "Mossberg 500 Persuader"
+      ],
+      [
+        [
+          "mossberg",
+          "500",
+          "mariner"
+        ],
+        300,
+        375,
+        450,
+        "Mossberg 500 Mariner"
+      ],
+      [
+        [
+          "mossberg",
+          "500",
+          "retrograde"
+        ],
+        275,
+        350,
+        425,
+        "Mossberg 500 Retrograde"
+      ],
+      [
+        [
+          "mossberg",
+          "500",
+          "field"
+        ],
+        200,
+        275,
+        350,
+        "Mossberg 500 Field"
+      ],
+      [
+        [
+          "mossberg",
+          "500",
+          "combo"
+        ],
+        250,
+        325,
+        400,
+        "Mossberg 500 Combo"
+      ],
+      [
+        [
+          "mossberg",
+          "500",
+          "hunting"
+        ],
+        200,
+        275,
+        350,
+        "Mossberg 500 Hunting"
+      ],
+      [
+        [
+          "mossberg",
+          "535",
+          "ats"
+        ],
+        250,
+        325,
+        400,
+        "Mossberg 535 ATS"
+      ],
+      [
+        [
+          "mossberg",
+          "835",
+          "ulti-mag"
+        ],
+        275,
+        350,
+        425,
+        "Mossberg 835 Ulti-Mag"
+      ],
+      [
+        [
+          "mossberg",
+          "930",
+          "tactical"
+        ],
+        400,
+        500,
+        600,
+        "Mossberg 930 Tactical"
+      ],
+      [
+        [
+          "mossberg",
+          "930",
+          "spx"
+        ],
+        450,
+        550,
+        650,
+        "Mossberg 930 SPX"
+      ],
+      [
+        [
+          "mossberg",
+          "930",
+          "jm",
+          "pro"
+        ],
+        500,
+        625,
+        750,
+        "Mossberg 930 JM Pro"
+      ],
+      [
+        [
+          "mossberg",
+          "930",
+          "field"
+        ],
+        350,
+        450,
+        550,
+        "Mossberg 930 Field"
+      ],
+      [
+        [
+          "mossberg",
+          "930",
+          "waterfowl"
+        ],
+        375,
+        475,
+        575,
+        "Mossberg 930 Waterfowl"
+      ],
+      [
+        [
+          "mossberg",
+          "maverick",
+          "88",
+          "security"
+        ],
+        150,
+        200,
+        250,
+        "Mossberg Maverick 88 Security"
+      ],
+      [
+        [
+          "mossberg",
+          "maverick",
+          "88",
+          "field"
+        ],
+        140,
+        190,
+        240,
+        "Mossberg Maverick 88 Field"
+      ],
+      [
+        [
+          "mossberg",
+          "sa-20",
+          "tactical"
+        ],
+        350,
+        450,
+        550,
+        "Mossberg SA-20 Tactical"
+      ],
+      [
+        [
+          "mossberg",
+          "sa-20",
+          "field"
+        ],
+        300,
+        400,
+        500,
+        "Mossberg SA-20 Field"
+      ],
+      [
+        [
+          "mossberg",
+          "sa-410",
+          "field"
+        ],
+        300,
+        400,
+        500,
+        "Mossberg SA-410 Field"
+      ],
+      [
+        [
+          "mossberg",
+          "patriot",
+          "predator"
+        ],
+        300,
+        375,
+        450,
+        "Mossberg Patriot Predator"
+      ],
+      [
+        [
+          "mossberg",
+          "patriot",
+          "synthetic"
+        ],
+        250,
+        325,
+        400,
+        "Mossberg Patriot Synthetic"
+      ],
+      [
+        [
+          "mossberg",
+          "patriot",
+          "walnut"
+        ],
+        275,
+        350,
+        425,
+        "Mossberg Patriot Walnut"
+      ],
+      [
+        [
+          "mossberg",
+          "patriot",
+          "night",
+          "train"
+        ],
+        350,
+        450,
+        550,
+        "Mossberg Patriot Night Train"
+      ],
+      [
+        [
+          "mossberg",
+          "patriot",
+          "revere"
+        ],
+        400,
+        500,
+        600,
+        "Mossberg Patriot Revere"
+      ],
+      [
+        [
+          "mossberg",
+          "patriot",
+          "lrt"
+        ],
+        450,
+        550,
+        650,
+        "Mossberg Patriot LRT"
+      ],
+      [
+        [
+          "mossberg",
+          "mvp",
+          "predator"
+        ],
+        400,
+        500,
+        600,
+        "Mossberg MVP Predator"
+      ],
+      [
+        [
+          "mossberg",
+          "mvp",
+          "patrol"
+        ],
+        450,
+        550,
+        650,
+        "Mossberg MVP Patrol"
+      ],
+      [
+        [
+          "mossberg",
+          "mvp",
+          "precision"
+        ],
+        700,
+        850,
+        1000,
+        "Mossberg MVP Precision"
+      ],
+      [
+        [
+          "mossberg",
+          "mvp",
+          "scout"
+        ],
+        400,
+        500,
+        600,
+        "Mossberg MVP Scout"
+      ],
+      [
+        [
+          "mossberg",
+          "mvp",
+          "lr"
+        ],
+        500,
+        625,
+        750,
+        "Mossberg MVP LR"
+      ],
+      [
+        [
+          "mossberg",
+          "mmr",
+          "tactical"
+        ],
+        700,
+        850,
+        1000,
+        "Mossberg MMR Tactical AR-15"
+      ],
+      [
+        [
+          "mossberg",
+          "mmr",
+          "hunter"
+        ],
+        650,
+        800,
+        950,
+        "Mossberg MMR Hunter AR-15"
+      ],
+      [
+        [
+          "mossberg",
+          "mmr",
+          "carbine"
+        ],
+        600,
+        750,
+        900,
+        "Mossberg MMR Carbine AR-15"
+      ],
+      [
+        [
+          "mossberg",
+          "mc1sc"
+        ],
+        250,
+        325,
+        400,
+        "Mossberg MC1sc"
+      ],
+      [
+        [
+          "mossberg",
+          "mc2c"
+        ],
+        275,
+        350,
+        425,
+        "Mossberg MC2c"
+      ],
+      [
+        [
+          "mossberg",
+          "mc2sc"
+        ],
+        275,
+        350,
+        425,
+        "Mossberg MC2sc"
+      ],
+      [
+        [
+          "mossberg",
+          "464",
+          "spx"
+        ],
+        400,
+        500,
+        600,
+        "Mossberg 464 SPX Lever Action"
+      ],
+      [
+        [
+          "mossberg",
+          "464",
+          "straight",
+          "grip"
+        ],
+        350,
+        450,
+        550,
+        "Mossberg 464 Straight Grip"
+      ],
+      [
+        [
+          "mossberg",
+          "464",
+          "tactical"
+        ],
+        400,
+        500,
+        600,
+        "Mossberg 464 Tactical"
+      ],
+      [
+        [
+          "mossberg",
+          "702",
+          "plinkster"
+        ],
+        100,
+        150,
+        200,
+        "Mossberg 702 Plinkster"
+      ],
+      [
+        [
+          "mossberg",
+          "715t",
+          "flat-top"
+        ],
+        150,
+        200,
+        250,
+        "Mossberg 715T Flat-Top"
+      ],
+      [
+        [
+          "mossberg",
+          "817",
+          "varmint"
+        ],
+        200,
+        275,
+        350,
+        "Mossberg 817 Varmint"
+      ],
+      [
+        [
+          "mossberg",
+          "international",
+          "silver",
+          "reserve"
+        ],
+        350,
+        450,
+        550,
+        "Mossberg Silver Reserve O/U"
+      ],
+      [
+        [
+          "mossberg",
+          "silver",
+          "reserve",
+          "ii"
+        ],
+        400,
+        500,
+        600,
+        "Mossberg Silver Reserve II O/U"
       ]
     ],
     "kimber": [
@@ -27192,6 +27817,1595 @@
         1250,
         1500,
         "Savage Impulse Straight-Pull"
+      ]
+    ],
+    "p.38 military and commercial pistols": [
+      [
+        [
+          "p.38",
+          "ac",
+          "1940"
+        ],
+        800,
+        1200,
+        1800,
+        "Walther P.38 AC40 WWII"
+      ],
+      [
+        [
+          "p.38",
+          "ac",
+          "1941"
+        ],
+        700,
+        1100,
+        1600,
+        "Walther P.38 AC41 WWII"
+      ],
+      [
+        [
+          "p.38",
+          "ac",
+          "1942"
+        ],
+        600,
+        950,
+        1400,
+        "Walther P.38 AC42 WWII"
+      ],
+      [
+        [
+          "p.38",
+          "ac",
+          "1943"
+        ],
+        500,
+        850,
+        1300,
+        "Walther P.38 AC43 WWII"
+      ],
+      [
+        [
+          "p.38",
+          "ac",
+          "1944"
+        ],
+        450,
+        750,
+        1200,
+        "Walther P.38 AC44 WWII"
+      ],
+      [
+        [
+          "p.38",
+          "ac",
+          "1945"
+        ],
+        500,
+        850,
+        1400,
+        "Walther P.38 AC45 WWII"
+      ],
+      [
+        [
+          "p.38",
+          "byf",
+          "1943"
+        ],
+        500,
+        850,
+        1300,
+        "Walther P.38 byf43 WWII"
+      ],
+      [
+        [
+          "p.38",
+          "byf",
+          "1944"
+        ],
+        450,
+        750,
+        1200,
+        "Walther P.38 byf44 WWII"
+      ],
+      [
+        [
+          "p.38",
+          "cyq"
+        ],
+        400,
+        700,
+        1100,
+        "Walther P.38 cyq Spreewerk WWII"
+      ],
+      [
+        [
+          "p.38",
+          "svw",
+          "1945"
+        ],
+        500,
+        900,
+        1500,
+        "Walther P.38 svw45 Mauser WWII"
+      ],
+      [
+        [
+          "p.38",
+          "zero",
+          "series"
+        ],
+        600,
+        1000,
+        1600,
+        "Walther P.38 Zero Series Pre-War"
+      ],
+      [
+        [
+          "p.38",
+          "480",
+          "code"
+        ],
+        1200,
+        2000,
+        3500,
+        "Walther P.38 480 Code Pre-War"
+      ],
+      [
+        [
+          "p.38",
+          "hp"
+        ],
+        1500,
+        2500,
+        4500,
+        "Walther HP Heeres Pistole Pre-War"
+      ],
+      [
+        [
+          "p.38",
+          "french",
+          "occupation"
+        ],
+        350,
+        600,
+        950,
+        "Walther P.38 French Occupation"
+      ],
+      [
+        [
+          "p.38",
+          "k",
+          "suffix"
+        ],
+        300,
+        500,
+        800,
+        "Walther P1 K-Suffix Bundeswehr"
+      ],
+      [
+        [
+          "p.38",
+          "p1",
+          "bundeswehr"
+        ],
+        350,
+        550,
+        850,
+        "Walther P1 Bundeswehr Post-War"
+      ],
+      [
+        [
+          "p.38",
+          "p1",
+          "aluminum"
+        ],
+        350,
+        550,
+        850,
+        "Walther P1 Aluminum Frame"
+      ],
+      [
+        [
+          "p.38",
+          "manurhin"
+        ],
+        400,
+        650,
+        1000,
+        "Manurhin P.38 French Contract"
+      ],
+      [
+        [
+          "p.38",
+          "commercial",
+          "post",
+          "war"
+        ],
+        450,
+        700,
+        1100,
+        "Walther P.38 Commercial Post-War"
+      ],
+      [
+        [
+          "p.38",
+          "steel",
+          "frame",
+          "commercial"
+        ],
+        500,
+        800,
+        1300,
+        "Walther P.38 Steel Frame Commercial"
+      ],
+      [
+        [
+          "p.38",
+          "target"
+        ],
+        600,
+        950,
+        1500,
+        "Walther P.38 Target Model"
+      ],
+      [
+        [
+          "p.38",
+          "cutaway"
+        ],
+        800,
+        1400,
+        2200,
+        "Walther P.38 Cutaway Training"
+      ],
+      [
+        [
+          "p.38",
+          "interarms"
+        ],
+        450,
+        700,
+        1100,
+        "Walther P.38 Interarms Import"
+      ],
+      [
+        [
+          "p.38",
+          "100th",
+          "anniversary"
+        ],
+        700,
+        1100,
+        1800,
+        "Walther P.38 100th Anniversary"
+      ],
+      [
+        [
+          "p.38",
+          "k",
+          "frame"
+        ],
+        300,
+        500,
+        800,
+        "Walther P.38 K-Frame Lightweight"
+      ],
+      [
+        [
+          "p.38"
+        ],
+        400,
+        650,
+        1100,
+        "Walther P.38 Military/Commercial Standard"
+      ]
+    ],
+    "olympic arms inc": [
+      [
+        [
+          "olympic",
+          "arms",
+          "k23b",
+          "tactical"
+        ],
+        450,
+        600,
+        750,
+        "Olympic Arms K23B Tactical AR-15"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k3b",
+          "carbine"
+        ],
+        400,
+        550,
+        700,
+        "Olympic Arms K3B Carbine AR-15"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k4b",
+          "a3"
+        ],
+        425,
+        575,
+        725,
+        "Olympic Arms K4B-A3 AR-15"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k8",
+          "targetmatch"
+        ],
+        500,
+        650,
+        800,
+        "Olympic Arms K8 Targetmatch AR-15"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k9",
+          "gl",
+          "carbine"
+        ],
+        450,
+        600,
+        750,
+        "Olympic Arms K9-GL Carbine 9mm"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k10",
+          "sub",
+          "carbine"
+        ],
+        475,
+        625,
+        775,
+        "Olympic Arms K10 Sub Carbine"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k16",
+          "free",
+          "float"
+        ],
+        500,
+        650,
+        800,
+        "Olympic Arms K16 Free Float AR-15"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k30",
+          "direct",
+          "impingement"
+        ],
+        425,
+        575,
+        725,
+        "Olympic Arms K30 Direct Impingement"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k40",
+          "gl",
+          "carbine"
+        ],
+        475,
+        625,
+        775,
+        "Olympic Arms K40-GL Carbine .40 S&W"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k45",
+          "carbine"
+        ],
+        475,
+        625,
+        775,
+        "Olympic Arms K45 Carbine .45 ACP"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "plinker",
+          "plus"
+        ],
+        375,
+        500,
+        625,
+        "Olympic Arms Plinker Plus AR-15"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "ml-1"
+        ],
+        425,
+        575,
+        725,
+        "Olympic Arms ML-1 Match AR-15"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "ml-2"
+        ],
+        450,
+        600,
+        750,
+        "Olympic Arms ML-2 Match AR-15"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "sm-1",
+          "servicematch"
+        ],
+        475,
+        625,
+        775,
+        "Olympic Arms SM-1 Servicematch"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "um-1",
+          "ultramatch"
+        ],
+        525,
+        675,
+        825,
+        "Olympic Arms UM-1 Ultramatch"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "gamestalker"
+        ],
+        500,
+        650,
+        800,
+        "Olympic Arms Gamestalker AR-15"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "big",
+          "deuce"
+        ],
+        600,
+        775,
+        950,
+        "Olympic Arms Big Deuce .223 WSSM"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k74",
+          "carbine"
+        ],
+        450,
+        600,
+        750,
+        "Olympic Arms K74 Carbine 5.45x39"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k68",
+          "carbine"
+        ],
+        475,
+        625,
+        775,
+        "Olympic Arms K68 Carbine 6.8 SPC"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "oa-93"
+        ],
+        700,
+        900,
+        1100,
+        "Olympic Arms OA-93 AR Pistol"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "oa-98"
+        ],
+        650,
+        850,
+        1050,
+        "Olympic Arms OA-98 AR Pistol"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "whitney",
+          "wolverine"
+        ],
+        250,
+        350,
+        450,
+        "Olympic Arms Whitney Wolverine .22 LR"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "enforcer"
+        ],
+        425,
+        575,
+        725,
+        "Olympic Arms Enforcer 1911 .45 ACP"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "cohort"
+        ],
+        375,
+        500,
+        625,
+        "Olympic Arms Cohort 1911 .45 ACP"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "safari",
+          "giraffe"
+        ],
+        550,
+        700,
+        850,
+        "Olympic Arms Safari Giraffe .458 SOCOM"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k3b-m4"
+        ],
+        400,
+        550,
+        700,
+        "Olympic Arms K3B-M4 Carbine"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k3b-ft"
+        ],
+        425,
+        575,
+        725,
+        "Olympic Arms K3B-FT Flat-Top"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k3b-far"
+        ],
+        450,
+        600,
+        750,
+        "Olympic Arms K3B-FAR Featherweight"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "k4b"
+        ],
+        400,
+        550,
+        700,
+        "Olympic Arms K4B AR-15 Rifle"
+      ],
+      [
+        [
+          "olympic",
+          "arms",
+          "pcr"
+        ],
+        375,
+        500,
+        625,
+        "Olympic Arms PCR AR-15"
+      ]
+    ],
+    "navy arms company": [
+      [
+        [
+          "navy arms",
+          "1873",
+          "rifle",
+          "deluxe"
+        ],
+        800,
+        1100,
+        1400,
+        "Navy Arms 1873 Winchester Rifle Deluxe"
+      ],
+      [
+        [
+          "navy arms",
+          "1873",
+          "rifle",
+          "standard"
+        ],
+        600,
+        850,
+        1100,
+        "Navy Arms 1873 Winchester Rifle Standard"
+      ],
+      [
+        [
+          "navy arms",
+          "1873",
+          "carbine"
+        ],
+        550,
+        800,
+        1050,
+        "Navy Arms 1873 Winchester Carbine"
+      ],
+      [
+        [
+          "navy arms",
+          "1866",
+          "yellowboy",
+          "rifle"
+        ],
+        650,
+        900,
+        1150,
+        "Navy Arms 1866 Yellowboy Rifle"
+      ],
+      [
+        [
+          "navy arms",
+          "1866",
+          "yellowboy",
+          "carbine"
+        ],
+        600,
+        850,
+        1100,
+        "Navy Arms 1866 Yellowboy Carbine"
+      ],
+      [
+        [
+          "navy arms",
+          "henry",
+          "rifle",
+          "military"
+        ],
+        700,
+        950,
+        1200,
+        "Navy Arms Henry Military Rifle"
+      ],
+      [
+        [
+          "navy arms",
+          "henry",
+          "rifle",
+          "iron frame"
+        ],
+        650,
+        900,
+        1150,
+        "Navy Arms Henry Iron Frame Rifle"
+      ],
+      [
+        [
+          "navy arms",
+          "rolling",
+          "block",
+          "buffalo"
+        ],
+        500,
+        700,
+        900,
+        "Navy Arms Rolling Block Buffalo Rifle"
+      ],
+      [
+        [
+          "navy arms",
+          "rolling",
+          "block",
+          "carbine"
+        ],
+        450,
+        650,
+        850,
+        "Navy Arms Rolling Block Carbine"
+      ],
+      [
+        [
+          "navy arms",
+          "sharps",
+          "cavalry",
+          "carbine"
+        ],
+        600,
+        850,
+        1100,
+        "Navy Arms Sharps Cavalry Carbine"
+      ],
+      [
+        [
+          "navy arms",
+          "sharps",
+          "rifle"
+        ],
+        700,
+        950,
+        1200,
+        "Navy Arms Sharps Rifle"
+      ],
+      [
+        [
+          "navy arms",
+          "1858",
+          "remington",
+          "stainless"
+        ],
+        250,
+        350,
+        450,
+        "Navy Arms 1858 Remington Revolver Stainless"
+      ],
+      [
+        [
+          "navy arms",
+          "1858",
+          "remington"
+        ],
+        200,
+        300,
+        400,
+        "Navy Arms 1858 Remington Revolver"
+      ],
+      [
+        [
+          "navy arms",
+          "1860",
+          "army"
+        ],
+        200,
+        300,
+        400,
+        "Navy Arms 1860 Army Revolver"
+      ],
+      [
+        [
+          "navy arms",
+          "1851",
+          "navy"
+        ],
+        180,
+        280,
+        380,
+        "Navy Arms 1851 Navy Revolver"
+      ],
+      [
+        [
+          "navy arms",
+          "1847",
+          "walker"
+        ],
+        250,
+        350,
+        450,
+        "Navy Arms 1847 Walker Revolver"
+      ],
+      [
+        [
+          "navy arms",
+          "colt",
+          "dragoon"
+        ],
+        220,
+        320,
+        420,
+        "Navy Arms Colt Dragoon Revolver"
+      ],
+      [
+        [
+          "navy arms",
+          "schofield",
+          "top",
+          "break"
+        ],
+        500,
+        700,
+        900,
+        "Navy Arms Schofield Top Break Revolver"
+      ],
+      [
+        [
+          "navy arms",
+          "1875",
+          "schofield",
+          "cavalry"
+        ],
+        550,
+        750,
+        950,
+        "Navy Arms 1875 Schofield Cavalry Model"
+      ],
+      [
+        [
+          "navy arms",
+          "bisley",
+          "model"
+        ],
+        400,
+        550,
+        700,
+        "Navy Arms Bisley Model Revolver"
+      ],
+      [
+        [
+          "navy arms",
+          "flat",
+          "top",
+          "target"
+        ],
+        450,
+        600,
+        750,
+        "Navy Arms Flat Top Target Revolver"
+      ],
+      [
+        [
+          "navy arms",
+          "1873",
+          "single",
+          "action",
+          "cavalry"
+        ],
+        400,
+        550,
+        700,
+        "Navy Arms 1873 Single Action Cavalry Model"
+      ],
+      [
+        [
+          "navy arms",
+          "1873",
+          "single",
+          "action",
+          "artillery"
+        ],
+        400,
+        550,
+        700,
+        "Navy Arms 1873 Single Action Artillery Model"
+      ],
+      [
+        [
+          "navy arms",
+          "1873",
+          "single",
+          "action"
+        ],
+        350,
+        500,
+        650,
+        "Navy Arms 1873 Single Action Revolver"
+      ],
+      [
+        [
+          "navy arms",
+          "frontier",
+          "revolver"
+        ],
+        350,
+        500,
+        650,
+        "Navy Arms Frontier Revolver"
+      ],
+      [
+        [
+          "navy arms",
+          "lightning",
+          "pump",
+          "rifle"
+        ],
+        500,
+        700,
+        900,
+        "Navy Arms Lightning Pump Action Rifle"
+      ],
+      [
+        [
+          "navy arms",
+          "double",
+          "barrel",
+          "shotgun"
+        ],
+        300,
+        450,
+        600,
+        "Navy Arms Double Barrel Shotgun"
+      ],
+      [
+        [
+          "navy arms",
+          "coach",
+          "gun"
+        ],
+        280,
+        400,
+        520,
+        "Navy Arms Coach Gun"
+      ],
+      [
+        [
+          "navy arms",
+          "hawken",
+          "rifle"
+        ],
+        300,
+        425,
+        550,
+        "Navy Arms Hawken Rifle"
+      ],
+      [
+        [
+          "navy arms",
+          "kentucky",
+          "rifle"
+        ],
+        250,
+        375,
+        500,
+        "Navy Arms Kentucky Rifle"
+      ]
+    ],
+    "nambu pistols": [
+      [
+        [
+          "nambu",
+          "type",
+          "14",
+          "late"
+        ],
+        400,
+        650,
+        900,
+        "Nambu Type 14 Late War"
+      ],
+      [
+        [
+          "nambu",
+          "type",
+          "14",
+          "early"
+        ],
+        600,
+        900,
+        1400,
+        "Nambu Type 14 Early Production"
+      ],
+      [
+        [
+          "nambu",
+          "type",
+          "14",
+          "nagoya"
+        ],
+        500,
+        750,
+        1100,
+        "Nambu Type 14 Nagoya Arsenal"
+      ],
+      [
+        [
+          "nambu",
+          "type",
+          "94"
+        ],
+        300,
+        500,
+        800,
+        "Nambu Type 94"
+      ],
+      [
+        [
+          "nambu",
+          "papa",
+          "nambu"
+        ],
+        2500,
+        4000,
+        6500,
+        "Papa Nambu (Grandpa Nambu) 8mm"
+      ],
+      [
+        [
+          "nambu",
+          "baby",
+          "nambu",
+          "7mm"
+        ],
+        1200,
+        1800,
+        2800,
+        "Baby Nambu 7mm"
+      ],
+      [
+        [
+          "nambu",
+          "type",
+          "26",
+          "revolver"
+        ],
+        400,
+        700,
+        1100,
+        "Type 26 Nambu Revolver 9mm"
+      ],
+      [
+        [
+          "nambu",
+          "1902",
+          "grandpa"
+        ],
+        2500,
+        4000,
+        6500,
+        "Nambu 1902 Grandpa Pistol"
+      ],
+      [
+        [
+          "nambu",
+          "1904",
+          "papa"
+        ],
+        2200,
+        3500,
+        5500,
+        "Nambu 1904 Papa Pistol"
+      ],
+      [
+        [
+          "nambu",
+          "type",
+          "14",
+          "kiska"
+        ],
+        350,
+        550,
+        850,
+        "Nambu Type 14 Kiska Variant"
+      ],
+      [
+        [
+          "nambu",
+          "type",
+          "14",
+          "small",
+          "trigger"
+        ],
+        550,
+        850,
+        1300,
+        "Nambu Type 14 Small Trigger Guard"
+      ],
+      [
+        [
+          "nambu",
+          "type",
+          "14",
+          "large",
+          "trigger"
+        ],
+        450,
+        700,
+        1050,
+        "Nambu Type 14 Large Trigger Guard"
+      ],
+      [
+        [
+          "nambu",
+          "hamada",
+          "type",
+          "2"
+        ],
+        800,
+        1400,
+        2200,
+        "Hamada Type 2 (Nambu Design)"
+      ],
+      [
+        [
+          "nambu",
+          "type",
+          "14",
+          "matching"
+        ],
+        550,
+        850,
+        1300,
+        "Nambu Type 14 Matching Numbers"
+      ],
+      [
+        [
+          "nambu",
+          "type",
+          "14",
+          "arsenal",
+          "marked"
+        ],
+        500,
+        800,
+        1200,
+        "Nambu Type 14 Arsenal Marked"
+      ],
+      [
+        [
+          "nambu",
+          "baby",
+          "nambu"
+        ],
+        1200,
+        1800,
+        2800,
+        "Baby Nambu Pistol"
+      ],
+      [
+        [
+          "nambu",
+          "type",
+          "14",
+          "transitional"
+        ],
+        550,
+        850,
+        1250,
+        "Nambu Type 14 Transitional Model"
+      ],
+      [
+        [
+          "nambu",
+          "type",
+          "14"
+        ],
+        400,
+        650,
+        1000,
+        "Nambu Type 14 Pistol 8mm Nambu"
+      ],
+      [
+        [
+          "nambu",
+          "8mm"
+        ],
+        400,
+        650,
+        1000,
+        "Nambu 8mm Pistol"
+      ],
+      [
+        [
+          "nambu",
+          "pistol"
+        ],
+        400,
+        650,
+        1000,
+        "Nambu Military Pistol"
+      ]
+    ],
+    "montana rifle company": [
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "extreme",
+          "weather",
+          "ti",
+          "titanium"
+        ],
+        3200,
+        3800,
+        4500,
+        "Montana Rifle Company Extreme Weather Ti"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "american",
+          "legends",
+          "rifle",
+          "alr"
+        ],
+        2400,
+        2900,
+        3400,
+        "Montana Rifle Company American Legends Rifle (ALR)"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "american",
+          "standard",
+          "rifle",
+          "asr"
+        ],
+        1800,
+        2200,
+        2600,
+        "Montana Rifle Company American Standard Rifle (ASR)"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "dangerous",
+          "game",
+          "rifle",
+          "dgr"
+        ],
+        2800,
+        3400,
+        4000,
+        "Montana Rifle Company Dangerous Game Rifle (DGR)"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "professional",
+          "hunter",
+          "rifle",
+          "phr"
+        ],
+        2600,
+        3200,
+        3800,
+        "Montana Rifle Company Professional Hunter Rifle (PHR)"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "alpine",
+          "rifle",
+          "mar"
+        ],
+        2000,
+        2500,
+        3000,
+        "Montana Rifle Company Alpine Rifle (MAR)"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "xtreme",
+          "weather",
+          "ti",
+          "300",
+          "win",
+          "mag"
+        ],
+        3300,
+        3900,
+        4600,
+        "Montana Rifle Company Extreme Weather Ti .300 Win Mag"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "xtreme",
+          "weather",
+          "ti",
+          "7mm",
+          "rem",
+          "mag"
+        ],
+        3300,
+        3900,
+        4600,
+        "Montana Rifle Company Extreme Weather Ti 7mm Rem Mag"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "xtreme",
+          "weather",
+          "ti",
+          "6.5",
+          "creedmoor"
+        ],
+        3200,
+        3800,
+        4500,
+        "Montana Rifle Company Extreme Weather Ti 6.5 Creedmoor"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "alr",
+          "300",
+          "win",
+          "mag"
+        ],
+        2500,
+        3000,
+        3500,
+        "Montana Rifle Company ALR .300 Win Mag"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "alr",
+          "7mm",
+          "rem",
+          "mag"
+        ],
+        2500,
+        3000,
+        3500,
+        "Montana Rifle Company ALR 7mm Rem Mag"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "alr",
+          "6.5",
+          "creedmoor"
+        ],
+        2400,
+        2900,
+        3400,
+        "Montana Rifle Company ALR 6.5 Creedmoor"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "asr",
+          "308",
+          "win"
+        ],
+        1800,
+        2200,
+        2600,
+        "Montana Rifle Company ASR .308 Win"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "asr",
+          "30-06"
+        ],
+        1800,
+        2200,
+        2600,
+        "Montana Rifle Company ASR .30-06"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "asr",
+          "6.5",
+          "creedmoor"
+        ],
+        1800,
+        2200,
+        2600,
+        "Montana Rifle Company ASR 6.5 Creedmoor"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "dgr",
+          "375",
+          "h&h"
+        ],
+        2900,
+        3500,
+        4100,
+        "Montana Rifle Company DGR .375 H&H"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "dgr",
+          "416",
+          "rigby"
+        ],
+        3000,
+        3600,
+        4200,
+        "Montana Rifle Company DGR .416 Rigby"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "phr",
+          "300",
+          "win",
+          "mag"
+        ],
+        2700,
+        3300,
+        3900,
+        "Montana Rifle Company PHR .300 Win Mag"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "phr",
+          "338",
+          "win",
+          "mag"
+        ],
+        2700,
+        3300,
+        3900,
+        "Montana Rifle Company PHR .338 Win Mag"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "mar",
+          "270",
+          "win"
+        ],
+        2000,
+        2500,
+        3000,
+        "Montana Rifle Company MAR .270 Win"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "mar",
+          "280",
+          "ackley"
+        ],
+        2100,
+        2600,
+        3100,
+        "Montana Rifle Company MAR .280 Ackley"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "x2",
+          "rifle"
+        ],
+        2200,
+        2700,
+        3200,
+        "Montana Rifle Company X2 Rifle"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "avr",
+          "american",
+          "varmint"
+        ],
+        1900,
+        2400,
+        2900,
+        "Montana Rifle Company American Varmint Rifle (AVR)"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "1999",
+          "action"
+        ],
+        1600,
+        2000,
+        2400,
+        "Montana Rifle Company 1999 Action Rifle"
+      ],
+      [
+        [
+          "montana",
+          "rifle",
+          "company",
+          "extreme",
+          "weather"
+        ],
+        2400,
+        2900,
+        3400,
+        "Montana Rifle Company Extreme Weather"
       ]
     ]
   },
