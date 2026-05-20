@@ -5388,6 +5388,7 @@ function rIns(){
             +'<div style="font-size:12px;color:#8a95a8;margin-top:2px">'+eh(g.type||'—')+' &middot; '+eh(g.caliber)+'</div>'
             +'<div style="font-size:12px;color:#8a95a8">SN: '+(g.serialNumber||'N/A')+(g.year?' &middot; '+g.year:'')+'</div>'
             +'<div style="font-size:12px;color:#8a95a8">Condition: '+g.condition+(g.storageLocation?' &middot; '+eh(g.storageLocation):'')+'</div>'
+            +_cpReportInline(g)
           +'</div>'
           +'<div style="text-align:right;flex-shrink:0;padding-left:6px">'
             +'<div style="color:#a0c0ff;font-weight:700;font-size:15px">'+fm(insVal)+'</div>'
@@ -5482,6 +5483,7 @@ function rTheft(){
             +'<div style="font-size:13px;color:#e8c46a;font-weight:600;margin-top:2px">SN: '+(g.serialNumber||'NOT RECORDED')+'</div>'
             +'<div style="font-size:12px;color:#8a95a8;margin-top:2px">'+eh(g.type||'—')+' &middot; '+eh(g.caliber)+(g.year?' &middot; '+g.year:'')+'</div>'
             +'<div style="font-size:12px;color:#8a95a8">Condition: '+g.condition+'</div>'
+            +_cpReportInline(g)+_cpTheftFeatures(g)
           +'</div>'
           +'<div style="text-align:right;flex-shrink:0;padding-left:6px">'
             +'<div style="color:#e8c46a;font-weight:700">'+fm(g.currentValue)+'</div>'
@@ -5616,9 +5618,10 @@ function printIns(){
 
     var summaryRows=selGuns.map(function(g,i){
       var insVal=parseFloat(g.insuranceValue)||parseFloat(g.currentValue)||0;
-      return '<tr><td>'+(i+1)+'</td><td>'+esc(g.make)+' '+esc(g.model)+'</td><td>'+esc(g.type||'—')+'</td><td>'+esc(g.caliber)+'</td><td>'+esc(g.serialNumber||'N/A')+'</td><td>'+esc(g.year||'—')+'</td><td>'+esc(g.condition)+'</td><td style="text-align:right">'+fm(g.purchasePrice)+'</td><td style="text-align:right;font-weight:bold">'+fm(insVal)+'</td></tr>';
+      var cpGrade='';if(g.conditionProfile&&g.conditionProfile.totalMultiplier){var _p=Math.round((g.conditionProfile.totalMultiplier-1)*100);cpGrade=(_p>=0?'+':'')+_p+'%';}
+      return '<tr><td>'+(i+1)+'</td><td>'+esc(g.make)+' '+esc(g.model)+'</td><td>'+esc(g.type||'—')+'</td><td>'+esc(g.caliber)+'</td><td>'+esc(g.serialNumber||'N/A')+'</td><td>'+esc(g.year||'—')+'</td><td>'+esc(g.condition)+'</td><td>'+esc(cpGrade||'—')+'</td><td style="text-align:right">'+fm(g.purchasePrice)+'</td><td style="text-align:right;font-weight:bold">'+fm(insVal)+'</td></tr>';
     }).join('');
-    html+='<table class="summary-tbl"><thead><tr><th>#</th><th>Make &amp; Model</th><th>Type</th><th>Caliber</th><th>Serial #</th><th>Year</th><th>Condition</th><th>Purchase Price</th><th>Insured Value</th></tr></thead><tbody>'+summaryRows+'</tbody></table>';
+    html+='<table class="summary-tbl"><thead><tr><th>#</th><th>Make &amp; Model</th><th>Type</th><th>Caliber</th><th>Serial #</th><th>Year</th><th>Condition</th><th>Grade</th><th>Purchase Price</th><th>Insured Value</th></tr></thead><tbody>'+summaryRows+'</tbody></table>';
     html+='<div class="summary-total">Total Insured Value: '+fm(totalIns)+'</div>';
     html+='<div class="summary-total" style="font-size:13px;color:#555;font-weight:600">Total Market Value: '+fm(totalMkt)+'</div>';
 
@@ -5653,7 +5656,8 @@ function printIns(){
       if(g.storageLocation) gRows+='<div class="gun-row"><span class="gun-label">Storage Location:</span> '+esc(g.storageLocation)+'</div>';
 
       html+='<div class="gun-block"><div class="gun-title">'+esc(g.make)+' '+esc(g.model)+'</div>'
-        +'<div class="gun-grid">'+gRows+'</div>';
+        +'<div class="gun-grid">'+gRows+'</div>'
+        +_cpPrintClaimBlock(g, esc);
 
       // Photos (up to 4, 2×2)
       var photos=gunPhotos[i]||[];
@@ -5850,6 +5854,21 @@ function printTheft(){
     html+='<div class="total-loss">Total Estimated Loss: '+fm(totalLoss)+'</div>';
     html+='</div>';
 
+    // -L: Per-gun distinguishing features from condition profile
+    var hasAnyProfile=selGuns.some(function(g){return g.conditionProfile&&g.conditionProfile.answers&&Object.keys(g.conditionProfile.answers).length>0;});
+    if(hasAnyProfile){
+      html+='<div class="section">'
+        +'<div class="sec-head">Distinguishing Physical Features</div>'
+        +'<div style="font-size:11px;color:#555;margin-bottom:10px">Physical characteristics to aid in identification and recovery</div>';
+      selGuns.forEach(function(g,i){
+        var block=_cpPrintTheftBlock(g, esc);
+        if(block){
+          html+='<div style="margin-bottom:8px"><div style="font-size:13px;font-weight:800;margin-bottom:4px">'+(i+1)+'. '+esc(g.make)+' '+esc(g.model)+' <span style="color:#c00;font-weight:900">SN: '+esc(g.serialNumber||'N/A')+'</span></div>'+block+'</div>';
+        }
+      });
+      html+='</div>';
+    }
+
     // Photo appendix
     var hasAnyPhotos=gunPhotos.some(function(p){return p.filter(Boolean).length>0;});
     if(hasAnyPhotos){
@@ -6007,7 +6026,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-05-19-K';   // bump on every revision
+var BUILD_TAG   = '2026-05-20-L';   // bump on every revision
 var PDB_UPDATE_URL = 'https://arsenaldb.com/pricedb.json';
 var PDB_VERSION    = '2026-05-19';     // inline baseline version
 var _cachedPDB     = null;             // populated from localStorage on boot
@@ -10596,12 +10615,17 @@ function _idRunAnalysis(base64, mediaType){
   .then(function(res){
     var text=res.text||'';
     try{
-      // Extract JSON — may have markdown fences
+      // Extract JSON — may have markdown fences or surrounding text
       var clean=text.replace(/```json|```/g,'').trim();
       // Handle case where model includes reasoning before JSON
       var jsonStart=clean.indexOf('{');
       var jsonEnd=clean.lastIndexOf('}');
-      if(jsonStart>=0&&jsonEnd>jsonStart) clean=clean.substring(jsonStart,jsonEnd+1);
+      if(jsonStart>=0&&jsonEnd>jsonStart){
+        clean=clean.substring(jsonStart,jsonEnd+1);
+      } else {
+        // No JSON braces found at all — show what came back
+        throw new Error('NO_JSON');
+      }
       var result=JSON.parse(clean);
 
       // -K: PDB validation + computed confidence
@@ -10609,7 +10633,10 @@ function _idRunAnalysis(base64, mediaType){
 
       showIdentifierResult(result, base64, mediaType);
     }catch(ex){
-      showIdentifierError('Could not parse AI response');
+      // Show diagnostic info so user can report the issue
+      var preview=text.length>200?text.substring(0,200)+'...':text;
+      if(!text) preview='(empty response)';
+      showIdentifierError('Could not parse AI response.\n\nRaw response preview:\n'+preview);
     }
   })
   .catch(function(err){
@@ -10910,12 +10937,18 @@ function _idRunAssisted(){
       var clean=text.replace(/```json|```/g,'').trim();
       var jsonStart=clean.indexOf('{');
       var jsonEnd=clean.lastIndexOf('}');
-      if(jsonStart>=0&&jsonEnd>jsonStart) clean=clean.substring(jsonStart,jsonEnd+1);
+      if(jsonStart>=0&&jsonEnd>jsonStart){
+        clean=clean.substring(jsonStart,jsonEnd+1);
+      } else {
+        throw new Error('NO_JSON');
+      }
       var result=JSON.parse(clean);
       result=_idValidateAndScore(result);
       showIdentifierResult(result, _idLastImage.base64, _idLastImage.mediaType);
     }catch(ex){
-      showIdentifierError('Could not parse AI response');
+      var preview=text.length>200?text.substring(0,200)+'...':text;
+      if(!text) preview='(empty response)';
+      showIdentifierError('Could not parse AI response.\n\nRaw response preview:\n'+preview);
     }
   })
   .catch(function(err){
@@ -10973,10 +11006,16 @@ function applyIdentifierResult(result){
 function showIdentifierError(msg){
   var modal=document.getElementById('identifier_modal');
   if(!modal) return;
-  modal.innerHTML='<div style="background:#222835;border:2px solid #ff707050;border-radius:12px;padding:24px;max-width:340px;width:100%;text-align:center">'
+  // Split message — if it contains raw response, show it in a scrollable area
+  var parts=msg.split('\n\nRaw response preview:\n');
+  var mainMsg=parts[0];
+  var rawPreview=parts[1]||'';
+
+  modal.innerHTML='<div style="background:#222835;border:2px solid #ff707050;border-radius:12px;padding:24px;max-width:380px;width:100%;text-align:center;max-height:90vh;overflow-y:auto">'
     +'<div style="margin-bottom:10px;color:#ff7070">'+_iM('alert-triangle', 36)+'</div>'
     +'<div style="font-size:15px;font-weight:700;color:#ff7070;margin-bottom:8px">Identification Failed</div>'
-    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:18px">'+msg+'</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:12px">'+eh(mainMsg)+'</div>'
+    +(rawPreview?'<div style="background:#13161d;border:1px solid #2e3545;border-radius:8px;padding:10px;margin-bottom:12px;text-align:left;max-height:150px;overflow-y:auto"><div style="font-size:10px;color:#a0c0ff;text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:4px">AI Response</div><div style="font-size:11px;color:#8a95a8;font-family:monospace;word-break:break-all;white-space:pre-wrap">'+eh(rawPreview)+'</div></div>':'')
     +'<div style="font-size:11px;color:#4a5568;margin-bottom:16px">Make sure you are connected to wifi</div>'
     +'<button onclick="document.getElementById(\'identifier_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Close</button>'
     +'</div>';
@@ -12673,6 +12712,109 @@ function _cpRenderInfoPanel(gun){
       +'<button class="btn-g" onclick="editGun(\''+gun.id+'\');setTimeout(_openConditionProfile,300)" style="font-size:12px;padding:8px 14px">'+_iM('pencil')+' Edit Profile</button>'
     +'</div>');
 }
+
+// ── Phase 5: Condition Profile → Reports ───────────────────────────
+// Inline summary for report rows (Insurance + Theft)
+function _cpReportInline(gun){
+  var cp=gun.conditionProfile;
+  if(!cp||!cp.answers||!Object.keys(cp.answers).length) return '';
+  var mult=cp.totalMultiplier||1.0;
+  var pct=Math.round((mult-1)*100);
+  if(pct===0) return '';
+  var pctColor=pct>0?'#60e880':'#ff7070';
+  var pctSign=pct>0?'+':'';
+
+  // Collect top factors (up to 3)
+  var factors=cp.adjustmentFactors||[];
+  var topFactors=factors.slice(0,3).map(function(f){return f.label;}).join(', ');
+
+  return '<div style="font-size:11px;color:'+pctColor+';margin-top:2px">'
+    +'Profile: <strong>'+pctSign+pct+'%</strong>'
+    +(topFactors?' <span style="color:#6a7585">('+eh(topFactors)+')</span>':'')
+    +'</div>';
+}
+
+// Distinguishing features summary for Theft reports
+function _cpTheftFeatures(gun){
+  var cp=gun.conditionProfile;
+  if(!cp||!cp.answers) return '';
+  var ans=cp.answers;
+  var features=[];
+
+  // Pull physically distinguishing details
+  var featureMap={
+    q6:{label:'Finish',map:{'95plus':'95%+ factory','80_95':'80-95% light wear','60_80':'60-80% moderate wear','under60':'Under 60% heavy wear'}},
+    q7:{label:'Grips/Stock',map:{'excellent_orig':'Excellent original','good_orig':'Good original','fair_orig':'Fair/worn original','replaced_up':'Aftermarket upgrade','replaced_gen':'Generic replacement'}},
+    q9:{label:'Import marks',map:{'none':'No import marks','marked':'Import marked'}},
+    q10:{label:'Modifications',map:{'none':'Factory original','pro_upgrades':'Professional upgrades','mixed':'Mixed modifications','heavy':'Heavily modified'}}
+  };
+
+  for(var qid in featureMap){
+    if(ans[qid]&&featureMap[qid].map[ans[qid]]){
+      features.push(featureMap[qid].label+': '+featureMap[qid].map[ans[qid]]);
+    }
+  }
+
+  if(!features.length) return '';
+  return '<div style="font-size:11px;color:#ffd060;margin-top:2px">Identifying: '+features.join(' &middot; ')+'</div>';
+}
+
+// Print block for Insurance claim sheets (detailed)
+function _cpPrintClaimBlock(gun, esc){
+  var cp=gun.conditionProfile;
+  if(!cp||!cp.answers||!Object.keys(cp.answers).length) return '';
+  var ans=cp.answers;
+  var mult=cp.totalMultiplier||1.0;
+  var pct=Math.round((mult-1)*100);
+  var pctSign=pct>0?'+':'';
+
+  var rows='';
+  for(var i=0;i<CP_QUESTIONS.length;i++){
+    var q=CP_QUESTIONS[i];
+    if(!ans[q.id]) continue;
+    var optLabel='';
+    for(var j=0;j<q.options.length;j++){
+      if(q.options[j].value===ans[q.id]){optLabel=q.options[j].label;break;}
+    }
+    var shortQ=q.question.split('—')[0].split('?')[0].trim();
+    rows+='<div class="gun-row"><span class="gun-label">'+esc(shortQ)+':</span> '+esc(optLabel)+'</div>';
+  }
+
+  if(!rows) return '';
+  return '<div style="border:1px solid #ccc;border-radius:6px;padding:12px;margin:10px 0;background:#f7f7f0">'
+    +'<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;color:#333">Condition Profile <span style="font-weight:400;color:#666">('+pctSign+pct+'% adjustment)</span></div>'
+    +'<div class="gun-grid">'+rows+'</div>'
+    +'</div>';
+}
+
+// Print block for Theft reports (distinguishing features focus)
+function _cpPrintTheftBlock(gun, esc){
+  var cp=gun.conditionProfile;
+  if(!cp||!cp.answers) return '';
+  var ans=cp.answers;
+
+  var rows='';
+  // Focus on physically identifiable characteristics
+  var theftQuestions=['q5','q6','q7','q8','q9','q10','q12','q13','q14','q15'];
+  for(var i=0;i<CP_QUESTIONS.length;i++){
+    var q=CP_QUESTIONS[i];
+    if(theftQuestions.indexOf(q.id)<0) continue;
+    if(!ans[q.id]) continue;
+    var optLabel='';
+    for(var j=0;j<q.options.length;j++){
+      if(q.options[j].value===ans[q.id]){optLabel=q.options[j].label;break;}
+    }
+    var shortQ=q.question.split('—')[0].split('?')[0].trim();
+    rows+='<div class="gun-row"><span class="gun-label">'+esc(shortQ)+':</span> '+esc(optLabel)+'</div>';
+  }
+
+  if(!rows) return '';
+  return '<div style="border:1px solid #ccc;border-radius:6px;padding:12px;margin:10px 0;background:#fff5f5">'
+    +'<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;color:#333">Distinguishing Physical Features</div>'
+    +'<div class="gun-grid">'+rows+'</div>'
+    +'</div>';
+}
+
 // ── RANGE SESSIONS ────────────────────────────────────────────────────
 var rangeForm=null; // active new-session form data
 var rangeViewId=null; // session being viewed
