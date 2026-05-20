@@ -1582,7 +1582,7 @@ function acceptArsenalPhoto(dataUrl){
   rnd();
 }
 
-function ef(){return{make:'',model:'',type:'',caliber:'',barrelLength:'',serialNumber:'',year:'',purchasePrice:'',currentValue:'',condition:'Good',working:true,repairNotes:'',maintenanceLog:'',photo:'',photos:[],storageLocation:'',ammoType:'',ammoCount:'',ammoLocation:'',insuranceValue:'',lastCleaned:'',starred:false,custody:[],totalRounds:0,serviceInterval:0,notes:[],estimateHistory:[]};}
+function ef(){return{make:'',model:'',type:'',caliber:'',barrelLength:'',serialNumber:'',year:'',purchasePrice:'',currentValue:'',condition:'Good',working:true,repairNotes:'',maintenanceLog:'',photo:'',photos:[],storageLocation:'',ammoType:'',ammoCount:'',ammoLocation:'',insuranceValue:'',lastCleaned:'',starred:false,custody:[],totalRounds:0,serviceInterval:0,notes:[],estimateHistory:[],conditionProfile:null};}
 
 // ── RANGE SESSIONS ────────────────────────────────────────────────────
 var rangeSessions=[];
@@ -4851,6 +4851,9 @@ function rAdd(){
       +(aiVal.adjustmentReason?'<div style="font-size:12px;color:#a0c0ff;line-height:1.4;margin-bottom:6px;font-style:italic">&#9650; '+eh(aiVal.adjustmentReason)+'</div>':'')
       +'<div style="font-size:13px;color:#b0bac8;line-height:1.5">'+eh(aiVal.notes||'')+'</div>'
       +(aiVal.caveats?'<div style="font-size:11px;color:#8a95a8;margin-top:4px;font-style:italic">'+eh(aiVal.caveats)+'</div>':'')
+      +'<div style="border-top:1px solid #2e3545;margin-top:10px;padding-top:10px;text-align:center">'
+        +'<button onclick="_openConditionProfile()" style="background:transparent;border:1px solid #e8c46a50;color:#e8c46a;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'+(FORM.conditionProfile&&FORM.conditionProfile.updatedAt?_iM('pencil')+' Update Profile':'&#9998; Refine Estimate')+'</button>'
+      +'</div>'
       +'</div>';
   }
 
@@ -6004,7 +6007,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-05-19-J';   // bump on every revision
+var BUILD_TAG   = '2026-05-19-K';   // bump on every revision
 var PDB_UPDATE_URL = 'https://arsenalvault.github.io/arsenal-vault/pricedb.json';
 var PDB_VERSION    = '2026-05-19';     // inline baseline version
 var _cachedPDB     = null;             // populated from localStorage on boot
@@ -7116,7 +7119,7 @@ function _backIntercepted(){
   }
   // Close any open modal first
   var modals=['qr_modal','label_modal','settings_modal','print_menu',
-    'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal','exit_modal','pcomp_modal'];
+    'unsaved_modal','identifier_modal','nfc_modal','bulk_modal','import_modal','pin_forgot_modal','exit_modal','pcomp_modal','cp_modal'];
   for(var i=0;i<modals.length;i++){
     var m=document.getElementById(modals[i]);
     if(m){ m.remove(); return true; }
@@ -11601,7 +11604,7 @@ function rDet(){
         estPanel = panelWrap('est_hist', _iM('chart')+' Estimate History ('+estHist.length+')', estRows);
       }
 
-      extraInfo = notesPanel + extraInfo + estPanel;
+      extraInfo = notesPanel + extraInfo + estPanel + _cpRenderInfoPanel(g);
 
   tc=((!g.working&&g.repairNotes)?'<div class="panel" style="border-color:#ff707050"><div class="sec-title" style="color:#ff7070">'+_iM('alert-triangle')+' Repair Notes</div><div style="font-size:15px;color:#f0f2f5;line-height:1.6">'+eh(g.repairNotes)+'</div></div>':'')+
     (!g.repairNotes&&!extraInfo?'<div class="empty" style="padding:28px 0"><div style="font-size:15px;color:#b0bac8">No additional info yet</div><button class="btn-g" style="margin-top:14px" onclick="editGun(\''+g.id+'\')">Add Info</button></div>':'')+extraInfo;
@@ -11926,7 +11929,379 @@ function _saveEstimateToHistory(){
 }
 
 
-// ── AI ────────────────────────────────────────────────────────────────
+// ── CONDITION PROFILE + REFINEMENT UX (Phase 4) ──────────────────
+// 15 question cards across 4 groups. Each question has options with
+// percentage-based adjustment multipliers that compound on the base
+// estimate. conditionProfile is stored on each gun record.
+
+// Question definitions: {id, question, tooltip, options:[{label,value,impact}], group, condition?}
+// condition: optional function(FORM) → boolean for conditional visibility
+var CP_QUESTIONS = [
+  // Group 1 — Completeness
+  {id:'q1', group:'Completeness', question:'Do you have the original box and case?',
+   tooltip:'The original box can add 5–15% to resale value. Collectors especially prize complete packaging for discontinued models.',
+   options:[{label:'Yes',value:'yes',impact:0.08},{label:'No',value:'no',impact:0},{label:"Don't know",value:'unknown',impact:0}]},
+  {id:'q2', group:'Completeness', question:'Do you have original papers, manual, and test target?',
+   tooltip:'Factory paperwork, especially the original test target with serial number, adds authenticity and value.',
+   options:[{label:'All papers',value:'all',impact:0.05},{label:'Some',value:'some',impact:0.02},{label:'None',value:'none',impact:0}]},
+  {id:'q3', group:'Completeness', question:'Extra factory magazines?',
+   tooltip:'Factory magazines for discontinued models can be worth $30–80+ each. Aftermarket mags don\'t add resale value.',
+   options:[{label:'Factory extras',value:'factory_extras',impact:0.03},{label:'Aftermarket only',value:'aftermarket',impact:0},{label:'None',value:'none',impact:0}]},
+  {id:'q4', group:'Completeness', question:'Are all serial numbers matching?',
+   tooltip:'On older firearms, matching serial numbers across frame, barrel, slide/cylinder, and grip frame confirm the gun is all-original. Mismatched numbers can drop value 20–40% on collector pieces.',
+   options:[{label:'All matching',value:'matching',impact:0.15},{label:'Partially matching',value:'partial',impact:0},{label:"Mismatched / Don't know",value:'mismatched',impact:-0.10}],
+   condition:function(f){return _cpIsCollectible(f);}},
+  // Group 2 — Physical Condition
+  {id:'q5', group:'Physical Condition', question:'Bore condition — look down the barrel with a light',
+   tooltip:'A bright, sharp bore with strong rifling is the single biggest condition factor for shooters. Dark or pitted bores significantly reduce value.',
+   options:[{label:'Mirror bright, sharp rifling',value:'mirror',impact:0.05},{label:'Light wear, good rifling',value:'light_wear',impact:0},{label:'Moderate wear',value:'moderate',impact:-0.05},{label:'Dark or pitted',value:'dark',impact:-0.15}]},
+  {id:'q6', group:'Physical Condition', question:'Original finish percentage — how much factory finish remains?',
+   tooltip:'Finish percentage is how collectors shorthand overall external condition. 95%+ is "Excellent"; below 60% is "Poor" regardless of mechanical condition.',
+   options:[{label:'95%+ (near factory)',value:'95plus',impact:0.05},{label:'80–95% (light holster/handling wear)',value:'80_95',impact:0},{label:'60–80% (moderate wear, some spots)',value:'60_80',impact:-0.08},{label:'Under 60% (heavy wear, bare metal)',value:'under60',impact:-0.18}]},
+  {id:'q7', group:'Physical Condition', question:'Grip or stock condition',
+   tooltip:'Original grips/stocks in good condition preserve value. Replacements can go either way — premium aftermarket grips can add value, cheap replacements subtract.',
+   options:[{label:'Excellent original',value:'excellent_orig',impact:0.03},{label:'Good original',value:'good_orig',impact:0},{label:'Fair/worn original',value:'fair_orig',impact:-0.03},{label:'Replaced — upgrade',value:'replaced_up',impact:0.02},{label:'Replaced — generic',value:'replaced_gen',impact:-0.05}]},
+  {id:'q8', group:'Physical Condition', question:'Action tightness — cycle the action by hand',
+   tooltip:'A tight, smooth action indicates less wear and better mechanical condition.',
+   options:[{label:'Tight and smooth',value:'tight',impact:0.03},{label:'Normal',value:'normal',impact:0},{label:'Loose or gritty',value:'loose',impact:-0.08}]},
+  // Group 3 — Market Modifiers
+  {id:'q9', group:'Market Modifiers', question:'Import marks present?',
+   tooltip:'Imported firearms are roll-marked by the importer (typically on the barrel or frame). These marks reduce collector and resale value.',
+   options:[{label:'No import marks',value:'none',impact:0},{label:'Import marked',value:'marked',impact:-0.05},{label:"Don't know",value:'unknown',impact:0}]},
+  {id:'q10', group:'Market Modifiers', question:'Any aftermarket modifications?',
+   tooltip:'Modifications are tricky — quality upgrades (night sights, match trigger) can add value, but permanent modifications (stippling, frame cuts) or amateur work often subtract.',
+   options:[{label:'No modifications (factory original)',value:'none',impact:0},{label:'Professional upgrades',value:'pro_upgrades',impact:0.03},{label:'Mixed / partial mods',value:'mixed',impact:-0.03},{label:'Heavily modified',value:'heavy',impact:-0.10}]},
+  {id:'q11', group:'Market Modifiers', question:'Is this model discontinued?',
+   tooltip:'Discontinued models can carry a premium if they\'re sought-after, but can also drop if parts become scarce.',
+   options:[{label:'Yes — sought after',value:'sought',impact:0.08},{label:'Yes — low demand',value:'low_demand',impact:-0.05},{label:'No — current production',value:'current',impact:0},{label:"Don't know",value:'unknown',impact:0}]},
+  // Group 4 — Category-Specific
+  {id:'q12', group:'Category-Specific', question:'Cylinder timing and lockup',
+   tooltip:'On revolvers, cylinder timing (alignment of chambers with the barrel) and lockup (tightness when the cylinder is closed) are critical mechanical checks. A revolver with off timing is potentially unsafe and significantly devalued.',
+   options:[{label:'Perfect timing, tight lockup',value:'perfect',impact:0.05},{label:'Slight play, shoots fine',value:'slight',impact:0},{label:'Needs work',value:'needs_work',impact:-0.20}],
+   condition:function(f){return _cpIsRevolver(f);}},
+  {id:'q13', group:'Category-Specific', question:'Endshake — push/pull the cylinder while closed',
+   tooltip:'Endshake is the back-and-forth play of the cylinder along its axis. Some is normal; excessive endshake means the gun needs a gunsmith.',
+   options:[{label:'None / minimal',value:'minimal',impact:0.02},{label:'Noticeable but acceptable',value:'noticeable',impact:0},{label:'Excessive',value:'excessive',impact:-0.12}],
+   condition:function(f){return _cpIsRevolver(f);}},
+  {id:'q14', group:'Category-Specific', question:'Muzzle crown condition',
+   tooltip:'The muzzle crown is where the bullet exits. Dings, chips, or uneven wear here directly affects accuracy. This is one of the first things a knowledgeable buyer checks.',
+   options:[{label:'Perfect / recessed',value:'perfect',impact:0.02},{label:'Minor wear',value:'minor',impact:0},{label:'Damaged / dinged',value:'damaged',impact:-0.08}],
+   condition:function(f){return _cpIsLongGun(f);}},
+  {id:'q15', group:'Category-Specific', question:'Period correctness — are all parts correct for the year of manufacture?',
+   tooltip:'A gun with all period-correct parts is worth significantly more than one with replacements, even if the replacements are functional. This is the single biggest value factor for antiques.',
+   options:[{label:'All period correct',value:'all_correct',impact:0.15},{label:'Mostly correct, minor replacements',value:'mostly',impact:0.05},{label:'Significant replacement parts',value:'significant',impact:-0.15}],
+   condition:function(f){return _cpIsCollectible(f);}}
+];
+
+// Helper predicates for conditional question visibility
+function _cpIsRevolver(f){
+  return (f.type||'').toLowerCase().indexOf('revolver')>=0;
+}
+function _cpIsLongGun(f){
+  var t=(f.type||'').toLowerCase();
+  return t.indexOf('rifle')>=0||t.indexOf('shotgun')>=0;
+}
+// Collectible = user answered Q11 "sought after" OR year < 1960 (true antiques/C&R)
+function _cpIsCollectible(f){
+  // Check Q11 answer if profile exists
+  var cp=FORM.conditionProfile;
+  if(cp&&cp.answers&&cp.answers.q11==='sought') return true;
+  // True antique/C&R
+  var yr=parseInt(f.year,10);
+  if(yr&&yr<1960) return true;
+  return false;
+}
+
+// Compute refined estimate from base + condition profile
+function _cpComputeRefinedEstimate(baseEstimate, conditionProfile){
+  if(!conditionProfile||!conditionProfile.answers) return null;
+  var factors=[];
+  var multiplier=1.0;
+  var answers=conditionProfile.answers;
+
+  for(var i=0;i<CP_QUESTIONS.length;i++){
+    var q=CP_QUESTIONS[i];
+    var ans=answers[q.id];
+    if(!ans) continue;
+    // Skip conditional questions that don't apply
+    if(q.condition&&!q.condition(FORM)) continue;
+    // Find matching option
+    for(var j=0;j<q.options.length;j++){
+      if(q.options[j].value===ans&&q.options[j].impact!==0){
+        var imp=q.options[j].impact;
+        factors.push({factor:q.question.split('—')[0].split('?')[0].trim(),label:q.options[j].label,impact:imp});
+        multiplier*=(1+imp);
+        break;
+      }
+    }
+  }
+  conditionProfile.adjustmentFactors=factors;
+  conditionProfile.totalMultiplier=multiplier;
+  conditionProfile.updatedAt=new Date().toISOString();
+
+  return{
+    low:Math.round(baseEstimate.low*multiplier),
+    mid:Math.round(baseEstimate.mid*multiplier),
+    high:Math.round(baseEstimate.high*multiplier),
+    baseSource:baseEstimate.source||'local',
+    totalMultiplier:multiplier,
+    factors:factors
+  };
+}
+
+// ── Condition Profile Modal ────────────────────────────────────────
+var _cpBaseEstimate=null; // stashed base estimate for live updating
+
+function _openConditionProfile(){
+  collect();
+  if(!FORM.make||!FORM.model){toast('Enter make and model first','err');return;}
+
+  // Get base estimate for live preview
+  _cpBaseEstimate=valLookup(FORM.make,FORM.model,FORM.caliber,FORM.condition,FORM.year);
+
+  // Initialize profile if needed
+  if(!FORM.conditionProfile) FORM.conditionProfile={answers:{},adjustmentFactors:[],totalMultiplier:1.0,updatedAt:null};
+
+  _renderConditionProfileModal();
+}
+
+function _renderConditionProfileModal(){
+  var existing=document.getElementById('cp_modal');
+  if(existing) existing.remove();
+
+  var cp=FORM.conditionProfile;
+  var answers=cp.answers||{};
+
+  // Compute current refined estimate
+  var refined=_cpComputeRefinedEstimate(_cpBaseEstimate,cp);
+  var pctChange=refined?Math.round((refined.totalMultiplier-1)*100):0;
+  var pctColor=pctChange>0?'#60e880':pctChange<0?'#ff7070':'#8a95a8';
+  var pctSign=pctChange>0?'+':'';
+
+  // Build live estimate header
+  var liveHeader='<div style="position:sticky;top:0;z-index:2;background:#13161d;border-bottom:1px solid #2e3545;padding:14px 20px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+      +'<div style="font-size:14px;font-weight:700;color:#e8c46a">Condition Profile</div>'
+      +'<button onclick="document.getElementById(\'cp_modal\').remove()" style="background:none;border:none;color:#8a95a8;font-size:22px;cursor:pointer;padding:0 4px;line-height:1">&times;</button>'
+    +'</div>';
+
+  if(_cpBaseEstimate){
+    liveHeader+='<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">'
+      +'<div>'
+        +'<div style="font-size:10px;color:#8a95a8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Base</div>'
+        +'<div style="font-size:13px;color:#b0bac8">'+fm(_cpBaseEstimate.low)+' – <span style="font-weight:700;color:#d0d8e8">'+fm(_cpBaseEstimate.mid)+'</span> – '+fm(_cpBaseEstimate.high)+'</div>'
+      +'</div>';
+    if(refined){
+      liveHeader+='<div style="font-size:18px;color:#4a5568">&rarr;</div>'
+      +'<div>'
+        +'<div style="font-size:10px;color:#8a95a8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Refined</div>'
+        +'<div style="font-size:13px;color:#e8c46a;font-weight:700">'+fm(refined.low)+' – '+fm(refined.mid)+' – '+fm(refined.high)+'</div>'
+      +'</div>'
+      +'<div style="font-size:14px;font-weight:800;color:'+pctColor+'">'+pctSign+pctChange+'%</div>';
+    }
+    liveHeader+='</div>';
+  }
+  liveHeader+='</div>';
+
+  // Build question cards grouped
+  var groups={};
+  var groupOrder=['Completeness','Physical Condition','Market Modifiers','Category-Specific'];
+  for(var i=0;i<CP_QUESTIONS.length;i++){
+    var q=CP_QUESTIONS[i];
+    // Check conditional visibility
+    if(q.condition&&!q.condition(FORM)) continue;
+    if(!groups[q.group]) groups[q.group]=[];
+    groups[q.group].push(q);
+  }
+
+  var cardsHtml='';
+  for(var gi=0;gi<groupOrder.length;gi++){
+    var gName=groupOrder[gi];
+    var gQuestions=groups[gName];
+    if(!gQuestions||!gQuestions.length) continue;
+
+    cardsHtml+='<div style="margin-bottom:8px;padding:0 20px">'
+      +'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:#e8c46a;font-weight:800;margin:18px 0 10px;display:flex;align-items:center;gap:8px">'+eh(gName)
+      +'<span style="flex:1;height:1px;background:linear-gradient(90deg,#e8c46a30,transparent)"></span></div>';
+
+    for(var qi=0;qi<gQuestions.length;qi++){
+      var question=gQuestions[qi];
+      var currentAns=answers[question.id]||null;
+
+      cardsHtml+='<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:10px">'
+        +'<div style="font-size:13px;font-weight:600;color:#f0f2f5;margin-bottom:6px">'+eh(question.question)+'</div>'
+        +'<div style="font-size:11px;color:#6a7585;line-height:1.5;margin-bottom:12px;font-style:italic">'+eh(question.tooltip)+'</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:6px">';
+
+      for(var oi=0;oi<question.options.length;oi++){
+        var opt=question.options[oi];
+        var isSelected=currentAns===opt.value;
+        var impactLabel=opt.impact>0?'+'+Math.round(opt.impact*100)+'%':opt.impact<0?Math.round(opt.impact*100)+'%':'';
+        var btnBg=isSelected?'#e8c46a20':'#13161d';
+        var btnBorder=isSelected?'#e8c46a':'#3a4455';
+        var btnColor=isSelected?'#e8c46a':'#c0c8d8';
+
+        cardsHtml+='<button onclick="_cpSelectAnswer(\''+question.id+'\',\''+opt.value+'\')" style="background:'+btnBg+';border:1.5px solid '+btnBorder+';border-radius:6px;padding:7px 12px;color:'+btnColor+';font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s ease">'
+          +eh(opt.label)
+          +(impactLabel?'<span style="margin-left:4px;font-size:10px;color:'+(opt.impact>0?'#60e880':'#ff7070')+'">'+impactLabel+'</span>':'')
+          +'</button>';
+      }
+      cardsHtml+='</div></div>';
+    }
+    cardsHtml+='</div>';
+  }
+
+  // Factors summary (if any)
+  var factorsHtml='';
+  if(refined&&refined.factors&&refined.factors.length>0){
+    factorsHtml='<div style="padding:0 20px;margin-bottom:16px"><div style="background:#13161d;border:1px solid #e8c46a30;border-radius:10px;padding:14px">'
+      +'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#e8c46a;font-weight:700;margin-bottom:8px">Active Factors</div>';
+    for(var fi=0;fi<refined.factors.length;fi++){
+      var fac=refined.factors[fi];
+      var facColor=fac.impact>0?'#60e880':'#ff7070';
+      var facSign=fac.impact>0?'+':'';
+      factorsHtml+='<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px">'
+        +'<span style="color:#c0c8d8">'+eh(fac.factor)+' <span style="color:#6a7585">'+eh(fac.label)+'</span></span>'
+        +'<span style="color:'+facColor+';font-weight:700">'+facSign+Math.round(fac.impact*100)+'%</span>'
+        +'</div>';
+    }
+    factorsHtml+='</div></div>';
+  }
+
+  // Action buttons
+  var actionHtml='<div style="padding:0 20px 24px;display:flex;gap:8px;flex-wrap:wrap">'
+    +'<button onclick="_cpSaveProfile()" style="flex:1;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Save Profile</button>'
+    +'<button onclick="_cpClearProfile()" style="background:transparent;border:1px solid #ff707060;color:#ff7070;padding:14px 18px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Clear</button>'
+    +'</div>';
+
+  var modal=document.createElement('div');
+  modal.id='cp_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#0f1117;z-index:10001;overflow-y:auto;-webkit-overflow-scrolling:touch';
+  modal.innerHTML=liveHeader+cardsHtml+factorsHtml+actionHtml;
+  document.body.appendChild(modal);
+}
+
+function _cpSelectAnswer(qId,value){
+  if(!FORM.conditionProfile) FORM.conditionProfile={answers:{},adjustmentFactors:[],totalMultiplier:1.0,updatedAt:null};
+  var current=FORM.conditionProfile.answers[qId];
+  // Toggle off if already selected
+  if(current===value){
+    delete FORM.conditionProfile.answers[qId];
+  } else {
+    FORM.conditionProfile.answers[qId]=value;
+  }
+
+  // Re-evaluate collectible status — Q4/Q15 visibility may change after Q11 answer
+  _renderConditionProfileModal();
+}
+
+function _cpSaveProfile(){
+  if(!FORM.conditionProfile) return;
+  FORM.conditionProfile.updatedAt=new Date().toISOString();
+
+  // If editing existing gun, write directly + sv()
+  if(editId){
+    var g=guns.find(function(x){return x.id===editId;});
+    if(g){
+      g.conditionProfile=FORM.conditionProfile;
+      sv();
+    }
+  }
+
+  document.getElementById('cp_modal').remove();
+  haptic('save');
+  toast('Condition profile saved');
+  rnd();
+}
+
+function _cpClearProfile(){
+  if(!confirm('Clear all condition profile answers?')) return;
+  FORM.conditionProfile={answers:{},adjustmentFactors:[],totalMultiplier:1.0,updatedAt:null};
+  if(editId){
+    var g=guns.find(function(x){return x.id===editId;});
+    if(g){
+      g.conditionProfile=FORM.conditionProfile;
+      sv();
+    }
+  }
+  document.getElementById('cp_modal').remove();
+  toast('Condition profile cleared');
+  rnd();
+}
+
+// Render condition profile summary for Info tab detail view
+function _cpRenderInfoPanel(gun){
+  var cp=gun.conditionProfile;
+  if(!cp||!cp.answers||!Object.keys(cp.answers).length){
+    return '<div class="panel" style="border-color:#e8c46a20">'
+      +'<div class="sec-title">'+_iM('chart')+' Condition Profile</div>'
+      +'<div style="text-align:center;padding:12px 0">'
+        +'<div style="font-size:13px;color:#6a7585;margin-bottom:12px">No condition profile yet.</div>'
+        +'<button class="btn-g" onclick="editGun(\''+gun.id+'\');setTimeout(_openConditionProfile,300)" style="font-size:12px;padding:10px 16px">+ Build Profile</button>'
+        +'<div style="font-size:11px;color:#4a5568;margin-top:8px">Adds detailed condition data for better estimates and reports</div>'
+      +'</div>'
+    +'</div>';
+  }
+
+  // Has profile — render summary
+  var ans=cp.answers;
+  var factors=cp.adjustmentFactors||[];
+  var mult=cp.totalMultiplier||1.0;
+  var pct=Math.round((mult-1)*100);
+  var pctColor=pct>0?'#60e880':pct<0?'#ff7070':'#8a95a8';
+  var pctSign=pct>0?'+':'';
+  var updatedStr=cp.updatedAt?_relTime(cp.updatedAt):'';
+
+  // Build grouped answer summaries
+  var summary='';
+  var groups={};
+  for(var i=0;i<CP_QUESTIONS.length;i++){
+    var q=CP_QUESTIONS[i];
+    if(!ans[q.id]) continue;
+    if(!groups[q.group]) groups[q.group]=[];
+    var optLabel='';
+    for(var j=0;j<q.options.length;j++){
+      if(q.options[j].value===ans[q.id]){optLabel=q.options[j].label;break;}
+    }
+    var shortQ=q.question.split('—')[0].split('?')[0].trim();
+    groups[q.group].push({question:shortQ,answer:optLabel});
+  }
+
+  var groupNames=['Completeness','Physical Condition','Market Modifiers','Category-Specific'];
+  for(var gi=0;gi<groupNames.length;gi++){
+    var gn=groupNames[gi];
+    if(!groups[gn]) continue;
+    summary+='<div style="margin-bottom:8px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#6a7585;font-weight:600;margin-bottom:4px">'+eh(gn)+'</div>';
+    for(var ri=0;ri<groups[gn].length;ri++){
+      var row=groups[gn][ri];
+      summary+='<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">'
+        +'<span style="color:#8a95a8">'+eh(row.question)+'</span>'
+        +'<span style="color:#d0d8e8;font-weight:600">'+eh(row.answer)+'</span></div>';
+    }
+    summary+='</div>';
+  }
+
+  var factorsSummary='';
+  if(factors.length>0){
+    factorsSummary='<div style="border-top:1px solid #2e3545;padding-top:8px;margin-top:8px">'
+      +'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#e8c46a;font-weight:600;margin-bottom:4px">Adjustment: <span style="color:'+pctColor+'">'+pctSign+pct+'%</span></div>';
+    for(var fi=0;fi<factors.length;fi++){
+      var f=factors[fi];
+      var fc=f.impact>0?'#60e880':'#ff7070';
+      var fs=f.impact>0?'+':'';
+      factorsSummary+='<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:11px">'
+        +'<span style="color:#6a7585">'+eh(f.factor)+'</span>'
+        +'<span style="color:'+fc+';font-weight:600">'+fs+Math.round(f.impact*100)+'%</span></div>';
+    }
+    factorsSummary+='</div>';
+  }
+
+  return panelWrap('cp_info',_iM('chart')+' Condition Profile'+(updatedStr?' <span style="font-size:11px;color:#6a7585;font-weight:400;text-transform:none;letter-spacing:0">'+updatedStr+'</span>':''),
+    summary+factorsSummary
+    +'<div style="text-align:center;margin-top:12px">'
+      +'<button class="btn-g" onclick="editGun(\''+gun.id+'\');setTimeout(_openConditionProfile,300)" style="font-size:12px;padding:8px 14px">'+_iM('pencil')+' Edit Profile</button>'
+    +'</div>');
+}
 // ── RANGE SESSIONS ────────────────────────────────────────────────────
 var rangeForm=null; // active new-session form data
 var rangeViewId=null; // session being viewed
@@ -13030,6 +13405,23 @@ function doValAI(){
   var extras = [];
   if(FORM.repairNotes) extras.push('Condition notes: ' + FORM.repairNotes);
   if(FORM.barrelLength) extras.push('Barrel length: ' + FORM.barrelLength + '"');
+  // -K: Include condition profile details when available
+  if(FORM.conditionProfile&&FORM.conditionProfile.answers){
+    var cpAns=FORM.conditionProfile.answers;
+    var cpDetails=[];
+    for(var _qi=0;_qi<CP_QUESTIONS.length;_qi++){
+      var _q=CP_QUESTIONS[_qi];
+      var _a=cpAns[_q.id];
+      if(!_a) continue;
+      for(var _oi=0;_oi<_q.options.length;_oi++){
+        if(_q.options[_oi].value===_a){
+          cpDetails.push(_q.question.split('—')[0].split('?')[0].trim()+': '+_q.options[_oi].label);
+          break;
+        }
+      }
+    }
+    if(cpDetails.length) extras.push('Detailed condition profile:\n  '+cpDetails.join('\n  '));
+  }
 
   var prompt = 'You are a firearms market valuation expert. A local database estimates the following firearm at:\n'
     + '  Low: $' + baseline.low + ' | Mid: $' + baseline.mid + ' | High: $' + baseline.high + '\n'
@@ -16746,8 +17138,8 @@ function remSch(id){
 // ── EXPORT / PRINT ────────────────────────────────────────────────────
 function expCSV(){
   if(!requirePro('Print & Export')) return;
-  var h=['Make','Model','Type','Caliber','Serial Number','Year','Condition','Working','Purchase Price','Current Value','Repair Notes','Notes','Est. Low','Est. Mid','Est. High','Est. Date','Maintenance Log'];
-  var rows=guns.map(function(g){var _n=(g.notes||[]).map(function(n){return (n.created?n.created.split('T')[0]+': ':'')+n.text;}).join('\n');var _e=(g.estimateHistory||[]);var _el=_e.length?_e[_e.length-1]:null;return[g.make,g.model,g.type,g.caliber,g.serialNumber,g.year,g.condition,g.working?'Yes':'No',g.purchasePrice,g.currentValue,g.repairNotes,_n,_el?_el.low:'',_el?_el.mid:'',_el?_el.high:'',_el?_el.date:'',g.maintenanceLog].map(function(v){return'"'+((v||'').toString().replace(/"/g,'""'))+'"';}).join(',');});
+  var h=['Make','Model','Type','Caliber','Serial Number','Year','Condition','Working','Purchase Price','Current Value','Condition Grade','Repair Notes','Notes','Est. Low','Est. Mid','Est. High','Est. Date','Maintenance Log'];
+  var rows=guns.map(function(g){var _n=(g.notes||[]).map(function(n){return (n.created?n.created.split('T')[0]+': ':'')+n.text;}).join('\n');var _e=(g.estimateHistory||[]);var _el=_e.length?_e[_e.length-1]:null;var _cg='';if(g.conditionProfile&&g.conditionProfile.totalMultiplier){var _pct=Math.round((g.conditionProfile.totalMultiplier-1)*100);_cg=(_pct>=0?'+':'')+_pct+'%';}return[g.make,g.model,g.type,g.caliber,g.serialNumber,g.year,g.condition,g.working?'Yes':'No',g.purchasePrice,g.currentValue,_cg,g.repairNotes,_n,_el?_el.low:'',_el?_el.mid:'',_el?_el.high:'',_el?_el.date:'',g.maintenanceLog].map(function(v){return'"'+((v||'').toString().replace(/"/g,'""'))+'"';}).join(',');});
   var csv=[h.join(',')].concat(rows).join('\n');
   var blob=new Blob([csv],{type:'text/csv'});
   var url=URL.createObjectURL(blob);
