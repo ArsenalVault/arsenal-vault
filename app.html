@@ -10757,7 +10757,7 @@ function showIdentifierResult(result, imgBase64, mediaType){
     +featuresHtml
     +'<div style="display:flex;flex-direction:column;gap:8px">'
       +'<button onclick="_idApplyResult()" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">+ Add to Inventory</button>'
-      +(result.confidence!=='verified'?'<button onclick="_idRetryMarkings()" style="background:#1e2535;border:1.5px solid #a0c0ff50;color:#a0c0ff;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Not right? Try close-up of markings</button>':'')
+      +(result.confidence!=='verified'?'<button onclick="_idRetryOptions()" style="background:#1e2535;border:1.5px solid #a0c0ff50;color:#a0c0ff;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Not right? Help me identify it</button>':'')
       +'<button onclick="document.getElementById(\'identifier_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Dismiss</button>'
     +'</div>'
     +'</div>';
@@ -10771,6 +10771,157 @@ function _idApplyResult(){
     var result=JSON.parse(modal.dataset.idResult);
     applyIdentifierResult(result);
   }catch(e){toast('Error applying result','err');}
+}
+
+// -K: Retry options — choice between retake photo or enter info
+function _idRetryOptions(){
+  var modal=document.getElementById('identifier_modal');
+  if(!modal) return;
+
+  modal.innerHTML='<div style="background:#222835;border:2px solid #a0c0ff40;border-radius:12px;padding:24px;max-width:380px;width:100%;text-align:center">'
+    +'<div style="font-size:28px;margin-bottom:10px">&#128269;</div>'
+    +'<div style="font-size:16px;font-weight:700;color:#a0c0ff;margin-bottom:6px">Help Identify</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:16px;line-height:1.5">Choose how you\'d like to help the AI get it right.</div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+      +'<button onclick="_idShowAssistForm()" style="background:linear-gradient(135deg,#1e2a40,#1a2535);border:2px solid #e8c46a50;color:#e8c46a;padding:16px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left">'
+        +'<div>&#9998; Enter info I can see</div>'
+        +'<div style="font-size:11px;color:#8a95a8;font-weight:400;margin-top:4px">Serial number, make, model, markings — anything on the gun</div>'
+      +'</button>'
+      +'<button onclick="_idRetryMarkings()" style="background:linear-gradient(135deg,#1e2a40,#1a2535);border:2px solid #a0c0ff50;color:#a0c0ff;padding:16px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left">'
+        +'<div>&#128247; Take a better photo</div>'
+        +'<div style="font-size:11px;color:#8a95a8;font-weight:400;margin-top:4px">Close-up of manufacturer markings on frame or slide</div>'
+      +'</button>'
+      +'<button onclick="document.getElementById(\'identifier_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
+    +'</div>'
+  +'</div>';
+}
+
+// -K: Assist form — user enters info they can see on the gun
+function _idShowAssistForm(){
+  var modal=document.getElementById('identifier_modal');
+  if(!modal) return;
+
+  modal.innerHTML='<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:24px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto">'
+    +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:4px">&#9998; Enter What You Can See</div>'
+    +'<div style="font-size:12px;color:#8a95a8;margin-bottom:16px;line-height:1.5">Fill in anything you can read or identify on the firearm. All fields are optional — the more you provide, the better the result.</div>'
+
+    +'<div style="margin-bottom:12px">'
+      +'<div style="font-size:11px;color:#a0c0ff;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Make / Manufacturer</div>'
+      +'<input id="id_assist_make" placeholder="e.g. Smith & Wesson, Ruger, Sig Sauer" style="background:#13161d;border:1px solid #2e3545;color:#e0e4ec;padding:10px 12px;border-radius:8px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box"/>'
+    +'</div>'
+
+    +'<div style="margin-bottom:12px">'
+      +'<div style="font-size:11px;color:#a0c0ff;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Model</div>'
+      +'<input id="id_assist_model" placeholder="e.g. M&P Shield Plus, GP100, P365 XL" style="background:#13161d;border:1px solid #2e3545;color:#e0e4ec;padding:10px 12px;border-radius:8px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box"/>'
+    +'</div>'
+
+    +'<div style="margin-bottom:12px">'
+      +'<div style="font-size:11px;color:#a0c0ff;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Serial Number</div>'
+      +'<input id="id_assist_serial" placeholder="Full or partial — even first 3 letters helps" style="background:#13161d;border:1px solid #2e3545;color:#e0e4ec;padding:10px 12px;border-radius:8px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box"/>'
+    +'</div>'
+
+    +'<div style="margin-bottom:12px">'
+      +'<div style="font-size:11px;color:#a0c0ff;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Caliber</div>'
+      +'<input id="id_assist_caliber" placeholder="e.g. 9mm, .45 ACP, .357 Mag, 5.56" style="background:#13161d;border:1px solid #2e3545;color:#e0e4ec;padding:10px 12px;border-radius:8px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box"/>'
+    +'</div>'
+
+    +'<div style="margin-bottom:16px">'
+      +'<div style="font-size:11px;color:#a0c0ff;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Other Markings or Details</div>'
+      +'<textarea id="id_assist_notes" rows="3" placeholder="Any other text, logos, stamps, import marks, patent numbers, barrel markings, or details that might help" style="background:#13161d;border:1px solid #2e3545;color:#e0e4ec;padding:10px 12px;border-radius:8px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box;resize:vertical"></textarea>'
+    +'</div>'
+
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+      +'<button onclick="_idRunAssisted()" style="background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Re-Identify with Hints</button>'
+      +'<button onclick="_idRetryOptions()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Back</button>'
+    +'</div>'
+  +'</div>';
+}
+
+// -K: Run assisted identification with user-provided hints + original image
+function _idRunAssisted(){
+  var make=(document.getElementById('id_assist_make')||{}).value||'';
+  var model=(document.getElementById('id_assist_model')||{}).value||'';
+  var serial=(document.getElementById('id_assist_serial')||{}).value||'';
+  var caliber=(document.getElementById('id_assist_caliber')||{}).value||'';
+  var notes=(document.getElementById('id_assist_notes')||{}).value||'';
+
+  // Need at least one hint
+  if(!make&&!model&&!serial&&!caliber&&!notes){
+    toast('Enter at least one piece of info','err');
+    return;
+  }
+
+  // Must have the original image stashed
+  if(!_idLastImage){
+    toast('No image available — take a new photo','err');
+    _idRetryMarkings();
+    return;
+  }
+
+  // Show loading
+  var modal=document.getElementById('identifier_modal');
+  if(modal) modal.innerHTML='<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:32px;max-width:340px;width:100%;text-align:center">'
+    +'<div class="id-pulse" style="font-size:36px;margin-bottom:14px">&#129302;</div>'
+    +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:8px">Re-analyzing with your hints...</div>'
+    +'<div style="font-size:13px;color:#8a95a8;line-height:1.5">Cross-referencing markings and details</div>'
+    +'</div>';
+
+  // Build hints block
+  var hints=[];
+  if(make) hints.push('Manufacturer: '+make);
+  if(model) hints.push('Model: '+model);
+  if(serial) hints.push('Serial number: '+serial);
+  if(caliber) hints.push('Caliber: '+caliber);
+  if(notes) hints.push('Additional markings/details: '+notes);
+
+  var assistedPrompt='You previously attempted to identify this firearm from the photo but the user says the result was wrong. The user has now provided additional information they can see on the gun:\n\n'
+    +hints.join('\n')+'\n\n'
+    +'Using BOTH the image AND these user-provided hints, re-identify this firearm. The user-provided information is more reliable than what you can see in the photo — prioritize it.\n\n'
+    +'Serial number hints:\n'
+    +'- Serial number prefixes often identify manufacturer, model line, and production year\n'
+    +'- S&W: 3-letter prefix (e.g. HBB = M&P Shield)\n'
+    +'- Ruger: prefix digits indicate model series\n'
+    +'- Sig: prefix letters indicate model family\n'
+    +'- Glock: 3-letter prefix + numbers\n'
+    +'- Use the serial prefix to narrow down the specific model and approximate production year if possible\n\n'
+    +'Respond with JSON in this exact format (no other text before or after):\n'
+    +'{"make":"","model":"","type":"","caliber":"","barrelLength":"","year":"","visibleText":"what text/markings you read","keyFeatures":"3-5 distinguishing features you observed","reasoning":"why you identified it as this specific model, including how the user hints helped","notes":""}\n\n'
+    +'Type must be one of: Pistol, Revolver, Rifle, Shotgun, AR-15/Semi-Auto Rifle, Bolt-Action Rifle, Lever-Action Rifle, Pump Shotgun, Semi-Auto Shotgun, Other.\n'
+    +'barrelLength: numeric inches only (e.g. "4.5") or empty string if unknown.\n'
+    +'year: approximate year or range (e.g. "2018" or "2015-2020") or empty if unknown.';
+
+  var messages=[{
+    role:'user',
+    content:[
+      {type:'image',source:{type:'base64',media_type:_idLastImage.mediaType,data:_idLastImage.base64}},
+      {type:'text',text:assistedPrompt}
+    ]
+  }];
+
+  _BYO_claudeCall(messages, {
+    model:_BYO_VISION_MODEL,
+    max_tokens:1000,
+    temperature:0,
+    system:_ID_SYSTEM
+  })
+  .then(function(res){
+    var text=res.text||'';
+    try{
+      var clean=text.replace(/```json|```/g,'').trim();
+      var jsonStart=clean.indexOf('{');
+      var jsonEnd=clean.lastIndexOf('}');
+      if(jsonStart>=0&&jsonEnd>jsonStart) clean=clean.substring(jsonStart,jsonEnd+1);
+      var result=JSON.parse(clean);
+      result=_idValidateAndScore(result);
+      showIdentifierResult(result, _idLastImage.base64, _idLastImage.mediaType);
+    }catch(ex){
+      showIdentifierError('Could not parse AI response');
+    }
+  })
+  .catch(function(err){
+    _BYO_showError(err);
+    showIdentifierError('AI request failed: '+(err.message||''));
+  });
 }
 
 // -K: Retry with guidance to photograph markings
