@@ -10757,7 +10757,7 @@ function showIdentifierResult(result, imgBase64, mediaType){
     +featuresHtml
     +'<div style="display:flex;flex-direction:column;gap:8px">'
       +'<button onclick="_idApplyResult()" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">+ Add to Inventory</button>'
-      +(result.confidence!=='verified'?'<button onclick="_idRetryOptions()" style="background:#1e2535;border:1.5px solid #a0c0ff50;color:#a0c0ff;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Not right? Help me identify it</button>':'')
+      +'<button onclick="_idRetryOptions()" style="background:#1e2535;border:1.5px solid #a0c0ff50;color:#a0c0ff;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Not right? Help me identify it</button>'
       +'<button onclick="document.getElementById(\'identifier_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Dismiss</button>'
     +'</div>'
     +'</div>';
