@@ -1,6 +1,6 @@
 {
   "version": "2026-05-20",
-  "generated": "2026-05-20T12:21:56.720Z",
+  "generated": "2026-05-20T17:18:16.678Z",
   "models": {
     "smith & wesson": [
       [
@@ -2593,6 +2593,1283 @@
         500,
         700,
         "Ruger firearm"
+      ],
+      [
+        [
+          "ruger",
+          "57",
+          "5.7x28"
+        ],
+        450,
+        525,
+        625,
+        "Ruger-57 5.7x28mm"
+      ],
+      [
+        [
+          "ruger",
+          "lcp",
+          "max",
+          "380"
+        ],
+        225,
+        275,
+        350,
+        "Ruger LCP MAX .380 ACP"
+      ],
+      [
+        [
+          "ruger",
+          "lcp",
+          "ii",
+          "380"
+        ],
+        175,
+        225,
+        285,
+        "Ruger LCP II .380 ACP"
+      ],
+      [
+        [
+          "ruger",
+          "lcp",
+          "380"
+        ],
+        150,
+        200,
+        265,
+        "Ruger LCP .380 ACP"
+      ],
+      [
+        [
+          "ruger",
+          "max",
+          "9",
+          "9mm"
+        ],
+        275,
+        325,
+        400,
+        "Ruger MAX-9 9mm"
+      ],
+      [
+        [
+          "ruger",
+          "security",
+          "9",
+          "compact"
+        ],
+        275,
+        325,
+        400,
+        "Ruger Security-9 Compact"
+      ],
+      [
+        [
+          "ruger",
+          "security",
+          "9"
+        ],
+        250,
+        300,
+        375,
+        "Ruger Security-9"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "pistol",
+          "competition"
+        ],
+        350,
+        425,
+        525,
+        "Ruger American Pistol Competition"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "pistol",
+          "compact"
+        ],
+        300,
+        375,
+        475,
+        "Ruger American Pistol Compact"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "pistol"
+        ],
+        325,
+        400,
+        500,
+        "Ruger American Pistol"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "target"
+        ],
+        350,
+        425,
+        525,
+        "Ruger Mark IV Target"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "hunter"
+        ],
+        425,
+        525,
+        650,
+        "Ruger Mark IV Hunter"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "competition"
+        ],
+        400,
+        500,
+        625,
+        "Ruger Mark IV Competition"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "tactical"
+        ],
+        375,
+        450,
+        550,
+        "Ruger Mark IV Tactical"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "22/45",
+          "lite"
+        ],
+        375,
+        450,
+        550,
+        "Ruger Mark IV 22/45 Lite"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "22/45"
+        ],
+        325,
+        400,
+        500,
+        "Ruger Mark IV 22/45"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv"
+        ],
+        300,
+        375,
+        475,
+        "Ruger Mark IV Standard"
+      ],
+      [
+        [
+          "ruger",
+          "wrangler",
+          "22lr"
+        ],
+        150,
+        185,
+        240,
+        "Ruger Wrangler .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "single",
+          "six",
+          "convertible"
+        ],
+        425,
+        525,
+        650,
+        "Ruger Single-Six Convertible"
+      ],
+      [
+        [
+          "ruger",
+          "single",
+          "six"
+        ],
+        400,
+        500,
+        625,
+        "Ruger Single-Six"
+      ],
+      [
+        [
+          "ruger",
+          "single",
+          "ten",
+          "22lr"
+        ],
+        450,
+        550,
+        675,
+        "Ruger Single-Ten .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "bearcat",
+          "22lr"
+        ],
+        425,
+        525,
+        650,
+        "Ruger New Bearcat .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "gp100",
+          "match",
+          "champion"
+        ],
+        650,
+        775,
+        950,
+        "Ruger GP100 Match Champion"
+      ],
+      [
+        [
+          "ruger",
+          "gp100",
+          "7",
+          "shot"
+        ],
+        525,
+        625,
+        775,
+        "Ruger GP100 7-Shot"
+      ],
+      [
+        [
+          "ruger",
+          "gp100",
+          "44",
+          "special"
+        ],
+        575,
+        675,
+        825,
+        "Ruger GP100 .44 Special"
+      ],
+      [
+        [
+          "ruger",
+          "gp100",
+          "357"
+        ],
+        500,
+        600,
+        750,
+        "Ruger GP100 .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "gp100"
+        ],
+        500,
+        600,
+        750,
+        "Ruger GP100"
+      ],
+      [
+        [
+          "ruger",
+          "sp101",
+          "357",
+          "3"
+        ],
+        475,
+        575,
+        700,
+        "Ruger SP101 .357 Magnum 3-inch"
+      ],
+      [
+        [
+          "ruger",
+          "sp101",
+          "357"
+        ],
+        450,
+        550,
+        675,
+        "Ruger SP101 .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "sp101",
+          "22lr"
+        ],
+        475,
+        575,
+        700,
+        "Ruger SP101 .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "sp101"
+        ],
+        450,
+        550,
+        675,
+        "Ruger SP101"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "redhawk",
+          "10mm"
+        ],
+        750,
+        900,
+        1100,
+        "Ruger Super Redhawk 10mm"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "redhawk",
+          "454"
+        ],
+        775,
+        925,
+        1150,
+        "Ruger Super Redhawk .454 Casull"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "redhawk",
+          "44",
+          "mag"
+        ],
+        725,
+        875,
+        1075,
+        "Ruger Super Redhawk .44 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "redhawk"
+        ],
+        725,
+        875,
+        1075,
+        "Ruger Super Redhawk"
+      ],
+      [
+        [
+          "ruger",
+          "redhawk",
+          "357"
+        ],
+        725,
+        875,
+        1075,
+        "Ruger Redhawk .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "redhawk",
+          "44",
+          "mag"
+        ],
+        750,
+        900,
+        1100,
+        "Ruger Redhawk .44 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "redhawk"
+        ],
+        750,
+        900,
+        1100,
+        "Ruger Redhawk"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "blackhawk",
+          "hunter",
+          "44"
+        ],
+        650,
+        775,
+        950,
+        "Ruger Super Blackhawk Hunter .44 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "blackhawk",
+          "44"
+        ],
+        525,
+        625,
+        775,
+        "Ruger Super Blackhawk .44 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "blackhawk",
+          "bisley"
+        ],
+        575,
+        675,
+        825,
+        "Ruger Super Blackhawk Bisley"
+      ],
+      [
+        [
+          "ruger",
+          "blackhawk",
+          "357"
+        ],
+        475,
+        575,
+        700,
+        "Ruger Blackhawk .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "blackhawk",
+          "41",
+          "mag"
+        ],
+        500,
+        600,
+        750,
+        "Ruger Blackhawk .41 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "blackhawk",
+          "45",
+          "colt"
+        ],
+        500,
+        600,
+        750,
+        "Ruger Blackhawk .45 Colt"
+      ],
+      [
+        [
+          "ruger",
+          "blackhawk",
+          "convertible"
+        ],
+        525,
+        625,
+        775,
+        "Ruger Blackhawk Convertible"
+      ],
+      [
+        [
+          "ruger",
+          "blackhawk"
+        ],
+        475,
+        575,
+        700,
+        "Ruger Blackhawk"
+      ],
+      [
+        [
+          "ruger",
+          "vaquero",
+          "357"
+        ],
+        525,
+        625,
+        775,
+        "Ruger Vaquero .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "vaquero",
+          "45",
+          "colt"
+        ],
+        525,
+        625,
+        775,
+        "Ruger Vaquero .45 Colt"
+      ],
+      [
+        [
+          "ruger",
+          "vaquero"
+        ],
+        525,
+        625,
+        775,
+        "Ruger Vaquero"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "takedown",
+          "magpul"
+        ],
+        425,
+        525,
+        650,
+        "Ruger 10/22 Takedown Magpul Backpacker"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "takedown"
+        ],
+        375,
+        475,
+        600,
+        "Ruger 10/22 Takedown"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "target",
+          "lite"
+        ],
+        425,
+        525,
+        650,
+        "Ruger 10/22 Target Lite"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "competition"
+        ],
+        450,
+        550,
+        675,
+        "Ruger 10/22 Competition"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "target"
+        ],
+        400,
+        500,
+        625,
+        "Ruger 10/22 Target"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "tactical"
+        ],
+        325,
+        400,
+        500,
+        "Ruger 10/22 Tactical"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "carbine"
+        ],
+        225,
+        275,
+        350,
+        "Ruger 10/22 Carbine"
+      ],
+      [
+        [
+          "ruger",
+          "10/22"
+        ],
+        225,
+        275,
+        350,
+        "Ruger 10/22"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rimfire",
+          "target"
+        ],
+        350,
+        425,
+        525,
+        "Ruger American Rimfire Target"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rimfire",
+          "compact"
+        ],
+        275,
+        325,
+        400,
+        "Ruger American Rimfire Compact"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rimfire"
+        ],
+        300,
+        375,
+        475,
+        "Ruger American Rimfire"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rimfire"
+        ],
+        375,
+        475,
+        600,
+        "Ruger Precision Rimfire"
+      ],
+      [
+        [
+          "ruger",
+          "77/22",
+          "22lr"
+        ],
+        525,
+        625,
+        775,
+        "Ruger 77/22 .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "77/22",
+          "22wmr"
+        ],
+        550,
+        650,
+        800,
+        "Ruger 77/22 .22 WMR"
+      ],
+      [
+        [
+          "ruger",
+          "77/17",
+          "17hmr"
+        ],
+        550,
+        650,
+        800,
+        "Ruger 77/17 .17 HMR"
+      ],
+      [
+        [
+          "ruger",
+          "pc",
+          "carbine",
+          "chassis"
+        ],
+        575,
+        675,
+        825,
+        "Ruger PC Carbine Chassis Model"
+      ],
+      [
+        [
+          "ruger",
+          "pc",
+          "carbine",
+          "9mm"
+        ],
+        475,
+        575,
+        700,
+        "Ruger PC Carbine 9mm"
+      ],
+      [
+        [
+          "ruger",
+          "pc",
+          "charger"
+        ],
+        525,
+        625,
+        775,
+        "Ruger PC Charger 9mm"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "ranch",
+          "450"
+        ],
+        575,
+        675,
+        825,
+        "Ruger American Rifle Ranch .450 Bushmaster"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "ranch",
+          "300"
+        ],
+        525,
+        625,
+        775,
+        "Ruger American Rifle Ranch .300 Blackout"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "ranch",
+          "7.62x39"
+        ],
+        525,
+        625,
+        775,
+        "Ruger American Rifle Ranch 7.62x39"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "ranch",
+          "556"
+        ],
+        525,
+        625,
+        775,
+        "Ruger American Rifle Ranch 5.56 NATO"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "ranch"
+        ],
+        525,
+        625,
+        775,
+        "Ruger American Rifle Ranch"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "predator"
+        ],
+        475,
+        575,
+        700,
+        "Ruger American Rifle Predator"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "compact"
+        ],
+        425,
+        525,
+        650,
+        "Ruger American Rifle Compact"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "go",
+          "wild"
+        ],
+        525,
+        625,
+        775,
+        "Ruger American Rifle Go Wild"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle"
+        ],
+        425,
+        525,
+        650,
+        "Ruger American Rifle"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "generation",
+          "ii"
+        ],
+        575,
+        675,
+        825,
+        "Ruger American Rifle Generation II"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rifle",
+          "6.5",
+          "creedmoor"
+        ],
+        1100,
+        1350,
+        1650,
+        "Ruger Precision Rifle 6.5 Creedmoor"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rifle",
+          "308"
+        ],
+        1100,
+        1350,
+        1650,
+        "Ruger Precision Rifle .308 Win"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rifle",
+          "6.5",
+          "prc"
+        ],
+        1200,
+        1450,
+        1750,
+        "Ruger Precision Rifle 6.5 PRC"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rifle",
+          "300",
+          "prc"
+        ],
+        1250,
+        1500,
+        1850,
+        "Ruger Precision Rifle .300 PRC"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rifle"
+        ],
+        1100,
+        1350,
+        1650,
+        "Ruger Precision Rifle"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye",
+          "long",
+          "range",
+          "target"
+        ],
+        950,
+        1150,
+        1400,
+        "Ruger Hawkeye Long-Range Target"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye",
+          "hunter"
+        ],
+        825,
+        1000,
+        1250,
+        "Ruger Hawkeye Hunter"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye",
+          "predator"
+        ],
+        775,
+        925,
+        1150,
+        "Ruger Hawkeye Predator"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye",
+          "african"
+        ],
+        1050,
+        1275,
+        1575,
+        "Ruger Hawkeye African"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye",
+          "alaskan"
+        ],
+        950,
+        1150,
+        1400,
+        "Ruger Hawkeye Alaskan"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye",
+          "compact"
+        ],
+        725,
+        875,
+        1075,
+        "Ruger Hawkeye Compact"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye"
+        ],
+        750,
+        900,
+        1100,
+        "Ruger Hawkeye"
+      ],
+      [
+        [
+          "ruger",
+          "guide",
+          "gun",
+          "375"
+        ],
+        1050,
+        1275,
+        1575,
+        "Ruger Guide Gun .375 Ruger"
+      ],
+      [
+        [
+          "ruger",
+          "guide",
+          "gun",
+          "416"
+        ],
+        1100,
+        1350,
+        1650,
+        "Ruger Guide Gun .416 Ruger"
+      ],
+      [
+        [
+          "ruger",
+          "guide",
+          "gun"
+        ],
+        1000,
+        1200,
+        1475,
+        "Ruger Guide Gun"
+      ],
+      [
+        [
+          "ruger",
+          "no",
+          "1",
+          "tropical"
+        ],
+        1200,
+        1450,
+        1750,
+        "Ruger No. 1 Tropical"
+      ],
+      [
+        [
+          "ruger",
+          "no",
+          "1",
+          "varminter"
+        ],
+        1100,
+        1350,
+        1650,
+        "Ruger No. 1 Varminter"
+      ],
+      [
+        [
+          "ruger",
+          "no",
+          "1"
+        ],
+        1050,
+        1275,
+        1575,
+        "Ruger No. 1"
+      ],
+      [
+        [
+          "ruger",
+          "ar",
+          "556",
+          "mpr"
+        ],
+        725,
+        875,
+        1075,
+        "Ruger AR-556 MPR"
+      ],
+      [
+        [
+          "ruger",
+          "ar",
+          "556",
+          "pistol"
+        ],
+        625,
+        750,
+        925,
+        "Ruger AR-556 Pistol"
+      ],
+      [
+        [
+          "ruger",
+          "ar",
+          "556",
+          "free",
+          "float"
+        ],
+        675,
+        800,
+        975,
+        "Ruger AR-556 Free-Float Handguard"
+      ],
+      [
+        [
+          "ruger",
+          "ar",
+          "556"
+        ],
+        575,
+        675,
+        825,
+        "Ruger AR-556"
+      ],
+      [
+        [
+          "ruger",
+          "sfar",
+          "308"
+        ],
+        950,
+        1150,
+        1400,
+        "Ruger SFAR .308 Win"
+      ],
+      [
+        [
+          "ruger",
+          "mini",
+          "14",
+          "tactical"
+        ],
+        875,
+        1050,
+        1300,
+        "Ruger Mini-14 Tactical"
+      ],
+      [
+        [
+          "ruger",
+          "mini",
+          "14",
+          "ranch"
+        ],
+        825,
+        1000,
+        1250,
+        "Ruger Mini-14 Ranch Rifle"
+      ],
+      [
+        [
+          "ruger",
+          "mini",
+          "14"
+        ],
+        775,
+        925,
+        1150,
+        "Ruger Mini-14"
+      ],
+      [
+        [
+          "ruger",
+          "mini",
+          "30"
+        ],
+        825,
+        1000,
+        1250,
+        "Ruger Mini-30"
+      ],
+      [
+        [
+          "ruger",
+          "scout",
+          "rifle",
+          "308"
+        ],
+        950,
+        1150,
+        1400,
+        "Ruger Gunsite Scout Rifle .308"
+      ],
+      [
+        [
+          "ruger",
+          "scout",
+          "rifle",
+          "450"
+        ],
+        1000,
+        1200,
+        1475,
+        "Ruger Gunsite Scout Rifle .450 Bushmaster"
+      ],
+      [
+        [
+          "ruger",
+          "scout",
+          "rifle"
+        ],
+        950,
+        1150,
+        1400,
+        "Ruger Gunsite Scout Rifle"
+      ],
+      [
+        [
+          "ruger",
+          "red",
+          "label",
+          "12ga"
+        ],
+        1050,
+        1275,
+        1575,
+        "Ruger Red Label 12 Gauge"
+      ],
+      [
+        [
+          "ruger",
+          "red",
+          "label",
+          "20ga"
+        ],
+        1050,
+        1275,
+        1575,
+        "Ruger Red Label 20 Gauge"
+      ],
+      [
+        [
+          "ruger",
+          "red",
+          "label"
+        ],
+        1050,
+        1275,
+        1575,
+        "Ruger Red Label Over/Under"
       ]
     ],
     "sig sauer": [
@@ -3837,6 +5114,590 @@
         860,
         1060,
         "Springfield Saint 5.56 AR"
+      ],
+      [
+        [
+          "springfield",
+          "prodigy",
+          "4.25",
+          "ds"
+        ],
+        900,
+        1100,
+        1400,
+        "Springfield Armory Prodigy 4.25\" DS"
+      ],
+      [
+        [
+          "springfield",
+          "prodigy",
+          "5",
+          "ds"
+        ],
+        950,
+        1150,
+        1450,
+        "Springfield Armory Prodigy 5\" DS"
+      ],
+      [
+        [
+          "springfield",
+          "prodigy",
+          "4.25"
+        ],
+        850,
+        1050,
+        1350,
+        "Springfield Armory Prodigy 4.25\""
+      ],
+      [
+        [
+          "springfield",
+          "prodigy",
+          "5"
+        ],
+        900,
+        1100,
+        1400,
+        "Springfield Armory Prodigy 5\""
+      ],
+      [
+        [
+          "springfield",
+          "1911",
+          "ronin",
+          "operator",
+          "10mm"
+        ],
+        650,
+        800,
+        1000,
+        "Springfield Armory 1911 Ronin Operator 10mm"
+      ],
+      [
+        [
+          "springfield",
+          "1911",
+          "ronin",
+          "operator"
+        ],
+        550,
+        700,
+        900,
+        "Springfield Armory 1911 Ronin Operator .45 ACP"
+      ],
+      [
+        [
+          "springfield",
+          "1911",
+          "ronin",
+          "emp",
+          "4"
+        ],
+        600,
+        750,
+        950,
+        "Springfield Armory 1911 Ronin EMP 4\""
+      ],
+      [
+        [
+          "springfield",
+          "1911",
+          "garrison"
+        ],
+        500,
+        650,
+        850,
+        "Springfield Armory 1911 Garrison"
+      ],
+      [
+        [
+          "springfield",
+          "1911",
+          "emissary",
+          "4.25"
+        ],
+        900,
+        1100,
+        1350,
+        "Springfield Armory 1911 Emissary 4.25\""
+      ],
+      [
+        [
+          "springfield",
+          "1911",
+          "emissary",
+          "5"
+        ],
+        950,
+        1150,
+        1400,
+        "Springfield Armory 1911 Emissary 5\""
+      ],
+      [
+        [
+          "springfield",
+          "1911",
+          "trp",
+          "operator",
+          "10mm"
+        ],
+        1300,
+        1550,
+        1850,
+        "Springfield Armory 1911 TRP Operator 10mm"
+      ],
+      [
+        [
+          "springfield",
+          "1911",
+          "trp",
+          "operator"
+        ],
+        1200,
+        1450,
+        1750,
+        "Springfield Armory 1911 TRP Operator .45 ACP"
+      ],
+      [
+        [
+          "springfield",
+          "1911",
+          "trp"
+        ],
+        1150,
+        1400,
+        1700,
+        "Springfield Armory 1911 TRP"
+      ],
+      [
+        [
+          "springfield",
+          "hellcat",
+          "pro",
+          "osp"
+        ],
+        400,
+        500,
+        650,
+        "Springfield Armory Hellcat Pro OSP"
+      ],
+      [
+        [
+          "springfield",
+          "hellcat",
+          "pro",
+          "comp"
+        ],
+        450,
+        550,
+        700,
+        "Springfield Armory Hellcat Pro Comp"
+      ],
+      [
+        [
+          "springfield",
+          "hellcat",
+          "pro"
+        ],
+        375,
+        475,
+        625,
+        "Springfield Armory Hellcat Pro"
+      ],
+      [
+        [
+          "springfield",
+          "hellcat",
+          "rdp"
+        ],
+        425,
+        525,
+        675,
+        "Springfield Armory Hellcat RDP"
+      ],
+      [
+        [
+          "springfield",
+          "hellcat",
+          "osp"
+        ],
+        375,
+        475,
+        625,
+        "Springfield Armory Hellcat OSP"
+      ],
+      [
+        [
+          "springfield",
+          "hellcat"
+        ],
+        350,
+        450,
+        600,
+        "Springfield Armory Hellcat"
+      ],
+      [
+        [
+          "springfield",
+          "echelon",
+          "4.5",
+          "comp"
+        ],
+        500,
+        625,
+        800,
+        "Springfield Armory Echelon 4.5\" Comp"
+      ],
+      [
+        [
+          "springfield",
+          "echelon",
+          "4.5"
+        ],
+        450,
+        575,
+        750,
+        "Springfield Armory Echelon 4.5\""
+      ],
+      [
+        [
+          "springfield",
+          "echelon",
+          "compact"
+        ],
+        425,
+        550,
+        725,
+        "Springfield Armory Echelon Compact"
+      ],
+      [
+        [
+          "springfield",
+          "xd-m",
+          "elite",
+          "osp",
+          "10mm"
+        ],
+        475,
+        600,
+        775,
+        "Springfield Armory XD-M Elite OSP 10mm"
+      ],
+      [
+        [
+          "springfield",
+          "xd-m",
+          "elite",
+          "osp",
+          "4.5"
+        ],
+        425,
+        550,
+        725,
+        "Springfield Armory XD-M Elite OSP 4.5\""
+      ],
+      [
+        [
+          "springfield",
+          "xd-m",
+          "elite",
+          "osp",
+          "3.8",
+          "compact"
+        ],
+        400,
+        525,
+        700,
+        "Springfield Armory XD-M Elite OSP 3.8\" Compact"
+      ],
+      [
+        [
+          "springfield",
+          "xd-m",
+          "elite",
+          "4.5"
+        ],
+        400,
+        525,
+        700,
+        "Springfield Armory XD-M Elite 4.5\""
+      ],
+      [
+        [
+          "springfield",
+          "xd-m",
+          "elite",
+          "3.8"
+        ],
+        375,
+        500,
+        675,
+        "Springfield Armory XD-M Elite 3.8\""
+      ],
+      [
+        [
+          "springfield",
+          "xd-s",
+          "mod.2",
+          "osp"
+        ],
+        325,
+        425,
+        575,
+        "Springfield Armory XD-S Mod.2 OSP"
+      ],
+      [
+        [
+          "springfield",
+          "xd-s",
+          "mod.2"
+        ],
+        300,
+        400,
+        550,
+        "Springfield Armory XD-S Mod.2"
+      ],
+      [
+        [
+          "springfield",
+          "xd",
+          "mod.2",
+          "tactical"
+        ],
+        350,
+        450,
+        600,
+        "Springfield Armory XD Mod.2 Tactical"
+      ],
+      [
+        [
+          "springfield",
+          "xd",
+          "mod.2",
+          "service"
+        ],
+        325,
+        425,
+        575,
+        "Springfield Armory XD Mod.2 Service"
+      ],
+      [
+        [
+          "springfield",
+          "xd",
+          "mod.2",
+          "subcompact"
+        ],
+        300,
+        400,
+        550,
+        "Springfield Armory XD Mod.2 Sub-Compact"
+      ],
+      [
+        [
+          "springfield",
+          "saint",
+          "victor",
+          "308",
+          "16"
+        ],
+        1000,
+        1250,
+        1600,
+        "Springfield Armory SAINT Victor .308 16\""
+      ],
+      [
+        [
+          "springfield",
+          "saint",
+          "victor",
+          "556",
+          "16"
+        ],
+        750,
+        950,
+        1250,
+        "Springfield Armory SAINT Victor 5.56 16\""
+      ],
+      [
+        [
+          "springfield",
+          "saint",
+          "victor",
+          "pistol",
+          "556"
+        ],
+        700,
+        900,
+        1200,
+        "Springfield Armory SAINT Victor Pistol 5.56"
+      ],
+      [
+        [
+          "springfield",
+          "saint",
+          "victor",
+          "pdw"
+        ],
+        850,
+        1050,
+        1350,
+        "Springfield Armory SAINT Victor PDW"
+      ],
+      [
+        [
+          "springfield",
+          "saint",
+          "edge",
+          "556"
+        ],
+        850,
+        1050,
+        1350,
+        "Springfield Armory SAINT Edge 5.56"
+      ],
+      [
+        [
+          "springfield",
+          "saint",
+          "edge",
+          "pdw"
+        ],
+        900,
+        1100,
+        1400,
+        "Springfield Armory SAINT Edge PDW"
+      ],
+      [
+        [
+          "springfield",
+          "saint",
+          "556",
+          "16"
+        ],
+        650,
+        850,
+        1150,
+        "Springfield Armory SAINT 5.56 16\""
+      ],
+      [
+        [
+          "springfield",
+          "saint",
+          "pistol"
+        ],
+        625,
+        825,
+        1100,
+        "Springfield Armory SAINT Pistol"
+      ],
+      [
+        [
+          "springfield",
+          "m1a",
+          "loaded"
+        ],
+        1400,
+        1700,
+        2100,
+        "Springfield Armory M1A Loaded"
+      ],
+      [
+        [
+          "springfield",
+          "m1a",
+          "scout",
+          "squad"
+        ],
+        1300,
+        1600,
+        2000,
+        "Springfield Armory M1A Scout Squad"
+      ],
+      [
+        [
+          "springfield",
+          "m1a",
+          "socom",
+          "16"
+        ],
+        1500,
+        1800,
+        2200,
+        "Springfield Armory M1A SOCOM 16"
+      ],
+      [
+        [
+          "springfield",
+          "m1a",
+          "standard"
+        ],
+        1200,
+        1500,
+        1900,
+        "Springfield Armory M1A Standard"
+      ],
+      [
+        [
+          "springfield",
+          "m1a",
+          "tanker"
+        ],
+        1250,
+        1550,
+        1950,
+        "Springfield Armory M1A Tanker"
+      ],
+      [
+        [
+          "springfield",
+          "waypoint",
+          "2020",
+          "6.5",
+          "creedmoor"
+        ],
+        1300,
+        1600,
+        2000,
+        "Springfield Armory Waypoint 2020 6.5 Creedmoor"
+      ],
+      [
+        [
+          "springfield",
+          "waypoint",
+          "2020",
+          "308"
+        ],
+        1250,
+        1550,
+        1950,
+        "Springfield Armory Waypoint 2020 .308"
+      ],
+      [
+        [
+          "springfield",
+          "waypoint",
+          "carbon",
+          "6.5",
+          "creedmoor"
+        ],
+        1400,
+        1700,
+        2100,
+        "Springfield Armory Waypoint Carbon 6.5 Creedmoor"
+      ],
+      [
+        [
+          "springfield",
+          "waypoint",
+          "carbon",
+          "308"
+        ],
+        1350,
+        1650,
+        2050,
+        "Springfield Armory Waypoint Carbon .308"
       ]
     ],
     "remington": [
@@ -4324,6 +6185,598 @@
         500,
         700,
         "Remington firearm"
+      ],
+      [
+        [
+          "remington",
+          "700",
+          "adl",
+          "tactical"
+        ],
+        400,
+        550,
+        700,
+        "Remington 700 ADL Tactical"
+      ],
+      [
+        [
+          "remington",
+          "700",
+          "sps",
+          "tactical"
+        ],
+        450,
+        600,
+        750,
+        "Remington 700 SPS Tactical"
+      ],
+      [
+        [
+          "remington",
+          "700",
+          "5r",
+          "milspec"
+        ],
+        800,
+        1000,
+        1300,
+        "Remington 700 5R MilSpec"
+      ],
+      [
+        [
+          "remington",
+          "700",
+          "sendero",
+          "sf",
+          "ii"
+        ],
+        900,
+        1150,
+        1400,
+        "Remington 700 Sendero SF II"
+      ],
+      [
+        [
+          "remington",
+          "700",
+          "varmint",
+          "sf"
+        ],
+        500,
+        650,
+        850,
+        "Remington 700 Varmint SF"
+      ],
+      [
+        [
+          "remington",
+          "700",
+          "cdl",
+          "sf"
+        ],
+        700,
+        900,
+        1150,
+        "Remington 700 CDL SF"
+      ],
+      [
+        [
+          "remington",
+          "700",
+          "bdl"
+        ],
+        550,
+        700,
+        900,
+        "Remington 700 BDL"
+      ],
+      [
+        [
+          "remington",
+          "700",
+          "adl"
+        ],
+        350,
+        475,
+        625,
+        "Remington 700 ADL"
+      ],
+      [
+        [
+          "remington",
+          "700",
+          "sps"
+        ],
+        400,
+        525,
+        675,
+        "Remington 700 SPS"
+      ],
+      [
+        [
+          "remington",
+          "700",
+          "cdl"
+        ],
+        650,
+        850,
+        1100,
+        "Remington 700 CDL"
+      ],
+      [
+        [
+          "remington",
+          "700",
+          "xcr"
+        ],
+        600,
+        775,
+        1000,
+        "Remington 700 XCR"
+      ],
+      [
+        [
+          "remington",
+          "700"
+        ],
+        375,
+        500,
+        650,
+        "Remington 700"
+      ],
+      [
+        [
+          "remington",
+          "870",
+          "express",
+          "tactical"
+        ],
+        250,
+        325,
+        425,
+        "Remington 870 Express Tactical"
+      ],
+      [
+        [
+          "remington",
+          "870",
+          "wingmaster",
+          "marine"
+        ],
+        450,
+        575,
+        725,
+        "Remington 870 Wingmaster Marine"
+      ],
+      [
+        [
+          "remington",
+          "870",
+          "police",
+          "magnum"
+        ],
+        350,
+        475,
+        625,
+        "Remington 870 Police Magnum"
+      ],
+      [
+        [
+          "remington",
+          "870",
+          "dm",
+          "magpul"
+        ],
+        325,
+        425,
+        550,
+        "Remington 870 DM Magpul"
+      ],
+      [
+        [
+          "remington",
+          "870",
+          "tac-14"
+        ],
+        275,
+        350,
+        450,
+        "Remington 870 Tac-14"
+      ],
+      [
+        [
+          "remington",
+          "870",
+          "wingmaster"
+        ],
+        350,
+        475,
+        650,
+        "Remington 870 Wingmaster"
+      ],
+      [
+        [
+          "remington",
+          "870",
+          "express"
+        ],
+        200,
+        275,
+        375,
+        "Remington 870 Express"
+      ],
+      [
+        [
+          "remington",
+          "870",
+          "dm"
+        ],
+        275,
+        375,
+        500,
+        "Remington 870 DM"
+      ],
+      [
+        [
+          "remington",
+          "870"
+        ],
+        200,
+        300,
+        425,
+        "Remington 870"
+      ],
+      [
+        [
+          "remington",
+          "1100",
+          "competition"
+        ],
+        600,
+        775,
+        1000,
+        "Remington 1100 Competition"
+      ],
+      [
+        [
+          "remington",
+          "1100",
+          "sporting"
+        ],
+        550,
+        700,
+        900,
+        "Remington 1100 Sporting"
+      ],
+      [
+        [
+          "remington",
+          "1100",
+          "tactical"
+        ],
+        450,
+        575,
+        750,
+        "Remington 1100 Tactical"
+      ],
+      [
+        [
+          "remington",
+          "1100"
+        ],
+        400,
+        550,
+        725,
+        "Remington 1100"
+      ],
+      [
+        [
+          "remington",
+          "11-87",
+          "sportsman"
+        ],
+        350,
+        475,
+        625,
+        "Remington 11-87 Sportsman"
+      ],
+      [
+        [
+          "remington",
+          "11-87",
+          "police"
+        ],
+        400,
+        525,
+        700,
+        "Remington 11-87 Police"
+      ],
+      [
+        [
+          "remington",
+          "11-87"
+        ],
+        350,
+        475,
+        650,
+        "Remington 11-87"
+      ],
+      [
+        [
+          "remington",
+          "versa",
+          "max",
+          "sportsman"
+        ],
+        550,
+        700,
+        900,
+        "Remington Versa Max Sportsman"
+      ],
+      [
+        [
+          "remington",
+          "versa",
+          "max",
+          "tactical"
+        ],
+        600,
+        775,
+        1000,
+        "Remington Versa Max Tactical"
+      ],
+      [
+        [
+          "remington",
+          "versa",
+          "max"
+        ],
+        575,
+        750,
+        975,
+        "Remington Versa Max"
+      ],
+      [
+        [
+          "remington",
+          "v3",
+          "field",
+          "sport"
+        ],
+        650,
+        825,
+        1050,
+        "Remington V3 Field Sport"
+      ],
+      [
+        [
+          "remington",
+          "v3",
+          "tactical"
+        ],
+        700,
+        900,
+        1150,
+        "Remington V3 Tactical"
+      ],
+      [
+        [
+          "remington",
+          "v3",
+          "tac-13"
+        ],
+        600,
+        775,
+        1000,
+        "Remington V3 Tac-13"
+      ],
+      [
+        [
+          "remington",
+          "v3"
+        ],
+        650,
+        850,
+        1100,
+        "Remington V3"
+      ],
+      [
+        [
+          "remington",
+          "model",
+          "7"
+        ],
+        450,
+        575,
+        750,
+        "Remington Model 7"
+      ],
+      [
+        [
+          "remington",
+          "model",
+          "seven"
+        ],
+        450,
+        575,
+        750,
+        "Remington Model Seven"
+      ],
+      [
+        [
+          "remington",
+          "783",
+          "varmint"
+        ],
+        275,
+        350,
+        450,
+        "Remington 783 Varmint"
+      ],
+      [
+        [
+          "remington",
+          "783",
+          "heavy",
+          "barrel"
+        ],
+        275,
+        350,
+        450,
+        "Remington 783 Heavy Barrel"
+      ],
+      [
+        [
+          "remington",
+          "783"
+        ],
+        250,
+        325,
+        425,
+        "Remington 783"
+      ],
+      [
+        [
+          "remington",
+          "r-15",
+          "vtr"
+        ],
+        700,
+        900,
+        1150,
+        "Remington R-15 VTR"
+      ],
+      [
+        [
+          "remington",
+          "r-25"
+        ],
+        800,
+        1050,
+        1350,
+        "Remington R-25"
+      ],
+      [
+        [
+          "remington",
+          "7600",
+          "pump"
+        ],
+        450,
+        575,
+        750,
+        "Remington 7600 Pump"
+      ],
+      [
+        [
+          "remington",
+          "7615",
+          "tactical"
+        ],
+        500,
+        650,
+        850,
+        "Remington 7615 Tactical"
+      ],
+      [
+        [
+          "remington",
+          "model",
+          "572",
+          "fieldmaster"
+        ],
+        250,
+        325,
+        425,
+        "Remington 572 Fieldmaster"
+      ],
+      [
+        [
+          "remington",
+          "model",
+          "597"
+        ],
+        150,
+        200,
+        275,
+        "Remington 597"
+      ],
+      [
+        [
+          "remington",
+          "1911",
+          "r1",
+          "enhanced"
+        ],
+        500,
+        650,
+        850,
+        "Remington 1911 R1 Enhanced"
+      ],
+      [
+        [
+          "remington",
+          "1911",
+          "r1",
+          "tactical"
+        ],
+        550,
+        700,
+        900,
+        "Remington 1911 R1 Tactical"
+      ],
+      [
+        [
+          "remington",
+          "1911",
+          "r1",
+          "hunter"
+        ],
+        600,
+        775,
+        1000,
+        "Remington 1911 R1 Hunter"
+      ],
+      [
+        [
+          "remington",
+          "1911",
+          "r1"
+        ],
+        450,
+        575,
+        750,
+        "Remington 1911 R1"
+      ],
+      [
+        [
+          "remington",
+          "rm380"
+        ],
+        200,
+        275,
+        375,
+        "Remington RM380"
+      ],
+      [
+        [
+          "remington",
+          "rp9"
+        ],
+        225,
+        300,
+        400,
+        "Remington RP9"
+      ],
+      [
+        [
+          "remington",
+          "rp45"
+        ],
+        250,
+        325,
+        425,
+        "Remington RP45"
       ]
     ],
     "winchester": [
@@ -5125,6 +7578,1069 @@
         650,
         900,
         "Beretta firearm"
+      ],
+      [
+        [
+          "1301",
+          "tactical",
+          "mod",
+          "2"
+        ],
+        900,
+        1100,
+        1400,
+        "Beretta 1301 Tactical Mod 2"
+      ],
+      [
+        [
+          "1301",
+          "tactical"
+        ],
+        800,
+        1000,
+        1250,
+        "Beretta 1301 Tactical"
+      ],
+      [
+        [
+          "1301",
+          "comp",
+          "pro"
+        ],
+        1100,
+        1350,
+        1650,
+        "Beretta 1301 Comp Pro"
+      ],
+      [
+        [
+          "1301",
+          "comp"
+        ],
+        900,
+        1100,
+        1400,
+        "Beretta 1301 Comp"
+      ],
+      [
+        [
+          "a300",
+          "ultima",
+          "patrol"
+        ],
+        800,
+        950,
+        1200,
+        "Beretta A300 Ultima Patrol"
+      ],
+      [
+        [
+          "a300",
+          "ultima"
+        ],
+        650,
+        800,
+        1000,
+        "Beretta A300 Ultima"
+      ],
+      [
+        [
+          "a300",
+          "outlander"
+        ],
+        400,
+        500,
+        650,
+        "Beretta A300 Outlander"
+      ],
+      [
+        [
+          "a400",
+          "xcel",
+          "sporting"
+        ],
+        1200,
+        1500,
+        1850,
+        "Beretta A400 Xcel Sporting"
+      ],
+      [
+        [
+          "a400",
+          "xtreme",
+          "plus"
+        ],
+        1300,
+        1600,
+        2000,
+        "Beretta A400 Xtreme Plus"
+      ],
+      [
+        [
+          "a400",
+          "upland"
+        ],
+        1100,
+        1400,
+        1750,
+        "Beretta A400 Upland"
+      ],
+      [
+        [
+          "686",
+          "silver",
+          "pigeon",
+          "i",
+          "sporting"
+        ],
+        1400,
+        1750,
+        2200,
+        "Beretta 686 Silver Pigeon I Sporting"
+      ],
+      [
+        [
+          "686",
+          "silver",
+          "pigeon",
+          "i"
+        ],
+        1200,
+        1500,
+        1900,
+        "Beretta 686 Silver Pigeon I"
+      ],
+      [
+        [
+          "687",
+          "silver",
+          "pigeon",
+          "iii"
+        ],
+        2200,
+        2800,
+        3500,
+        "Beretta 687 Silver Pigeon III"
+      ],
+      [
+        [
+          "687",
+          "eell",
+          "diamond",
+          "pigeon"
+        ],
+        5000,
+        6500,
+        8500,
+        "Beretta 687 EELL Diamond Pigeon"
+      ],
+      [
+        [
+          "dt11",
+          "sporting"
+        ],
+        6500,
+        8000,
+        10000,
+        "Beretta DT11 Sporting"
+      ],
+      [
+        [
+          "692",
+          "sporting"
+        ],
+        2800,
+        3400,
+        4200,
+        "Beretta 692 Sporting"
+      ],
+      [
+        [
+          "92x",
+          "performance",
+          "defensive"
+        ],
+        900,
+        1100,
+        1400,
+        "Beretta 92X Performance Defensive"
+      ],
+      [
+        [
+          "92x",
+          "performance"
+        ],
+        1000,
+        1250,
+        1600,
+        "Beretta 92X Performance"
+      ],
+      [
+        [
+          "92x",
+          "rdo",
+          "compact"
+        ],
+        550,
+        650,
+        800,
+        "Beretta 92X RDO Compact"
+      ],
+      [
+        [
+          "92x",
+          "rdo",
+          "full"
+        ],
+        550,
+        650,
+        800,
+        "Beretta 92X RDO Full Size"
+      ],
+      [
+        [
+          "92x",
+          "centurion"
+        ],
+        500,
+        600,
+        750,
+        "Beretta 92X Centurion"
+      ],
+      [
+        [
+          "92x",
+          "compact"
+        ],
+        500,
+        600,
+        750,
+        "Beretta 92X Compact"
+      ],
+      [
+        [
+          "92x",
+          "full"
+        ],
+        500,
+        600,
+        750,
+        "Beretta 92X Full Size"
+      ],
+      [
+        [
+          "m9a4"
+        ],
+        700,
+        850,
+        1050,
+        "Beretta M9A4"
+      ],
+      [
+        [
+          "m9a3"
+        ],
+        650,
+        800,
+        1000,
+        "Beretta M9A3"
+      ],
+      [
+        [
+          "92fs",
+          "inox"
+        ],
+        500,
+        600,
+        750,
+        "Beretta 92FS Inox"
+      ],
+      [
+        [
+          "92fs",
+          "compact"
+        ],
+        450,
+        550,
+        700,
+        "Beretta 92FS Compact"
+      ],
+      [
+        [
+          "92fs"
+        ],
+        400,
+        500,
+        650,
+        "Beretta 92FS"
+      ],
+      [
+        [
+          "apx",
+          "a1",
+          "tactical"
+        ],
+        400,
+        500,
+        625,
+        "Beretta APX A1 Tactical"
+      ],
+      [
+        [
+          "apx",
+          "a1",
+          "carry"
+        ],
+        350,
+        450,
+        575,
+        "Beretta APX A1 Carry"
+      ],
+      [
+        [
+          "apx",
+          "a1",
+          "full"
+        ],
+        350,
+        450,
+        575,
+        "Beretta APX A1 Full Size"
+      ],
+      [
+        [
+          "apx",
+          "carry"
+        ],
+        300,
+        400,
+        525,
+        "Beretta APX Carry"
+      ],
+      [
+        [
+          "apx",
+          "combat"
+        ],
+        450,
+        550,
+        700,
+        "Beretta APX Combat"
+      ],
+      [
+        [
+          "apx",
+          "centurion"
+        ],
+        300,
+        400,
+        525,
+        "Beretta APX Centurion"
+      ],
+      [
+        [
+          "apx"
+        ],
+        275,
+        375,
+        500,
+        "Beretta APX"
+      ],
+      [
+        [
+          "px4",
+          "storm",
+          "compact",
+          "carry"
+        ],
+        350,
+        450,
+        575,
+        "Beretta PX4 Storm Compact Carry"
+      ],
+      [
+        [
+          "px4",
+          "storm",
+          "compact"
+        ],
+        325,
+        425,
+        550,
+        "Beretta PX4 Storm Compact"
+      ],
+      [
+        [
+          "px4",
+          "storm",
+          "full"
+        ],
+        350,
+        450,
+        575,
+        "Beretta PX4 Storm Full Size"
+      ],
+      [
+        [
+          "1934"
+        ],
+        300,
+        400,
+        550,
+        "Beretta Model 1934"
+      ],
+      [
+        [
+          "3032",
+          "tomcat",
+          "inox"
+        ],
+        350,
+        450,
+        575,
+        "Beretta 3032 Tomcat Inox"
+      ],
+      [
+        [
+          "3032",
+          "tomcat"
+        ],
+        300,
+        400,
+        525,
+        "Beretta 3032 Tomcat"
+      ],
+      [
+        [
+          "21a",
+          "bobcat"
+        ],
+        225,
+        300,
+        400,
+        "Beretta 21A Bobcat"
+      ],
+      [
+        [
+          "80x",
+          "cheetah"
+        ],
+        550,
+        675,
+        850,
+        "Beretta 80X Cheetah"
+      ],
+      [
+        [
+          "arx100"
+        ],
+        1200,
+        1500,
+        1900,
+        "Beretta ARX100"
+      ],
+      [
+        [
+          "cx4",
+          "storm"
+        ],
+        550,
+        700,
+        900,
+        "Beretta CX4 Storm"
+      ],
+      [
+        [
+          "1873",
+          "renegade",
+          "short"
+        ],
+        1100,
+        1400,
+        1750,
+        "Beretta 1873 Renegade Short Rifle"
+      ],
+      [
+        [
+          "bm59"
+        ],
+        1800,
+        2300,
+        3000,
+        "Beretta BM59"
+      ],
+      [
+        [
+          "1301",
+          "tactical",
+          "mod",
+          "2"
+        ],
+        900,
+        1100,
+        1400,
+        "Beretta 1301 Tactical Mod 2"
+      ],
+      [
+        [
+          "1301",
+          "tactical"
+        ],
+        800,
+        1000,
+        1250,
+        "Beretta 1301 Tactical"
+      ],
+      [
+        [
+          "1301",
+          "comp",
+          "pro"
+        ],
+        1100,
+        1350,
+        1650,
+        "Beretta 1301 Comp Pro"
+      ],
+      [
+        [
+          "1301",
+          "comp"
+        ],
+        900,
+        1100,
+        1400,
+        "Beretta 1301 Comp"
+      ],
+      [
+        [
+          "a300",
+          "ultima",
+          "patrol"
+        ],
+        800,
+        950,
+        1200,
+        "Beretta A300 Ultima Patrol"
+      ],
+      [
+        [
+          "a300",
+          "ultima"
+        ],
+        650,
+        800,
+        1000,
+        "Beretta A300 Ultima"
+      ],
+      [
+        [
+          "a300",
+          "outlander"
+        ],
+        400,
+        500,
+        650,
+        "Beretta A300 Outlander"
+      ],
+      [
+        [
+          "92x",
+          "performance"
+        ],
+        900,
+        1100,
+        1400,
+        "Beretta 92X Performance"
+      ],
+      [
+        [
+          "92x",
+          "rdo",
+          "full",
+          "size"
+        ],
+        600,
+        725,
+        900,
+        "Beretta 92X RDO Full Size"
+      ],
+      [
+        [
+          "92x",
+          "rdo",
+          "compact"
+        ],
+        575,
+        700,
+        875,
+        "Beretta 92X RDO Compact"
+      ],
+      [
+        [
+          "92x",
+          "rdo",
+          "centurion"
+        ],
+        575,
+        700,
+        875,
+        "Beretta 92X RDO Centurion"
+      ],
+      [
+        [
+          "92x",
+          "full",
+          "size"
+        ],
+        550,
+        675,
+        850,
+        "Beretta 92X Full Size"
+      ],
+      [
+        [
+          "92x",
+          "compact"
+        ],
+        525,
+        650,
+        825,
+        "Beretta 92X Compact"
+      ],
+      [
+        [
+          "92x",
+          "centurion"
+        ],
+        525,
+        650,
+        825,
+        "Beretta 92X Centurion"
+      ],
+      [
+        [
+          "92fs",
+          "inox"
+        ],
+        500,
+        625,
+        800,
+        "Beretta 92FS Inox"
+      ],
+      [
+        [
+          "92fs",
+          "brigadier"
+        ],
+        500,
+        625,
+        800,
+        "Beretta 92FS Brigadier"
+      ],
+      [
+        [
+          "92fs"
+        ],
+        425,
+        550,
+        725,
+        "Beretta 92FS"
+      ],
+      [
+        [
+          "m9a4"
+        ],
+        700,
+        850,
+        1100,
+        "Beretta M9A4"
+      ],
+      [
+        [
+          "m9a3"
+        ],
+        650,
+        800,
+        1050,
+        "Beretta M9A3"
+      ],
+      [
+        [
+          "m9"
+        ],
+        400,
+        525,
+        700,
+        "Beretta M9"
+      ],
+      [
+        [
+          "apx",
+          "a1",
+          "tactical"
+        ],
+        400,
+        500,
+        650,
+        "Beretta APX A1 Tactical"
+      ],
+      [
+        [
+          "apx",
+          "a1",
+          "full",
+          "size"
+        ],
+        350,
+        450,
+        575,
+        "Beretta APX A1 Full Size"
+      ],
+      [
+        [
+          "apx",
+          "a1",
+          "compact"
+        ],
+        325,
+        425,
+        550,
+        "Beretta APX A1 Compact"
+      ],
+      [
+        [
+          "apx",
+          "a1",
+          "carry"
+        ],
+        325,
+        425,
+        550,
+        "Beretta APX A1 Carry"
+      ],
+      [
+        [
+          "apx",
+          "tactical"
+        ],
+        375,
+        475,
+        625,
+        "Beretta APX Tactical"
+      ],
+      [
+        [
+          "apx",
+          "combat"
+        ],
+        500,
+        625,
+        800,
+        "Beretta APX Combat"
+      ],
+      [
+        [
+          "apx",
+          "centurion"
+        ],
+        300,
+        400,
+        525,
+        "Beretta APX Centurion"
+      ],
+      [
+        [
+          "apx",
+          "compact"
+        ],
+        275,
+        375,
+        500,
+        "Beretta APX Compact"
+      ],
+      [
+        [
+          "apx",
+          "carry"
+        ],
+        275,
+        375,
+        500,
+        "Beretta APX Carry"
+      ],
+      [
+        [
+          "apx"
+        ],
+        275,
+        375,
+        500,
+        "Beretta APX"
+      ],
+      [
+        [
+          "px4",
+          "storm",
+          "compact",
+          "carry"
+        ],
+        350,
+        450,
+        575,
+        "Beretta PX4 Storm Compact Carry"
+      ],
+      [
+        [
+          "px4",
+          "storm",
+          "compact"
+        ],
+        325,
+        425,
+        550,
+        "Beretta PX4 Storm Compact"
+      ],
+      [
+        [
+          "px4",
+          "storm",
+          "full",
+          "size"
+        ],
+        350,
+        450,
+        575,
+        "Beretta PX4 Storm Full Size"
+      ],
+      [
+        [
+          "px4",
+          "storm"
+        ],
+        325,
+        425,
+        550,
+        "Beretta PX4 Storm"
+      ],
+      [
+        [
+          "80x",
+          "cheetah"
+        ],
+        550,
+        675,
+        850,
+        "Beretta 80X Cheetah"
+      ],
+      [
+        [
+          "81",
+          "cheetah"
+        ],
+        350,
+        450,
+        600,
+        "Beretta 81 Cheetah"
+      ],
+      [
+        [
+          "3032",
+          "tomcat",
+          "inox"
+        ],
+        350,
+        450,
+        575,
+        "Beretta 3032 Tomcat Inox"
+      ],
+      [
+        [
+          "3032",
+          "tomcat"
+        ],
+        300,
+        400,
+        525,
+        "Beretta 3032 Tomcat"
+      ],
+      [
+        [
+          "21a",
+          "bobcat"
+        ],
+        250,
+        325,
+        425,
+        "Beretta 21A Bobcat"
+      ],
+      [
+        [
+          "686",
+          "silver",
+          "pigeon",
+          "i",
+          "sporting"
+        ],
+        1400,
+        1700,
+        2100,
+        "Beretta 686 Silver Pigeon I Sporting"
+      ],
+      [
+        [
+          "686",
+          "silver",
+          "pigeon",
+          "i"
+        ],
+        1200,
+        1500,
+        1900,
+        "Beretta 686 Silver Pigeon I"
+      ],
+      [
+        [
+          "687",
+          "silver",
+          "pigeon",
+          "iii"
+        ],
+        1800,
+        2200,
+        2800,
+        "Beretta 687 Silver Pigeon III"
+      ],
+      [
+        [
+          "687",
+          "silver",
+          "pigeon",
+          "v"
+        ],
+        2400,
+        3000,
+        3800,
+        "Beretta 687 Silver Pigeon V"
+      ],
+      [
+        [
+          "690",
+          "field",
+          "i"
+        ],
+        1800,
+        2200,
+        2800,
+        "Beretta 690 Field I"
+      ],
+      [
+        [
+          "690",
+          "sporting"
+        ],
+        2000,
+        2500,
+        3200,
+        "Beretta 690 Sporting"
+      ],
+      [
+        [
+          "dt11",
+          "sporting"
+        ],
+        6000,
+        7500,
+        9500,
+        "Beretta DT11 Sporting"
+      ],
+      [
+        [
+          "dt11"
+        ],
+        5500,
+        7000,
+        9000,
+        "Beretta DT11"
+      ],
+      [
+        [
+          "a400",
+          "xcel",
+          "sporting"
+        ],
+        1100,
+        1400,
+        1800,
+        "Beretta A400 Xcel Sporting"
+      ],
+      [
+        [
+          "a400",
+          "xtreme",
+          "plus"
+        ],
+        1200,
+        1500,
+        1900,
+        "Beretta A400 Xtreme Plus"
+      ],
+      [
+        [
+          "a400",
+          "upland"
+        ],
+        900,
+        1150,
+        1500,
+        "Beretta A400 Upland"
+      ],
+      [
+        [
+          "a400"
+        ],
+        900,
+        1150,
+        1500,
+        "Beretta A400"
+      ],
+      [
+        [
+          "1301",
+          "marine"
+        ],
+        850,
+        1050,
+        1350,
+        "Beretta 1301 Marine"
+      ],
+      [
+        [
+          "arx100"
+        ],
+        1200,
+        1500,
+        1900,
+        "Beretta ARX100"
+      ],
+      [
+        [
+          "cx4",
+          "storm"
+        ],
+        600,
+        750,
+        975,
+        "Beretta CX4 Storm"
+      ],
+      [
+        [
+          "bm59"
+        ],
+        1400,
+        1800,
+        2400,
+        "Beretta BM59"
       ]
     ],
     "mossberg": [
@@ -6369,6 +9885,596 @@
         500,
         620,
         "Taurus 1911 Commander .45"
+      ],
+      [
+        [
+          "taurus",
+          "tx22",
+          "competition"
+        ],
+        320,
+        380,
+        450,
+        "Taurus TX22 Competition"
+      ],
+      [
+        [
+          "taurus",
+          "tx22",
+          "compact"
+        ],
+        220,
+        270,
+        330,
+        "Taurus TX22 Compact"
+      ],
+      [
+        [
+          "taurus",
+          "tx22"
+        ],
+        240,
+        290,
+        350,
+        "Taurus TX22"
+      ],
+      [
+        [
+          "taurus",
+          "gx4",
+          "xl"
+        ],
+        260,
+        310,
+        370,
+        "Taurus GX4 XL"
+      ],
+      [
+        [
+          "taurus",
+          "gx4",
+          "carry"
+        ],
+        250,
+        300,
+        360,
+        "Taurus GX4 Carry"
+      ],
+      [
+        [
+          "taurus",
+          "gx4",
+          "t.o.r.o."
+        ],
+        270,
+        320,
+        380,
+        "Taurus GX4 T.O.R.O."
+      ],
+      [
+        [
+          "taurus",
+          "gx4"
+        ],
+        240,
+        290,
+        350,
+        "Taurus GX4"
+      ],
+      [
+        [
+          "taurus",
+          "g3c",
+          "t.o.r.o."
+        ],
+        230,
+        280,
+        340,
+        "Taurus G3c T.O.R.O."
+      ],
+      [
+        [
+          "taurus",
+          "g3c"
+        ],
+        210,
+        260,
+        320,
+        "Taurus G3c"
+      ],
+      [
+        [
+          "taurus",
+          "g3x",
+          "t.o.r.o."
+        ],
+        250,
+        300,
+        360,
+        "Taurus G3X T.O.R.O."
+      ],
+      [
+        [
+          "taurus",
+          "g3x"
+        ],
+        230,
+        280,
+        340,
+        "Taurus G3X"
+      ],
+      [
+        [
+          "taurus",
+          "g3xl",
+          "t.o.r.o."
+        ],
+        260,
+        310,
+        370,
+        "Taurus G3XL T.O.R.O."
+      ],
+      [
+        [
+          "taurus",
+          "g3xl"
+        ],
+        240,
+        290,
+        350,
+        "Taurus G3XL"
+      ],
+      [
+        [
+          "taurus",
+          "g3",
+          "t.o.r.o."
+        ],
+        240,
+        290,
+        350,
+        "Taurus G3 T.O.R.O."
+      ],
+      [
+        [
+          "taurus",
+          "g3"
+        ],
+        220,
+        270,
+        330,
+        "Taurus G3"
+      ],
+      [
+        [
+          "taurus",
+          "g2c"
+        ],
+        180,
+        230,
+        290,
+        "Taurus G2c"
+      ],
+      [
+        [
+          "taurus",
+          "g2s"
+        ],
+        190,
+        240,
+        300,
+        "Taurus G2S"
+      ],
+      [
+        [
+          "taurus",
+          "1911",
+          "commander"
+        ],
+        420,
+        500,
+        600,
+        "Taurus 1911 Commander"
+      ],
+      [
+        [
+          "taurus",
+          "1911",
+          "officer"
+        ],
+        400,
+        480,
+        580,
+        "Taurus 1911 Officer"
+      ],
+      [
+        [
+          "taurus",
+          "1911",
+          "45"
+        ],
+        400,
+        480,
+        580,
+        "Taurus 1911 .45 ACP"
+      ],
+      [
+        [
+          "taurus",
+          "1911",
+          "9mm"
+        ],
+        380,
+        460,
+        560,
+        "Taurus 1911 9mm"
+      ],
+      [
+        [
+          "taurus",
+          "th45"
+        ],
+        320,
+        380,
+        460,
+        "Taurus TH45"
+      ],
+      [
+        [
+          "taurus",
+          "th40"
+        ],
+        280,
+        340,
+        410,
+        "Taurus TH40"
+      ],
+      [
+        [
+          "taurus",
+          "th9",
+          "compact"
+        ],
+        260,
+        310,
+        380,
+        "Taurus TH9 Compact"
+      ],
+      [
+        [
+          "taurus",
+          "th9"
+        ],
+        280,
+        340,
+        410,
+        "Taurus TH9"
+      ],
+      [
+        [
+          "taurus",
+          "pt111",
+          "g2"
+        ],
+        180,
+        230,
+        290,
+        "Taurus PT111 G2"
+      ],
+      [
+        [
+          "taurus",
+          "pt92"
+        ],
+        300,
+        370,
+        450,
+        "Taurus PT92"
+      ],
+      [
+        [
+          "taurus",
+          "pt99"
+        ],
+        310,
+        380,
+        460,
+        "Taurus PT99"
+      ],
+      [
+        [
+          "taurus",
+          "judge",
+          "public",
+          "defender"
+        ],
+        340,
+        410,
+        500,
+        "Taurus Judge Public Defender"
+      ],
+      [
+        [
+          "taurus",
+          "judge",
+          "magnum"
+        ],
+        380,
+        460,
+        560,
+        "Taurus Judge Magnum"
+      ],
+      [
+        [
+          "taurus",
+          "judge"
+        ],
+        350,
+        420,
+        510,
+        "Taurus Judge"
+      ],
+      [
+        [
+          "taurus",
+          "raging",
+          "hunter",
+          "454"
+        ],
+        780,
+        920,
+        1100,
+        "Taurus Raging Hunter .454 Casull"
+      ],
+      [
+        [
+          "taurus",
+          "raging",
+          "hunter",
+          "44"
+        ],
+        700,
+        830,
+        1000,
+        "Taurus Raging Hunter .44 Mag"
+      ],
+      [
+        [
+          "taurus",
+          "raging",
+          "hunter"
+        ],
+        680,
+        810,
+        980,
+        "Taurus Raging Hunter"
+      ],
+      [
+        [
+          "taurus",
+          "raging",
+          "bull",
+          "454"
+        ],
+        650,
+        780,
+        950,
+        "Taurus Raging Bull .454 Casull"
+      ],
+      [
+        [
+          "taurus",
+          "raging",
+          "bull",
+          "44"
+        ],
+        580,
+        700,
+        850,
+        "Taurus Raging Bull .44 Mag"
+      ],
+      [
+        [
+          "taurus",
+          "raging",
+          "bull"
+        ],
+        560,
+        680,
+        820,
+        "Taurus Raging Bull"
+      ],
+      [
+        [
+          "taurus",
+          "tracker",
+          "44"
+        ],
+        420,
+        500,
+        610,
+        "Taurus Tracker .44 Mag"
+      ],
+      [
+        [
+          "taurus",
+          "tracker",
+          "357"
+        ],
+        380,
+        460,
+        560,
+        "Taurus Tracker .357 Mag"
+      ],
+      [
+        [
+          "taurus",
+          "tracker"
+        ],
+        370,
+        450,
+        550,
+        "Taurus Tracker"
+      ],
+      [
+        [
+          "taurus",
+          "856",
+          "t.o.r.o."
+        ],
+        280,
+        340,
+        420,
+        "Taurus 856 T.O.R.O."
+      ],
+      [
+        [
+          "taurus",
+          "856",
+          "ultra",
+          "lite"
+        ],
+        260,
+        320,
+        390,
+        "Taurus 856 Ultra-Lite"
+      ],
+      [
+        [
+          "taurus",
+          "856",
+          "defender"
+        ],
+        270,
+        330,
+        400,
+        "Taurus 856 Defender"
+      ],
+      [
+        [
+          "taurus",
+          "856"
+        ],
+        250,
+        310,
+        380,
+        "Taurus 856"
+      ],
+      [
+        [
+          "taurus",
+          "605"
+        ],
+        260,
+        320,
+        390,
+        "Taurus 605"
+      ],
+      [
+        [
+          "taurus",
+          "942"
+        ],
+        280,
+        340,
+        420,
+        "Taurus 942"
+      ],
+      [
+        [
+          "taurus",
+          "model",
+          "82"
+        ],
+        220,
+        280,
+        350,
+        "Taurus Model 82"
+      ],
+      [
+        [
+          "taurus",
+          "model",
+          "85"
+        ],
+        230,
+        290,
+        360,
+        "Taurus Model 85"
+      ],
+      [
+        [
+          "taurus",
+          "defender",
+          "856"
+        ],
+        270,
+        330,
+        400,
+        "Taurus Defender 856"
+      ],
+      [
+        [
+          "taurus",
+          "spectrum"
+        ],
+        150,
+        200,
+        260,
+        "Taurus Spectrum"
+      ],
+      [
+        [
+          "taurus",
+          "curve"
+        ],
+        160,
+        210,
+        270,
+        "Taurus Curve"
+      ],
+      [
+        [
+          "taurus",
+          "tx22",
+          "tactical"
+        ],
+        300,
+        360,
+        440,
+        "Taurus TX22 Tactical"
+      ],
+      [
+        [
+          "taurus",
+          "t4sa"
+        ],
+        320,
+        390,
+        480,
+        "Taurus T4SA"
+      ],
+      [
+        [
+          "taurus",
+          "ct9",
+          "g2"
+        ],
+        280,
+        340,
+        420,
+        "Taurus CT9 G2 Carbine"
+      ],
+      [
+        [
+          "taurus",
+          "ct40",
+          "g2"
+        ],
+        290,
+        350,
+        430,
+        "Taurus CT40 G2 Carbine"
       ]
     ],
     "savage": [
@@ -7547,6 +11653,928 @@
         860,
         1060,
         "CZ 600 series bolt-action"
+      ],
+      [
+        [
+          "cz",
+          "shadow",
+          "2",
+          "orange"
+        ],
+        1400,
+        1650,
+        1900,
+        "CZ Shadow 2 Orange"
+      ],
+      [
+        [
+          "cz",
+          "shadow",
+          "2",
+          "optics",
+          "ready"
+        ],
+        1100,
+        1300,
+        1500,
+        "CZ Shadow 2 Optics Ready"
+      ],
+      [
+        [
+          "cz",
+          "shadow",
+          "2",
+          "compact"
+        ],
+        1000,
+        1200,
+        1400,
+        "CZ Shadow 2 Compact"
+      ],
+      [
+        [
+          "cz",
+          "shadow",
+          "2",
+          "blue"
+        ],
+        950,
+        1150,
+        1350,
+        "CZ Shadow 2 Blue"
+      ],
+      [
+        [
+          "cz",
+          "shadow",
+          "2"
+        ],
+        950,
+        1150,
+        1350,
+        "CZ Shadow 2"
+      ],
+      [
+        [
+          "cz",
+          "ts",
+          "2",
+          "racing",
+          "orange"
+        ],
+        1500,
+        1750,
+        2000,
+        "CZ TS 2 Racing Orange"
+      ],
+      [
+        [
+          "cz",
+          "ts",
+          "2",
+          "orange"
+        ],
+        1400,
+        1650,
+        1900,
+        "CZ TS 2 Orange"
+      ],
+      [
+        [
+          "cz",
+          "ts",
+          "2",
+          "blue"
+        ],
+        1100,
+        1300,
+        1500,
+        "CZ TS 2 Blue"
+      ],
+      [
+        [
+          "cz",
+          "ts",
+          "2"
+        ],
+        1100,
+        1300,
+        1500,
+        "CZ TS 2"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "10",
+          "f",
+          "optics",
+          "ready"
+        ],
+        450,
+        550,
+        650,
+        "CZ P-10 F Optics Ready"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "10",
+          "f",
+          "suppressor",
+          "ready"
+        ],
+        500,
+        600,
+        700,
+        "CZ P-10 F Suppressor Ready"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "10",
+          "f"
+        ],
+        400,
+        500,
+        600,
+        "CZ P-10 F"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "10",
+          "c",
+          "optics",
+          "ready"
+        ],
+        425,
+        525,
+        625,
+        "CZ P-10 C Optics Ready"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "10",
+          "c",
+          "suppressor",
+          "ready"
+        ],
+        475,
+        575,
+        675,
+        "CZ P-10 C Suppressor Ready"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "10",
+          "c"
+        ],
+        375,
+        475,
+        575,
+        "CZ P-10 C"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "10",
+          "s",
+          "optics",
+          "ready"
+        ],
+        425,
+        525,
+        625,
+        "CZ P-10 S Optics Ready"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "10",
+          "s"
+        ],
+        375,
+        475,
+        575,
+        "CZ P-10 S"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "10",
+          "m"
+        ],
+        400,
+        500,
+        600,
+        "CZ P-10 M"
+      ],
+      [
+        [
+          "cz",
+          "75",
+          "sp",
+          "01",
+          "tactical"
+        ],
+        550,
+        650,
+        750,
+        "CZ 75 SP-01 Tactical"
+      ],
+      [
+        [
+          "cz",
+          "75",
+          "sp",
+          "01",
+          "phantom"
+        ],
+        500,
+        600,
+        700,
+        "CZ 75 SP-01 Phantom"
+      ],
+      [
+        [
+          "cz",
+          "75",
+          "sp",
+          "01",
+          "shadow"
+        ],
+        850,
+        1000,
+        1150,
+        "CZ 75 SP-01 Shadow"
+      ],
+      [
+        [
+          "cz",
+          "75",
+          "sp",
+          "01"
+        ],
+        500,
+        600,
+        700,
+        "CZ 75 SP-01"
+      ],
+      [
+        [
+          "cz",
+          "75",
+          "b",
+          "omega"
+        ],
+        450,
+        550,
+        650,
+        "CZ 75 B Omega"
+      ],
+      [
+        [
+          "cz",
+          "75",
+          "b"
+        ],
+        425,
+        525,
+        625,
+        "CZ 75 B"
+      ],
+      [
+        [
+          "cz",
+          "75",
+          "compact"
+        ],
+        450,
+        550,
+        650,
+        "CZ 75 Compact"
+      ],
+      [
+        [
+          "cz",
+          "75",
+          "bd"
+        ],
+        425,
+        525,
+        625,
+        "CZ 75 BD"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "07"
+        ],
+        350,
+        450,
+        550,
+        "CZ P-07"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "09"
+        ],
+        375,
+        475,
+        575,
+        "CZ P-09"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "01",
+          "omega"
+        ],
+        475,
+        575,
+        675,
+        "CZ P-01 Omega"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "01"
+        ],
+        475,
+        575,
+        675,
+        "CZ P-01"
+      ],
+      [
+        [
+          "cz",
+          "pcr"
+        ],
+        475,
+        575,
+        675,
+        "CZ PCR"
+      ],
+      [
+        [
+          "cz",
+          "scorpion",
+          "evo",
+          "3",
+          "s1",
+          "pistol"
+        ],
+        750,
+        900,
+        1050,
+        "CZ Scorpion EVO 3 S1 Pistol"
+      ],
+      [
+        [
+          "cz",
+          "scorpion",
+          "evo",
+          "3",
+          "s1",
+          "carbine"
+        ],
+        850,
+        1000,
+        1150,
+        "CZ Scorpion EVO 3 S1 Carbine"
+      ],
+      [
+        [
+          "cz",
+          "scorpion",
+          "evo",
+          "3",
+          "s1"
+        ],
+        750,
+        900,
+        1050,
+        "CZ Scorpion EVO 3 S1"
+      ],
+      [
+        [
+          "cz",
+          "bren",
+          "2",
+          "ms",
+          "pistol",
+          "11"
+        ],
+        1400,
+        1650,
+        1900,
+        "CZ Bren 2 MS Pistol 11-inch"
+      ],
+      [
+        [
+          "cz",
+          "bren",
+          "2",
+          "ms",
+          "pistol",
+          "8"
+        ],
+        1400,
+        1650,
+        1900,
+        "CZ Bren 2 MS Pistol 8-inch"
+      ],
+      [
+        [
+          "cz",
+          "bren",
+          "2",
+          "ms",
+          "carbine",
+          "14"
+        ],
+        1500,
+        1750,
+        2000,
+        "CZ Bren 2 MS Carbine 14-inch"
+      ],
+      [
+        [
+          "cz",
+          "bren",
+          "2",
+          "ms",
+          "carbine",
+          "16.5"
+        ],
+        1500,
+        1750,
+        2000,
+        "CZ Bren 2 MS Carbine 16.5-inch"
+      ],
+      [
+        [
+          "cz",
+          "bren",
+          "2",
+          "ms"
+        ],
+        1400,
+        1650,
+        1900,
+        "CZ Bren 2 MS"
+      ],
+      [
+        [
+          "cz",
+          "457",
+          "varmint",
+          "mtr"
+        ],
+        500,
+        600,
+        700,
+        "CZ 457 Varmint MTR"
+      ],
+      [
+        [
+          "cz",
+          "457",
+          "varmint",
+          "precision",
+          "trainer"
+        ],
+        550,
+        650,
+        750,
+        "CZ 457 Varmint Precision Trainer"
+      ],
+      [
+        [
+          "cz",
+          "457",
+          "varmint"
+        ],
+        450,
+        550,
+        650,
+        "CZ 457 Varmint"
+      ],
+      [
+        [
+          "cz",
+          "457",
+          "american"
+        ],
+        400,
+        500,
+        600,
+        "CZ 457 American"
+      ],
+      [
+        [
+          "cz",
+          "457",
+          "provarmint",
+          "suppressor",
+          "ready"
+        ],
+        500,
+        600,
+        700,
+        "CZ 457 ProVarmint Suppressor Ready"
+      ],
+      [
+        [
+          "cz",
+          "457",
+          "royal"
+        ],
+        650,
+        750,
+        850,
+        "CZ 457 Royal"
+      ],
+      [
+        [
+          "cz",
+          "457",
+          "premium"
+        ],
+        700,
+        800,
+        900,
+        "CZ 457 Premium"
+      ],
+      [
+        [
+          "cz",
+          "457",
+          "scout"
+        ],
+        325,
+        400,
+        475,
+        "CZ 457 Scout"
+      ],
+      [
+        [
+          "cz",
+          "457",
+          "training",
+          "rifle"
+        ],
+        350,
+        425,
+        500,
+        "CZ 457 Training Rifle"
+      ],
+      [
+        [
+          "cz",
+          "457"
+        ],
+        400,
+        500,
+        600,
+        "CZ 457"
+      ],
+      [
+        [
+          "cz",
+          "600",
+          "range"
+        ],
+        850,
+        1000,
+        1150,
+        "CZ 600 Range"
+      ],
+      [
+        [
+          "cz",
+          "600",
+          "trail"
+        ],
+        750,
+        900,
+        1050,
+        "CZ 600 Trail"
+      ],
+      [
+        [
+          "cz",
+          "600",
+          "lux"
+        ],
+        800,
+        950,
+        1100,
+        "CZ 600 Lux"
+      ],
+      [
+        [
+          "cz",
+          "600",
+          "alpha"
+        ],
+        700,
+        850,
+        1000,
+        "CZ 600 Alpha"
+      ],
+      [
+        [
+          "cz",
+          "600"
+        ],
+        750,
+        900,
+        1050,
+        "CZ 600"
+      ],
+      [
+        [
+          "cz",
+          "557",
+          "american"
+        ],
+        550,
+        650,
+        750,
+        "CZ 557 American"
+      ],
+      [
+        [
+          "cz",
+          "557",
+          "sporter"
+        ],
+        600,
+        700,
+        800,
+        "CZ 557 Sporter"
+      ],
+      [
+        [
+          "cz",
+          "557"
+        ],
+        550,
+        650,
+        750,
+        "CZ 557"
+      ],
+      [
+        [
+          "cz",
+          "527",
+          "varmint",
+          "mtr"
+        ],
+        600,
+        700,
+        800,
+        "CZ 527 Varmint MTR"
+      ],
+      [
+        [
+          "cz",
+          "527",
+          "carbine"
+        ],
+        550,
+        650,
+        750,
+        "CZ 527 Carbine"
+      ],
+      [
+        [
+          "cz",
+          "527",
+          "american"
+        ],
+        550,
+        650,
+        750,
+        "CZ 527 American"
+      ],
+      [
+        [
+          "cz",
+          "527"
+        ],
+        550,
+        650,
+        750,
+        "CZ 527"
+      ],
+      [
+        [
+          "cz",
+          "550",
+          "safari",
+          "magnum"
+        ],
+        1100,
+        1300,
+        1500,
+        "CZ 550 Safari Magnum"
+      ],
+      [
+        [
+          "cz",
+          "550",
+          "american"
+        ],
+        700,
+        850,
+        1000,
+        "CZ 550 American"
+      ],
+      [
+        [
+          "cz",
+          "550",
+          "varmint"
+        ],
+        750,
+        900,
+        1050,
+        "CZ 550 Varmint"
+      ],
+      [
+        [
+          "cz",
+          "550"
+        ],
+        700,
+        850,
+        1000,
+        "CZ 550"
+      ],
+      [
+        [
+          "cz",
+          "712",
+          "g2"
+        ],
+        400,
+        500,
+        600,
+        "CZ 712 G2 Semi-Auto Shotgun"
+      ],
+      [
+        [
+          "cz",
+          "712"
+        ],
+        375,
+        475,
+        575,
+        "CZ 712 Semi-Auto Shotgun"
+      ],
+      [
+        [
+          "cz",
+          "1012"
+        ],
+        425,
+        525,
+        625,
+        "CZ 1012 Semi-Auto Shotgun"
+      ],
+      [
+        [
+          "cz",
+          "redhead",
+          "premier",
+          "over",
+          "under"
+        ],
+        800,
+        950,
+        1100,
+        "CZ Redhead Premier Over/Under"
+      ],
+      [
+        [
+          "cz",
+          "drake",
+          "over",
+          "under"
+        ],
+        550,
+        650,
+        750,
+        "CZ Drake Over/Under"
+      ],
+      [
+        [
+          "cz",
+          "all",
+          "american",
+          "trap"
+        ],
+        1100,
+        1300,
+        1500,
+        "CZ All-American Trap"
+      ],
+      [
+        [
+          "cz",
+          "swamp",
+          "magnum"
+        ],
+        500,
+        600,
+        700,
+        "CZ Swamp Magnum Over/Under"
+      ],
+      [
+        [
+          "cz",
+          "upland",
+          "ultralight"
+        ],
+        650,
+        750,
+        850,
+        "CZ Upland Ultralight Over/Under"
+      ],
+      [
+        [
+          "cz",
+          "bobwhite",
+          "g2"
+        ],
+        500,
+        600,
+        700,
+        "CZ Bobwhite G2 Side-by-Side"
+      ],
+      [
+        [
+          "cz",
+          "sharp",
+          "tail"
+        ],
+        900,
+        1050,
+        1200,
+        "CZ Sharp-Tail Side-by-Side"
+      ],
+      [
+        [
+          "cz",
+          "hammer",
+          "coach"
+        ],
+        700,
+        825,
+        950,
+        "CZ Hammer Coach Side-by-Side"
+      ],
+      [
+        [
+          "cz",
+          "tsa",
+          "vz",
+          "58"
+        ],
+        900,
+        1100,
+        1300,
+        "CZ TSA VZ 58 Sporter"
+      ],
+      [
+        [
+          "cz",
+          "p",
+          "09",
+          "duty"
+        ],
+        375,
+        475,
+        575,
+        "CZ P-09 Duty"
       ]
     ],
     "heckler & koch": [
@@ -8591,6 +13619,419 @@
         550,
         750,
         "Walther firearm"
+      ],
+      [
+        [
+          "pdp",
+          "pro",
+          "sd",
+          "compact"
+        ],
+        450,
+        550,
+        650,
+        "Walther PDP Pro SD Compact"
+      ],
+      [
+        [
+          "pdp",
+          "pro",
+          "sd",
+          "full"
+        ],
+        475,
+        575,
+        675,
+        "Walther PDP Pro SD Full Size"
+      ],
+      [
+        [
+          "pdp",
+          "pro",
+          "compact"
+        ],
+        425,
+        525,
+        625,
+        "Walther PDP Pro Compact"
+      ],
+      [
+        [
+          "pdp",
+          "pro",
+          "full"
+        ],
+        450,
+        550,
+        650,
+        "Walther PDP Pro Full Size"
+      ],
+      [
+        [
+          "pdp",
+          "f",
+          "series",
+          "4.5"
+        ],
+        400,
+        500,
+        600,
+        "Walther PDP F-Series 4.5"
+      ],
+      [
+        [
+          "pdp",
+          "f",
+          "series",
+          "4"
+        ],
+        400,
+        500,
+        600,
+        "Walther PDP F-Series 4"
+      ],
+      [
+        [
+          "pdp",
+          "compact",
+          "4"
+        ],
+        375,
+        475,
+        575,
+        "Walther PDP Compact 4"
+      ],
+      [
+        [
+          "pdp",
+          "full",
+          "size",
+          "4.5"
+        ],
+        400,
+        500,
+        600,
+        "Walther PDP Full Size 4.5"
+      ],
+      [
+        [
+          "pdp",
+          "full",
+          "size",
+          "4.6"
+        ],
+        400,
+        500,
+        600,
+        "Walther PDP Full Size 4.6"
+      ],
+      [
+        [
+          "pdp",
+          "match",
+          "steel",
+          "frame"
+        ],
+        1100,
+        1300,
+        1500,
+        "Walther PDP Match Steel Frame"
+      ],
+      [
+        [
+          "pdp",
+          "match"
+        ],
+        500,
+        600,
+        700,
+        "Walther PDP Match"
+      ],
+      [
+        [
+          "pdp"
+        ],
+        375,
+        475,
+        575,
+        "Walther PDP"
+      ],
+      [
+        [
+          "ppq",
+          "q5",
+          "match",
+          "steel",
+          "frame"
+        ],
+        1000,
+        1200,
+        1400,
+        "Walther PPQ Q5 Match Steel Frame"
+      ],
+      [
+        [
+          "ppq",
+          "q5",
+          "match"
+        ],
+        550,
+        650,
+        750,
+        "Walther PPQ Q5 Match"
+      ],
+      [
+        [
+          "ppq",
+          "q4",
+          "tac"
+        ],
+        475,
+        575,
+        675,
+        "Walther PPQ Q4 TAC"
+      ],
+      [
+        [
+          "ppq",
+          "m2",
+          "subcompact"
+        ],
+        350,
+        425,
+        500,
+        "Walther PPQ M2 Subcompact"
+      ],
+      [
+        [
+          "ppq",
+          "m2",
+          "5"
+        ],
+        375,
+        450,
+        550,
+        "Walther PPQ M2 5 inch"
+      ],
+      [
+        [
+          "ppq",
+          "m2",
+          "4"
+        ],
+        350,
+        425,
+        525,
+        "Walther PPQ M2 4 inch"
+      ],
+      [
+        [
+          "ppq",
+          "m2"
+        ],
+        350,
+        425,
+        525,
+        "Walther PPQ M2"
+      ],
+      [
+        [
+          "ppq",
+          "45"
+        ],
+        400,
+        475,
+        575,
+        "Walther PPQ 45"
+      ],
+      [
+        [
+          "ppq"
+        ],
+        350,
+        425,
+        525,
+        "Walther PPQ"
+      ],
+      [
+        [
+          "pps",
+          "m2"
+        ],
+        275,
+        350,
+        425,
+        "Walther PPS M2"
+      ],
+      [
+        [
+          "pps"
+        ],
+        250,
+        325,
+        400,
+        "Walther PPS Classic"
+      ],
+      [
+        [
+          "ppk/s",
+          "22"
+        ],
+        250,
+        325,
+        400,
+        "Walther PPK/S 22LR"
+      ],
+      [
+        [
+          "ppk/s"
+        ],
+        425,
+        525,
+        625,
+        "Walther PPK/S 380 ACP"
+      ],
+      [
+        [
+          "ppk",
+          "22"
+        ],
+        250,
+        325,
+        400,
+        "Walther PPK 22LR"
+      ],
+      [
+        [
+          "ppk"
+        ],
+        450,
+        550,
+        650,
+        "Walther PPK 380 ACP"
+      ],
+      [
+        [
+          "creed"
+        ],
+        275,
+        350,
+        425,
+        "Walther Creed"
+      ],
+      [
+        [
+          "ccp",
+          "m2"
+        ],
+        225,
+        300,
+        375,
+        "Walther CCP M2"
+      ],
+      [
+        [
+          "ccp"
+        ],
+        200,
+        275,
+        350,
+        "Walther CCP"
+      ],
+      [
+        [
+          "p22",
+          "q"
+        ],
+        225,
+        275,
+        350,
+        "Walther P22 Q"
+      ],
+      [
+        [
+          "p22"
+        ],
+        200,
+        250,
+        325,
+        "Walther P22"
+      ],
+      [
+        [
+          "ppx"
+        ],
+        225,
+        300,
+        375,
+        "Walther PPX"
+      ],
+      [
+        [
+          "p99",
+          "as"
+        ],
+        375,
+        450,
+        550,
+        "Walther P99 AS"
+      ],
+      [
+        [
+          "p99"
+        ],
+        350,
+        425,
+        525,
+        "Walther P99"
+      ],
+      [
+        [
+          "pk380"
+        ],
+        225,
+        300,
+        375,
+        "Walther PK380"
+      ],
+      [
+        [
+          "p38"
+        ],
+        500,
+        700,
+        1000,
+        "Walther P38 (Surplus)"
+      ],
+      [
+        [
+          "gsp"
+        ],
+        1100,
+        1400,
+        1700,
+        "Walther GSP Expert"
+      ],
+      [
+        [
+          "hammerli",
+          "tac",
+          "r1",
+          "22"
+        ],
+        275,
+        350,
+        425,
+        "Walther Hammerli Tac R1 22LR"
+      ],
+      [
+        [
+          "wmp"
+        ],
+        300,
+        375,
+        450,
+        "Walther WMP 22 Magnum"
       ]
     ],
     "aero precision": [
@@ -9605,6 +15046,778 @@
         850,
         1200,
         "Browning firearm"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "pro",
+          "long range"
+        ],
+        1400,
+        1650,
+        1900,
+        "Browning X-Bolt Pro Long Range"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "pro",
+          "tungsten"
+        ],
+        1500,
+        1750,
+        2000,
+        "Browning X-Bolt Pro Tungsten"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "hell's canyon",
+          "speed"
+        ],
+        900,
+        1100,
+        1300,
+        "Browning X-Bolt Hell's Canyon Speed"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "hell's canyon",
+          "long range"
+        ],
+        1000,
+        1200,
+        1400,
+        "Browning X-Bolt Hell's Canyon Long Range"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "medallion"
+        ],
+        750,
+        900,
+        1100,
+        "Browning X-Bolt Medallion"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "hunter"
+        ],
+        650,
+        800,
+        950,
+        "Browning X-Bolt Hunter"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "stalker"
+        ],
+        600,
+        750,
+        900,
+        "Browning X-Bolt Stalker"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "composite",
+          "stalker"
+        ],
+        600,
+        750,
+        900,
+        "Browning X-Bolt Composite Stalker"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "micro",
+          "midas"
+        ],
+        550,
+        700,
+        850,
+        "Browning X-Bolt Micro Midas"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "eclipse",
+          "hunter"
+        ],
+        850,
+        1000,
+        1200,
+        "Browning X-Bolt Eclipse Hunter"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "target"
+        ],
+        1100,
+        1300,
+        1500,
+        "Browning X-Bolt Target"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "max",
+          "long range"
+        ],
+        1000,
+        1200,
+        1400,
+        "Browning X-Bolt Max Long Range"
+      ],
+      [
+        [
+          "browning",
+          "x-bolt",
+          "speed"
+        ],
+        850,
+        1000,
+        1200,
+        "Browning X-Bolt Speed"
+      ],
+      [
+        [
+          "browning",
+          "ab3",
+          "composite",
+          "stalker"
+        ],
+        350,
+        450,
+        550,
+        "Browning AB3 Composite Stalker"
+      ],
+      [
+        [
+          "browning",
+          "ab3",
+          "hunter"
+        ],
+        400,
+        500,
+        600,
+        "Browning AB3 Hunter"
+      ],
+      [
+        [
+          "browning",
+          "ab3",
+          "micro",
+          "stalker"
+        ],
+        350,
+        450,
+        550,
+        "Browning AB3 Micro Stalker"
+      ],
+      [
+        [
+          "browning",
+          "bar",
+          "mk3",
+          "hell's canyon"
+        ],
+        1100,
+        1350,
+        1600,
+        "Browning BAR MK3 Hell's Canyon"
+      ],
+      [
+        [
+          "browning",
+          "bar",
+          "mk3",
+          "stalker"
+        ],
+        900,
+        1100,
+        1300,
+        "Browning BAR MK3 Stalker"
+      ],
+      [
+        [
+          "browning",
+          "bar",
+          "mk3"
+        ],
+        950,
+        1150,
+        1350,
+        "Browning BAR MK3"
+      ],
+      [
+        [
+          "browning",
+          "blr",
+          "lightweight",
+          "81"
+        ],
+        750,
+        900,
+        1100,
+        "Browning BLR Lightweight '81"
+      ],
+      [
+        [
+          "browning",
+          "blr",
+          "lightweight",
+          "stainless"
+        ],
+        800,
+        950,
+        1150,
+        "Browning BLR Lightweight Stainless"
+      ],
+      [
+        [
+          "browning",
+          "blr",
+          "lightweight"
+        ],
+        700,
+        850,
+        1000,
+        "Browning BLR Lightweight"
+      ],
+      [
+        [
+          "browning",
+          "a5",
+          "wicked wing"
+        ],
+        1200,
+        1450,
+        1700,
+        "Browning A5 Wicked Wing"
+      ],
+      [
+        [
+          "browning",
+          "a5",
+          "stalker"
+        ],
+        1000,
+        1200,
+        1400,
+        "Browning A5 Stalker"
+      ],
+      [
+        [
+          "browning",
+          "a5",
+          "hunter"
+        ],
+        1050,
+        1250,
+        1450,
+        "Browning A5 Hunter"
+      ],
+      [
+        [
+          "browning",
+          "a5",
+          "sweet sixteen"
+        ],
+        1100,
+        1300,
+        1500,
+        "Browning A5 Sweet Sixteen"
+      ],
+      [
+        [
+          "browning",
+          "a5",
+          "ultimate"
+        ],
+        1300,
+        1550,
+        1800,
+        "Browning A5 Ultimate"
+      ],
+      [
+        [
+          "browning",
+          "maxus",
+          "ii",
+          "wicked wing"
+        ],
+        1100,
+        1350,
+        1600,
+        "Browning Maxus II Wicked Wing"
+      ],
+      [
+        [
+          "browning",
+          "maxus",
+          "ii",
+          "stalker"
+        ],
+        950,
+        1150,
+        1350,
+        "Browning Maxus II Stalker"
+      ],
+      [
+        [
+          "browning",
+          "maxus",
+          "ii",
+          "hunter"
+        ],
+        1000,
+        1200,
+        1400,
+        "Browning Maxus II Hunter"
+      ],
+      [
+        [
+          "browning",
+          "maxus",
+          "ii",
+          "sporting"
+        ],
+        1100,
+        1300,
+        1500,
+        "Browning Maxus II Sporting"
+      ],
+      [
+        [
+          "browning",
+          "silver",
+          "field"
+        ],
+        550,
+        700,
+        850,
+        "Browning Silver Field"
+      ],
+      [
+        [
+          "browning",
+          "silver",
+          "rifled deer"
+        ],
+        600,
+        750,
+        900,
+        "Browning Silver Rifled Deer"
+      ],
+      [
+        [
+          "browning",
+          "bps",
+          "field"
+        ],
+        400,
+        500,
+        600,
+        "Browning BPS Field"
+      ],
+      [
+        [
+          "browning",
+          "bps",
+          "hunter"
+        ],
+        425,
+        525,
+        625,
+        "Browning BPS Hunter"
+      ],
+      [
+        [
+          "browning",
+          "bps",
+          "stalker"
+        ],
+        400,
+        500,
+        600,
+        "Browning BPS Stalker"
+      ],
+      [
+        [
+          "browning",
+          "bps",
+          "rifled deer"
+        ],
+        500,
+        625,
+        750,
+        "Browning BPS Rifled Deer"
+      ],
+      [
+        [
+          "browning",
+          "bps",
+          "trap"
+        ],
+        550,
+        700,
+        850,
+        "Browning BPS Trap"
+      ],
+      [
+        [
+          "browning",
+          "citori",
+          "725",
+          "sporting"
+        ],
+        1800,
+        2200,
+        2600,
+        "Browning Citori 725 Sporting"
+      ],
+      [
+        [
+          "browning",
+          "citori",
+          "725",
+          "field"
+        ],
+        1600,
+        2000,
+        2400,
+        "Browning Citori 725 Field"
+      ],
+      [
+        [
+          "browning",
+          "citori",
+          "725",
+          "trap"
+        ],
+        1900,
+        2300,
+        2700,
+        "Browning Citori 725 Trap"
+      ],
+      [
+        [
+          "browning",
+          "citori",
+          "725",
+          "skeet"
+        ],
+        1800,
+        2200,
+        2600,
+        "Browning Citori 725 Skeet"
+      ],
+      [
+        [
+          "browning",
+          "citori",
+          "725",
+          "feather"
+        ],
+        1700,
+        2100,
+        2500,
+        "Browning Citori 725 Feather"
+      ],
+      [
+        [
+          "browning",
+          "citori",
+          "cxs"
+        ],
+        1400,
+        1700,
+        2000,
+        "Browning Citori CXS"
+      ],
+      [
+        [
+          "browning",
+          "citori",
+          "cxt"
+        ],
+        1400,
+        1700,
+        2000,
+        "Browning Citori CXT"
+      ],
+      [
+        [
+          "browning",
+          "citori",
+          "white lightning"
+        ],
+        1200,
+        1500,
+        1800,
+        "Browning Citori White Lightning"
+      ],
+      [
+        [
+          "browning",
+          "citori",
+          "hunter"
+        ],
+        1100,
+        1400,
+        1700,
+        "Browning Citori Hunter"
+      ],
+      [
+        [
+          "browning",
+          "cynergy",
+          "wicked wing"
+        ],
+        1300,
+        1600,
+        1900,
+        "Browning Cynergy Wicked Wing"
+      ],
+      [
+        [
+          "browning",
+          "cynergy",
+          "ultimate"
+        ],
+        1400,
+        1700,
+        2000,
+        "Browning Cynergy Ultimate"
+      ],
+      [
+        [
+          "browning",
+          "cynergy",
+          "sporting"
+        ],
+        1300,
+        1600,
+        1900,
+        "Browning Cynergy Sporting"
+      ],
+      [
+        [
+          "browning",
+          "cynergy",
+          "field"
+        ],
+        1100,
+        1400,
+        1700,
+        "Browning Cynergy Field"
+      ],
+      [
+        [
+          "browning",
+          "hi-power",
+          "standard"
+        ],
+        800,
+        1000,
+        1200,
+        "Browning Hi-Power Standard"
+      ],
+      [
+        [
+          "browning",
+          "1911-22",
+          "black label"
+        ],
+        400,
+        500,
+        600,
+        "Browning 1911-22 Black Label"
+      ],
+      [
+        [
+          "browning",
+          "1911-22",
+          "compact"
+        ],
+        375,
+        475,
+        575,
+        "Browning 1911-22 Compact"
+      ],
+      [
+        [
+          "browning",
+          "1911-380",
+          "black label",
+          "pro"
+        ],
+        550,
+        675,
+        800,
+        "Browning 1911-380 Black Label Pro"
+      ],
+      [
+        [
+          "browning",
+          "1911-380",
+          "black label",
+          "medallion"
+        ],
+        600,
+        725,
+        850,
+        "Browning 1911-380 Black Label Medallion"
+      ],
+      [
+        [
+          "browning",
+          "buck mark",
+          "plus",
+          "udx"
+        ],
+        350,
+        425,
+        500,
+        "Browning Buck Mark Plus UDX"
+      ],
+      [
+        [
+          "browning",
+          "buck mark",
+          "camper",
+          "stainless",
+          "ufx"
+        ],
+        300,
+        375,
+        450,
+        "Browning Buck Mark Camper Stainless UFX"
+      ],
+      [
+        [
+          "browning",
+          "buck mark",
+          "hunter"
+        ],
+        325,
+        400,
+        475,
+        "Browning Buck Mark Hunter"
+      ],
+      [
+        [
+          "browning",
+          "buck mark",
+          "field",
+          "target"
+        ],
+        350,
+        425,
+        500,
+        "Browning Buck Mark Field Target"
+      ],
+      [
+        [
+          "browning",
+          "buck mark",
+          "micro"
+        ],
+        275,
+        350,
+        425,
+        "Browning Buck Mark Micro"
+      ],
+      [
+        [
+          "browning",
+          "buck mark",
+          "standard",
+          "stainless",
+          "ufx"
+        ],
+        300,
+        375,
+        450,
+        "Browning Buck Mark Standard Stainless UFX"
+      ],
+      [
+        [
+          "browning",
+          "t-bolt",
+          "target",
+          "varmint"
+        ],
+        650,
+        800,
+        950,
+        "Browning T-Bolt Target/Varmint"
+      ],
+      [
+        [
+          "browning",
+          "t-bolt",
+          "sporter"
+        ],
+        600,
+        750,
+        900,
+        "Browning T-Bolt Sporter"
+      ],
+      [
+        [
+          "browning",
+          "t-bolt",
+          "composite",
+          "hunter"
+        ],
+        550,
+        700,
+        850,
+        "Browning T-Bolt Composite Hunter"
+      ],
+      [
+        [
+          "browning",
+          "sa-22",
+          "grade",
+          "vi"
+        ],
+        1100,
+        1400,
+        1700,
+        "Browning SA-22 Grade VI"
+      ],
+      [
+        [
+          "browning",
+          "sa-22",
+          "grade",
+          "i"
+        ],
+        550,
+        700,
+        850,
+        "Browning SA-22 Grade I"
       ]
     ],
     "canik": [
@@ -13014,6 +19227,478 @@
         430,
         600,
         "Rock Island Armory firearm"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "tac ultra",
+          "fs",
+          "hc",
+          "10mm"
+        ],
+        450,
+        575,
+        700,
+        "Rock Island Armory 1911 TAC Ultra FS HC 10mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "tac ultra",
+          "fs",
+          "hc"
+        ],
+        400,
+        525,
+        650,
+        "Rock Island Armory 1911 TAC Ultra FS HC .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "tac ultra",
+          "ms",
+          "hc"
+        ],
+        400,
+        525,
+        650,
+        "Rock Island Armory 1911 TAC Ultra MS HC .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "tac ultra",
+          "cs"
+        ],
+        375,
+        500,
+        625,
+        "Rock Island Armory 1911 TAC Ultra CS .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "tac ultra",
+          "fs"
+        ],
+        375,
+        500,
+        625,
+        "Rock Island Armory 1911 TAC Ultra FS .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "double stack",
+          "tactical",
+          "10mm"
+        ],
+        550,
+        700,
+        850,
+        "Rock Island Armory 1911 Double Stack Tactical 10mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "double stack",
+          "tactical"
+        ],
+        500,
+        650,
+        800,
+        "Rock Island Armory 1911 Double Stack Tactical .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "double stack"
+        ],
+        475,
+        625,
+        775,
+        "Rock Island Armory 1911 Double Stack .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "gi",
+          "standard",
+          "fs"
+        ],
+        300,
+        400,
+        500,
+        "Rock Island Armory 1911 GI Standard FS .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "gi",
+          "standard",
+          "cs"
+        ],
+        300,
+        400,
+        500,
+        "Rock Island Armory 1911 GI Standard CS .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "gi",
+          "midsize"
+        ],
+        300,
+        400,
+        500,
+        "Rock Island Armory 1911 GI Midsize .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "tactical",
+          "10mm"
+        ],
+        425,
+        550,
+        675,
+        "Rock Island Armory 1911 Tactical 10mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "tactical",
+          "9mm"
+        ],
+        375,
+        500,
+        625,
+        "Rock Island Armory 1911 Tactical 9mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "tactical",
+          ".22 tcm"
+        ],
+        400,
+        525,
+        650,
+        "Rock Island Armory 1911 Tactical .22 TCM"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "tactical"
+        ],
+        350,
+        475,
+        600,
+        "Rock Island Armory 1911 Tactical .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "ultra",
+          "ms"
+        ],
+        325,
+        450,
+        575,
+        "Rock Island Armory 1911 Ultra MS .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "ultra",
+          "cs"
+        ],
+        325,
+        450,
+        575,
+        "Rock Island Armory 1911 Ultra CS .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "1911",
+          "officer"
+        ],
+        325,
+        450,
+        575,
+        "Rock Island Armory 1911 Officer .45 ACP"
+      ],
+      [
+        [
+          "rock island armory",
+          "xt22",
+          "magnum",
+          "pro"
+        ],
+        225,
+        300,
+        375,
+        "Rock Island Armory XT22 Magnum Pro .22 WMR"
+      ],
+      [
+        [
+          "rock island armory",
+          "xt22",
+          "magnum"
+        ],
+        200,
+        275,
+        350,
+        "Rock Island Armory XT22 Magnum .22 WMR"
+      ],
+      [
+        [
+          "rock island armory",
+          "xt22"
+        ],
+        175,
+        250,
+        325,
+        "Rock Island Armory XT22 .22 LR"
+      ],
+      [
+        [
+          "rock island armory",
+          "m206",
+          "38 special"
+        ],
+        175,
+        250,
+        325,
+        "Rock Island Armory M206 .38 Special Revolver"
+      ],
+      [
+        [
+          "rock island armory",
+          "m200",
+          "38 special"
+        ],
+        150,
+        225,
+        300,
+        "Rock Island Armory M200 .38 Special Revolver"
+      ],
+      [
+        [
+          "rock island armory",
+          "al22",
+          "competition"
+        ],
+        225,
+        300,
+        375,
+        "Rock Island Armory AL22 Competition .22 LR"
+      ],
+      [
+        [
+          "rock island armory",
+          "al22"
+        ],
+        200,
+        275,
+        350,
+        "Rock Island Armory AL22 .22 LR"
+      ],
+      [
+        [
+          "rock island armory",
+          "al9.0",
+          "competition"
+        ],
+        275,
+        375,
+        475,
+        "Rock Island Armory AL9.0 Competition 9mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "al9.0"
+        ],
+        250,
+        350,
+        450,
+        "Rock Island Armory AL9.0 9mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "mapp",
+          "ms"
+        ],
+        200,
+        275,
+        350,
+        "Rock Island Armory MAPP MS 9mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "mapp",
+          "fs"
+        ],
+        200,
+        275,
+        350,
+        "Rock Island Armory MAPP FS 9mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "mapp",
+          "tct"
+        ],
+        225,
+        300,
+        375,
+        "Rock Island Armory MAPP TCT 9mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "rock",
+          "ultra",
+          "cs"
+        ],
+        225,
+        300,
+        375,
+        "Rock Island Armory Rock Ultra CS 9mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "rock",
+          "ultra",
+          "fs"
+        ],
+        225,
+        300,
+        375,
+        "Rock Island Armory Rock Ultra FS 9mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "rock",
+          "standard",
+          "fs"
+        ],
+        200,
+        275,
+        350,
+        "Rock Island Armory Rock Standard FS 9mm"
+      ],
+      [
+        [
+          "rock island armory",
+          "vr60"
+        ],
+        350,
+        475,
+        600,
+        "Rock Island Armory VR60 12 Gauge Shotgun"
+      ],
+      [
+        [
+          "rock island armory",
+          "vr80"
+        ],
+        375,
+        500,
+        625,
+        "Rock Island Armory VR80 12 Gauge Shotgun"
+      ],
+      [
+        [
+          "rock island armory",
+          "vrbp-100"
+        ],
+        400,
+        525,
+        650,
+        "Rock Island Armory VRBP-100 Bullpup 12 Gauge"
+      ],
+      [
+        [
+          "rock island armory",
+          "vrpa40"
+        ],
+        275,
+        375,
+        475,
+        "Rock Island Armory VRPA40 12 Gauge Shotgun"
+      ],
+      [
+        [
+          "rock island armory",
+          "m5"
+        ],
+        350,
+        475,
+        600,
+        "Rock Island Armory M5 12 Gauge Shotgun"
+      ],
+      [
+        [
+          "rock island armory",
+          "m22",
+          "tcm",
+          "ba"
+        ],
+        300,
+        400,
+        500,
+        "Rock Island Armory M22 TCM BA Rifle"
+      ],
+      [
+        [
+          "rock island armory",
+          "m22",
+          "tcm"
+        ],
+        275,
+        375,
+        475,
+        "Rock Island Armory M22 TCM Rifle"
+      ],
+      [
+        [
+          "rock island armory",
+          "tac",
+          "ii",
+          "ultra",
+          "hc"
+        ],
+        425,
+        550,
+        675,
+        "Rock Island Armory TAC II Ultra HC .45 ACP"
       ]
     ],
     "rossi": [
@@ -15330,6 +22015,352 @@
         520,
         750,
         "High Standard firearm — collectible"
+      ],
+      [
+        [
+          "high standard",
+          "victor",
+          "10x"
+        ],
+        1800,
+        2200,
+        2800,
+        "High Standard Victor 10X .22 LR Target Pistol"
+      ],
+      [
+        [
+          "high standard",
+          "victor",
+          "4.5"
+        ],
+        1400,
+        1700,
+        2100,
+        "High Standard Victor 4.5 .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "victor",
+          "5.5"
+        ],
+        1500,
+        1800,
+        2300,
+        "High Standard Victor 5.5 .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "victor"
+        ],
+        1400,
+        1700,
+        2200,
+        "High Standard Victor .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "trophy",
+          "7.25"
+        ],
+        1300,
+        1600,
+        2000,
+        "High Standard Trophy 7.25 .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "trophy",
+          "5.5"
+        ],
+        1200,
+        1500,
+        1900,
+        "High Standard Trophy 5.5 .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "trophy"
+        ],
+        1200,
+        1500,
+        1900,
+        "High Standard Trophy .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "olympic",
+          "military"
+        ],
+        1100,
+        1400,
+        1800,
+        "High Standard Olympic Military .22 Short"
+      ],
+      [
+        [
+          "high standard",
+          "olympic",
+          "iss"
+        ],
+        1200,
+        1500,
+        1900,
+        "High Standard Olympic ISS .22 Short"
+      ],
+      [
+        [
+          "high standard",
+          "olympic",
+          "rapid fire"
+        ],
+        1300,
+        1600,
+        2000,
+        "High Standard Olympic Rapid Fire .22 Short"
+      ],
+      [
+        [
+          "high standard",
+          "olympic"
+        ],
+        1100,
+        1400,
+        1800,
+        "High Standard Olympic .22 Short"
+      ],
+      [
+        [
+          "high standard",
+          "supermatic",
+          "citation"
+        ],
+        1000,
+        1300,
+        1700,
+        "High Standard Supermatic Citation .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "supermatic",
+          "tournament"
+        ],
+        900,
+        1200,
+        1600,
+        "High Standard Supermatic Tournament .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "supermatic",
+          "trophy"
+        ],
+        1100,
+        1400,
+        1800,
+        "High Standard Supermatic Trophy .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "supermatic"
+        ],
+        900,
+        1200,
+        1600,
+        "High Standard Supermatic .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "sport king"
+        ],
+        500,
+        700,
+        1000,
+        "High Standard Sport King .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "crusader"
+        ],
+        1200,
+        1600,
+        2200,
+        "High Standard Crusader .44 Mag/.45 Colt Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "sentinel",
+          "mark iv"
+        ],
+        350,
+        500,
+        700,
+        "High Standard Sentinel Mark IV .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "sentinel",
+          "mark iii"
+        ],
+        350,
+        500,
+        700,
+        "High Standard Sentinel Mark III .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "sentinel",
+          "mark ii"
+        ],
+        350,
+        500,
+        700,
+        "High Standard Sentinel Mark II .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "sentinel",
+          "imperial"
+        ],
+        400,
+        550,
+        750,
+        "High Standard Sentinel Imperial .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "sentinel",
+          "snub"
+        ],
+        350,
+        500,
+        700,
+        "High Standard Sentinel Snub .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "sentinel"
+        ],
+        350,
+        500,
+        700,
+        "High Standard Sentinel .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "double nine"
+        ],
+        400,
+        550,
+        800,
+        "High Standard Double Nine .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "durango"
+        ],
+        400,
+        550,
+        800,
+        "High Standard Durango .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "natchez"
+        ],
+        450,
+        600,
+        850,
+        "High Standard Natchez .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "posse"
+        ],
+        400,
+        550,
+        800,
+        "High Standard Posse .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "hombre"
+        ],
+        400,
+        550,
+        800,
+        "High Standard Hombre .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "longhorn"
+        ],
+        450,
+        600,
+        850,
+        "High Standard Longhorn .22 LR Revolver"
+      ],
+      [
+        [
+          "high standard",
+          "camp gun"
+        ],
+        600,
+        800,
+        1100,
+        "High Standard Camp Gun .22 LR Carbine"
+      ],
+      [
+        [
+          "high standard",
+          "10x"
+        ],
+        1800,
+        2200,
+        2800,
+        "High Standard 10X .22 LR Target Pistol"
+      ],
+      [
+        [
+          "high standard",
+          "citation"
+        ],
+        1000,
+        1300,
+        1700,
+        "High Standard Citation .22 LR"
+      ],
+      [
+        [
+          "high standard",
+          "tournament"
+        ],
+        900,
+        1200,
+        1600,
+        "High Standard Tournament .22 LR"
       ]
     ],
     "howa": [
@@ -16656,6 +23687,3511 @@
         680,
         840,
         "Shadow Systems XR920 crossover 9mm"
+      ]
+    ],
+    "astra": [
+      [
+        [
+          "astra",
+          "a-100",
+          "45",
+          "acp"
+        ],
+        300,
+        400,
+        550,
+        "Astra A-100 .45 ACP"
+      ],
+      [
+        [
+          "astra",
+          "a-100",
+          "40",
+          "s&w"
+        ],
+        275,
+        375,
+        525,
+        "Astra A-100 .40 S&W"
+      ],
+      [
+        [
+          "astra",
+          "a-100",
+          "9mm"
+        ],
+        250,
+        350,
+        500,
+        "Astra A-100 9mm"
+      ],
+      [
+        [
+          "astra",
+          "a-90",
+          "45",
+          "acp"
+        ],
+        275,
+        375,
+        525,
+        "Astra A-90 .45 ACP"
+      ],
+      [
+        [
+          "astra",
+          "a-90",
+          "9mm"
+        ],
+        250,
+        350,
+        500,
+        "Astra A-90 9mm"
+      ],
+      [
+        [
+          "astra",
+          "a-80",
+          "45",
+          "acp"
+        ],
+        275,
+        375,
+        500,
+        "Astra A-80 .45 ACP"
+      ],
+      [
+        [
+          "astra",
+          "a-80",
+          "9mm"
+        ],
+        250,
+        325,
+        475,
+        "Astra A-80 9mm"
+      ],
+      [
+        [
+          "astra",
+          "a-75",
+          "decocker",
+          "9mm"
+        ],
+        275,
+        375,
+        525,
+        "Astra A-75 Decocker 9mm"
+      ],
+      [
+        [
+          "astra",
+          "a-75",
+          "decocker",
+          "40"
+        ],
+        275,
+        375,
+        525,
+        "Astra A-75 Decocker .40 S&W"
+      ],
+      [
+        [
+          "astra",
+          "a-75",
+          "decocker",
+          "45"
+        ],
+        300,
+        400,
+        550,
+        "Astra A-75 Decocker .45 ACP"
+      ],
+      [
+        [
+          "astra",
+          "a-75",
+          "9mm"
+        ],
+        250,
+        350,
+        500,
+        "Astra A-75 9mm"
+      ],
+      [
+        [
+          "astra",
+          "a-75",
+          "40"
+        ],
+        250,
+        350,
+        500,
+        "Astra A-75 .40 S&W"
+      ],
+      [
+        [
+          "astra",
+          "a-75",
+          "45"
+        ],
+        275,
+        375,
+        525,
+        "Astra A-75 .45 ACP"
+      ],
+      [
+        [
+          "astra",
+          "a-70",
+          "9mm"
+        ],
+        225,
+        300,
+        450,
+        "Astra A-70 9mm"
+      ],
+      [
+        [
+          "astra",
+          "a-60",
+          "380"
+        ],
+        200,
+        275,
+        400,
+        "Astra A-60 .380 ACP"
+      ],
+      [
+        [
+          "astra",
+          "constable",
+          "380"
+        ],
+        225,
+        325,
+        475,
+        "Astra Constable .380 ACP"
+      ],
+      [
+        [
+          "astra",
+          "constable",
+          "22",
+          "lr"
+        ],
+        200,
+        300,
+        450,
+        "Astra Constable .22 LR"
+      ],
+      [
+        [
+          "astra",
+          "cub",
+          "22",
+          "short"
+        ],
+        150,
+        225,
+        350,
+        "Astra Cub .22 Short"
+      ],
+      [
+        [
+          "astra",
+          "cub",
+          "25",
+          "acp"
+        ],
+        150,
+        225,
+        350,
+        "Astra Cub .25 ACP"
+      ],
+      [
+        [
+          "astra",
+          "cadix",
+          "38",
+          "special"
+        ],
+        175,
+        250,
+        375,
+        "Astra Cadix .38 Special"
+      ],
+      [
+        [
+          "astra",
+          "cadix",
+          "22",
+          "lr"
+        ],
+        150,
+        225,
+        350,
+        "Astra Cadix .22 LR"
+      ],
+      [
+        [
+          "astra",
+          "357",
+          "magnum",
+          "revolver"
+        ],
+        250,
+        350,
+        500,
+        "Astra .357 Magnum Revolver"
+      ],
+      [
+        [
+          "astra",
+          "44",
+          "magnum",
+          "revolver"
+        ],
+        300,
+        425,
+        600,
+        "Astra .44 Magnum Revolver"
+      ],
+      [
+        [
+          "astra",
+          "terminator",
+          "44",
+          "magnum"
+        ],
+        325,
+        450,
+        650,
+        "Astra Terminator .44 Magnum"
+      ],
+      [
+        [
+          "astra",
+          "model",
+          "960",
+          "38",
+          "special"
+        ],
+        200,
+        275,
+        425,
+        "Astra Model 960 .38 Special"
+      ],
+      [
+        [
+          "astra",
+          "model",
+          "680",
+          "38",
+          "special"
+        ],
+        175,
+        250,
+        400,
+        "Astra Model 680 .38 Special"
+      ],
+      [
+        [
+          "astra",
+          "firecat",
+          "25",
+          "acp"
+        ],
+        175,
+        250,
+        375,
+        "Astra Firecat .25 ACP"
+      ],
+      [
+        [
+          "astra",
+          "model",
+          "4000",
+          "falcon",
+          "380"
+        ],
+        200,
+        275,
+        425,
+        "Astra Model 4000 Falcon .380"
+      ],
+      [
+        [
+          "astra",
+          "model",
+          "3000",
+          "32",
+          "acp"
+        ],
+        175,
+        250,
+        400,
+        "Astra Model 3000 .32 ACP"
+      ],
+      [
+        [
+          "astra",
+          "model",
+          "2000",
+          "cub",
+          "22"
+        ],
+        150,
+        225,
+        350,
+        "Astra Model 2000 Cub .22 Short"
+      ],
+      [
+        [
+          "astra",
+          "model",
+          "400",
+          "9mm",
+          "largo"
+        ],
+        300,
+        425,
+        650,
+        "Astra Model 400 9mm Largo"
+      ],
+      [
+        [
+          "astra",
+          "model",
+          "600",
+          "9mm"
+        ],
+        275,
+        400,
+        600,
+        "Astra Model 600 9mm"
+      ],
+      [
+        [
+          "astra",
+          "model",
+          "800",
+          "condor",
+          "9mm"
+        ],
+        250,
+        350,
+        525,
+        "Astra Model 800 Condor 9mm"
+      ]
+    ],
+    "iver johnson": [
+      [
+        [
+          "iver johnson",
+          "1911",
+          "hawk",
+          "commander"
+        ],
+        350,
+        425,
+        525,
+        "Iver Johnson 1911 Hawk Commander .45 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "1911",
+          "hawk",
+          "officer"
+        ],
+        325,
+        400,
+        500,
+        "Iver Johnson 1911 Hawk Officer .45 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "1911",
+          "hawk",
+          "government"
+        ],
+        375,
+        450,
+        550,
+        "Iver Johnson 1911 Hawk Government .45 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "1911",
+          "thrasher"
+        ],
+        400,
+        475,
+        575,
+        "Iver Johnson 1911 Thrasher .45 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "1911",
+          "eagle",
+          "xl"
+        ],
+        425,
+        500,
+        625,
+        "Iver Johnson 1911 Eagle XL .45 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "1911",
+          "eagle"
+        ],
+        400,
+        475,
+        600,
+        "Iver Johnson 1911 Eagle .45 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "1911",
+          "raven"
+        ],
+        375,
+        450,
+        550,
+        "Iver Johnson 1911 Raven .45 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "1911",
+          "carbine"
+        ],
+        450,
+        550,
+        675,
+        "Iver Johnson 1911 Carbine .45 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "1911",
+          "chrome"
+        ],
+        425,
+        500,
+        625,
+        "Iver Johnson 1911 Chrome .45 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "1911",
+          "polished"
+        ],
+        400,
+        475,
+        600,
+        "Iver Johnson 1911 Polished .45 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "1911",
+          "9mm"
+        ],
+        375,
+        450,
+        550,
+        "Iver Johnson 1911 9mm"
+      ],
+      [
+        [
+          "iver johnson",
+          "1911"
+        ],
+        350,
+        425,
+        525,
+        "Iver Johnson 1911 .45 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "ar15",
+          "m4"
+        ],
+        450,
+        550,
+        675,
+        "Iver Johnson AR-15 M4 5.56 NATO"
+      ],
+      [
+        [
+          "iver johnson",
+          "ar15",
+          "pistol"
+        ],
+        425,
+        525,
+        650,
+        "Iver Johnson AR-15 Pistol 5.56 NATO"
+      ],
+      [
+        [
+          "iver johnson",
+          "ar",
+          "m4"
+        ],
+        450,
+        550,
+        675,
+        "Iver Johnson AR M4 5.56 NATO"
+      ],
+      [
+        [
+          "iver johnson",
+          "ar",
+          "pistol"
+        ],
+        425,
+        525,
+        650,
+        "Iver Johnson AR Pistol 5.56 NATO"
+      ],
+      [
+        [
+          "iver johnson",
+          "pf380"
+        ],
+        125,
+        175,
+        250,
+        "Iver Johnson PF380 .380 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "tp22"
+        ],
+        100,
+        150,
+        225,
+        "Iver Johnson TP22 .22 LR"
+      ],
+      [
+        [
+          "iver johnson",
+          "tp380"
+        ],
+        125,
+        175,
+        250,
+        "Iver Johnson TP380 .380 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "eagle",
+          "380"
+        ],
+        150,
+        200,
+        275,
+        "Iver Johnson Eagle .380 ACP"
+      ],
+      [
+        [
+          "iver johnson",
+          "eagle",
+          "9mm"
+        ],
+        175,
+        225,
+        300,
+        "Iver Johnson Eagle 9mm"
+      ],
+      [
+        [
+          "iver johnson",
+          "thrasher",
+          "9mm"
+        ],
+        175,
+        225,
+        300,
+        "Iver Johnson Thrasher 9mm"
+      ],
+      [
+        [
+          "iver johnson",
+          "shotgun",
+          "single"
+        ],
+        100,
+        150,
+        225,
+        "Iver Johnson Single Shot Shotgun"
+      ],
+      [
+        [
+          "iver johnson",
+          "revolver",
+          "22"
+        ],
+        125,
+        175,
+        250,
+        "Iver Johnson Revolver .22 LR"
+      ],
+      [
+        [
+          "iver johnson",
+          "revolver",
+          "38"
+        ],
+        150,
+        200,
+        275,
+        "Iver Johnson Revolver .38 Special"
+      ]
+    ],
+    "merwin, hulbert & co": [
+      [
+        [
+          "merwin hulbert",
+          "pocket",
+          "army",
+          "38"
+        ],
+        800,
+        1200,
+        1800,
+        "Merwin Hulbert Pocket Army .38"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "double",
+          "action",
+          "44"
+        ],
+        1200,
+        1800,
+        2800,
+        "Merwin Hulbert Double Action .44"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "single",
+          "action",
+          "army",
+          "44"
+        ],
+        1500,
+        2500,
+        4000,
+        "Merwin Hulbert Single Action Army .44"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "frontier",
+          "army",
+          "44"
+        ],
+        1400,
+        2300,
+        3800,
+        "Merwin Hulbert Frontier Army .44"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "pocket",
+          "32"
+        ],
+        600,
+        900,
+        1400,
+        "Merwin Hulbert Pocket .32"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "first",
+          "model",
+          "frontier"
+        ],
+        1600,
+        2800,
+        4500,
+        "Merwin Hulbert First Model Frontier"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "second",
+          "model",
+          "frontier"
+        ],
+        1400,
+        2400,
+        3800,
+        "Merwin Hulbert Second Model Frontier"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "third",
+          "model",
+          "frontier"
+        ],
+        1300,
+        2200,
+        3500,
+        "Merwin Hulbert Third Model Frontier"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "fourth",
+          "model",
+          "frontier"
+        ],
+        1200,
+        2000,
+        3200,
+        "Merwin Hulbert Fourth Model Frontier"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "open",
+          "top",
+          "44"
+        ],
+        1500,
+        2600,
+        4200,
+        "Merwin Hulbert Open Top .44"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "automatic",
+          "hammerless"
+        ],
+        700,
+        1100,
+        1700,
+        "Merwin Hulbert Automatic Hammerless"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "small",
+          "frame",
+          "38"
+        ],
+        800,
+        1300,
+        2000,
+        "Merwin Hulbert Small Frame .38"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "large",
+          "frame",
+          "44"
+        ],
+        1400,
+        2400,
+        3800,
+        "Merwin Hulbert Large Frame .44"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "army",
+          "revolver",
+          "44",
+          "russian"
+        ],
+        1600,
+        2700,
+        4300,
+        "Merwin Hulbert Army Revolver .44 Russian"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "cavalry",
+          "model"
+        ],
+        1700,
+        2900,
+        4600,
+        "Merwin Hulbert Cavalry Model"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "artillery",
+          "model"
+        ],
+        1600,
+        2700,
+        4300,
+        "Merwin Hulbert Artillery Model"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "target",
+          "model"
+        ],
+        1500,
+        2500,
+        4000,
+        "Merwin Hulbert Target Model"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "sheriff",
+          "model"
+        ],
+        1800,
+        3000,
+        4800,
+        "Merwin Hulbert Sheriff Model"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "38",
+          "double",
+          "action"
+        ],
+        900,
+        1500,
+        2400,
+        "Merwin Hulbert .38 Double Action"
+      ],
+      [
+        [
+          "merwin hulbert",
+          "32",
+          "double",
+          "action"
+        ],
+        700,
+        1200,
+        1900,
+        "Merwin Hulbert .32 Double Action"
+      ]
+    ],
+    "rohm": [
+      [
+        [
+          "rg",
+          "88"
+        ],
+        50,
+        75,
+        125,
+        "Röhm RG-88 .38 Special Revolver"
+      ],
+      [
+        [
+          "rg",
+          "86"
+        ],
+        45,
+        70,
+        115,
+        "Röhm RG-86 .38 Special Revolver"
+      ],
+      [
+        [
+          "rg",
+          "66"
+        ],
+        60,
+        90,
+        150,
+        "Röhm RG-66 .22 LR Revolver"
+      ],
+      [
+        [
+          "rg",
+          "63"
+        ],
+        50,
+        75,
+        125,
+        "Röhm RG-63 .22 LR Revolver"
+      ],
+      [
+        [
+          "rg",
+          "57"
+        ],
+        45,
+        65,
+        110,
+        "Röhm RG-57 .22 LR Revolver"
+      ],
+      [
+        [
+          "rg",
+          "46"
+        ],
+        40,
+        60,
+        100,
+        "Röhm RG-46 .22 LR Revolver"
+      ],
+      [
+        [
+          "rg",
+          "38s"
+        ],
+        50,
+        75,
+        120,
+        "Röhm RG-38S .38 Special Revolver"
+      ],
+      [
+        [
+          "rg",
+          "38"
+        ],
+        45,
+        70,
+        115,
+        "Röhm RG-38 .38 Special Revolver"
+      ],
+      [
+        [
+          "rg",
+          "31"
+        ],
+        40,
+        60,
+        100,
+        "Röhm RG-31 .32 S&W Revolver"
+      ],
+      [
+        [
+          "rg",
+          "26"
+        ],
+        35,
+        55,
+        95,
+        "Röhm RG-26 .25 ACP Derringer"
+      ],
+      [
+        [
+          "rg",
+          "23"
+        ],
+        40,
+        60,
+        100,
+        "Röhm RG-23 .22 LR Revolver"
+      ],
+      [
+        [
+          "rg",
+          "14"
+        ],
+        35,
+        55,
+        90,
+        "Röhm RG-14 .22 LR Revolver"
+      ],
+      [
+        [
+          "rg",
+          "10"
+        ],
+        30,
+        50,
+        85,
+        "Röhm RG-10 .22 Short Revolver"
+      ],
+      [
+        [
+          "rg",
+          "7"
+        ],
+        25,
+        45,
+        80,
+        "Röhm RG-7 .22 LR Revolver"
+      ],
+      [
+        [
+          "rg",
+          "3"
+        ],
+        25,
+        40,
+        75,
+        "Röhm RG-3 .22 LR Revolver"
+      ],
+      [
+        [
+          "rohm",
+          "twinmaster"
+        ],
+        75,
+        110,
+        175,
+        "Röhm Twinmaster .22 LR Combo Revolver"
+      ],
+      [
+        [
+          "rohm",
+          "gmbh"
+        ],
+        30,
+        50,
+        90,
+        "Röhm GmbH .22 LR Revolver"
+      ],
+      [
+        [
+          "rohm",
+          "starter",
+          "pistol"
+        ],
+        20,
+        35,
+        60,
+        "Röhm Blank Starter Pistol"
+      ],
+      [
+        [
+          "rohm",
+          "derringer"
+        ],
+        35,
+        55,
+        95,
+        "Röhm .22 LR Derringer"
+      ],
+      [
+        [
+          "rohm",
+          "revolver"
+        ],
+        30,
+        50,
+        85,
+        "Röhm .22 LR Revolver (Generic)"
+      ]
+    ],
+    "v. bernardelli": [
+      [
+        [
+          "bernardelli",
+          "vb",
+          "uber",
+          "match"
+        ],
+        1800,
+        2400,
+        3200,
+        "Bernardelli VB Uber Match"
+      ],
+      [
+        [
+          "bernardelli",
+          "vb",
+          "practical",
+          "vb"
+        ],
+        1400,
+        1800,
+        2400,
+        "Bernardelli VB Practical VB"
+      ],
+      [
+        [
+          "bernardelli",
+          "vb",
+          "custom",
+          "2000"
+        ],
+        1600,
+        2100,
+        2800,
+        "Bernardelli VB Custom 2000"
+      ],
+      [
+        [
+          "bernardelli",
+          "vb",
+          "distinction"
+        ],
+        1500,
+        2000,
+        2600,
+        "Bernardelli VB Distinction"
+      ],
+      [
+        [
+          "bernardelli",
+          "vb",
+          "target"
+        ],
+        1300,
+        1700,
+        2300,
+        "Bernardelli VB Target"
+      ],
+      [
+        [
+          "bernardelli",
+          "p018",
+          "compact"
+        ],
+        350,
+        475,
+        650,
+        "Bernardelli P018 Compact"
+      ],
+      [
+        [
+          "bernardelli",
+          "p018"
+        ],
+        325,
+        425,
+        575,
+        "Bernardelli P018"
+      ],
+      [
+        [
+          "bernardelli",
+          "p019"
+        ],
+        300,
+        400,
+        550,
+        "Bernardelli P019"
+      ],
+      [
+        [
+          "bernardelli",
+          "p.one",
+          "pro"
+        ],
+        400,
+        525,
+        700,
+        "Bernardelli P.One Pro"
+      ],
+      [
+        [
+          "bernardelli",
+          "p.one",
+          "compact"
+        ],
+        375,
+        500,
+        675,
+        "Bernardelli P.One Compact"
+      ],
+      [
+        [
+          "bernardelli",
+          "p.one"
+        ],
+        350,
+        475,
+        625,
+        "Bernardelli P.One"
+      ],
+      [
+        [
+          "bernardelli",
+          "model",
+          "60"
+        ],
+        250,
+        350,
+        500,
+        "Bernardelli Model 60"
+      ],
+      [
+        [
+          "bernardelli",
+          "model",
+          "80"
+        ],
+        275,
+        375,
+        525,
+        "Bernardelli Model 80"
+      ],
+      [
+        [
+          "bernardelli",
+          "model",
+          "90"
+        ],
+        300,
+        400,
+        550,
+        "Bernardelli Model 90"
+      ],
+      [
+        [
+          "bernardelli",
+          "usa"
+        ],
+        225,
+        325,
+        450,
+        "Bernardelli USA"
+      ],
+      [
+        [
+          "bernardelli",
+          "practical"
+        ],
+        1200,
+        1600,
+        2200,
+        "Bernardelli Practical"
+      ],
+      [
+        [
+          "bernardelli",
+          "hemmerli"
+        ],
+        1100,
+        1500,
+        2000,
+        "Bernardelli Hemmerli"
+      ],
+      [
+        [
+          "bernardelli",
+          "sporterized"
+        ],
+        400,
+        550,
+        750,
+        "Bernardelli Sporterized"
+      ],
+      [
+        [
+          "bernardelli",
+          "vest",
+          "pocket"
+        ],
+        200,
+        300,
+        425,
+        "Bernardelli Vest Pocket"
+      ],
+      [
+        [
+          "bernardelli",
+          "baby"
+        ],
+        225,
+        325,
+        450,
+        "Bernardelli Baby"
+      ],
+      [
+        [
+          "bernardelli",
+          "gamecock"
+        ],
+        800,
+        1100,
+        1500,
+        "Bernardelli Gamecock O/U"
+      ],
+      [
+        [
+          "bernardelli",
+          "holland",
+          "vb"
+        ],
+        2500,
+        3500,
+        5000,
+        "Bernardelli Holland VB"
+      ],
+      [
+        [
+          "bernardelli",
+          "roma"
+        ],
+        600,
+        850,
+        1200,
+        "Bernardelli Roma SxS"
+      ],
+      [
+        [
+          "bernardelli",
+          "brescia"
+        ],
+        550,
+        750,
+        1050,
+        "Bernardelli Brescia"
+      ],
+      [
+        [
+          "bernardelli",
+          "elio"
+        ],
+        500,
+        700,
+        950,
+        "Bernardelli Elio"
+      ],
+      [
+        [
+          "bernardelli",
+          "slug",
+          "gun"
+        ],
+        450,
+        625,
+        850,
+        "Bernardelli Slug Gun"
+      ],
+      [
+        [
+          "bernardelli",
+          "express",
+          "vb"
+        ],
+        2000,
+        2800,
+        4000,
+        "Bernardelli Express VB Rifle"
+      ],
+      [
+        [
+          "bernardelli",
+          "carbine"
+        ],
+        600,
+        850,
+        1200,
+        "Bernardelli Carbine"
+      ]
+    ],
+    "mouser": [
+      [
+        [
+          "mouser",
+          "m1a",
+          "scout",
+          "squad"
+        ],
+        1400,
+        1650,
+        1900,
+        "Mouser M1A Scout Squad"
+      ],
+      [
+        [
+          "mouser",
+          "m1a",
+          "socom",
+          "16"
+        ],
+        1500,
+        1750,
+        2000,
+        "Mouser M1A SOCOM 16"
+      ],
+      [
+        [
+          "mouser",
+          "m1a",
+          "loaded"
+        ],
+        1300,
+        1550,
+        1800,
+        "Mouser M1A Loaded"
+      ],
+      [
+        [
+          "mouser",
+          "m1a",
+          "standard"
+        ],
+        1100,
+        1350,
+        1600,
+        "Mouser M1A Standard"
+      ],
+      [
+        [
+          "mouser",
+          "m1a",
+          "national",
+          "match"
+        ],
+        1800,
+        2100,
+        2400,
+        "Mouser M1A National Match"
+      ],
+      [
+        [
+          "mouser",
+          "saint",
+          "victor",
+          "308"
+        ],
+        900,
+        1100,
+        1300,
+        "Mouser Saint Victor .308"
+      ],
+      [
+        [
+          "mouser",
+          "saint",
+          "victor",
+          "pistol"
+        ],
+        700,
+        850,
+        1000,
+        "Mouser Saint Victor Pistol"
+      ],
+      [
+        [
+          "mouser",
+          "saint",
+          "victor"
+        ],
+        750,
+        900,
+        1050,
+        "Mouser Saint Victor"
+      ],
+      [
+        [
+          "mouser",
+          "saint",
+          "edge"
+        ],
+        850,
+        1000,
+        1200,
+        "Mouser Saint Edge"
+      ],
+      [
+        [
+          "mouser",
+          "saint"
+        ],
+        650,
+        800,
+        950,
+        "Mouser Saint AR-15"
+      ],
+      [
+        [
+          "mouser",
+          "hellcat",
+          "pro",
+          "osp"
+        ],
+        400,
+        475,
+        550,
+        "Mouser Hellcat Pro OSP"
+      ],
+      [
+        [
+          "mouser",
+          "hellcat",
+          "pro"
+        ],
+        375,
+        450,
+        525,
+        "Mouser Hellcat Pro"
+      ],
+      [
+        [
+          "mouser",
+          "hellcat",
+          "rdp"
+        ],
+        425,
+        500,
+        575,
+        "Mouser Hellcat RDP"
+      ],
+      [
+        [
+          "mouser",
+          "hellcat"
+        ],
+        350,
+        425,
+        500,
+        "Mouser Hellcat"
+      ],
+      [
+        [
+          "mouser",
+          "xd-m",
+          "elite",
+          "osp",
+          "10mm"
+        ],
+        450,
+        550,
+        650,
+        "Mouser XD-M Elite OSP 10mm"
+      ],
+      [
+        [
+          "mouser",
+          "xd-m",
+          "elite",
+          "osp"
+        ],
+        425,
+        525,
+        625,
+        "Mouser XD-M Elite OSP"
+      ],
+      [
+        [
+          "mouser",
+          "xd-m",
+          "elite"
+        ],
+        400,
+        500,
+        600,
+        "Mouser XD-M Elite"
+      ],
+      [
+        [
+          "mouser",
+          "xd-m"
+        ],
+        375,
+        475,
+        575,
+        "Mouser XD-M"
+      ],
+      [
+        [
+          "mouser",
+          "xd-s",
+          "mod.2",
+          "osp"
+        ],
+        325,
+        400,
+        475,
+        "Mouser XD-S Mod.2 OSP"
+      ],
+      [
+        [
+          "mouser",
+          "xd-s"
+        ],
+        300,
+        375,
+        450,
+        "Mouser XD-S"
+      ],
+      [
+        [
+          "mouser",
+          "xd",
+          "mod.2",
+          "tactical"
+        ],
+        350,
+        425,
+        500,
+        "Mouser XD Mod.2 Tactical"
+      ],
+      [
+        [
+          "mouser",
+          "xd",
+          "mod.2"
+        ],
+        325,
+        400,
+        475,
+        "Mouser XD Mod.2"
+      ],
+      [
+        [
+          "mouser",
+          "1911",
+          "ronin",
+          "operator"
+        ],
+        600,
+        725,
+        850,
+        "Mouser 1911 Ronin Operator"
+      ],
+      [
+        [
+          "mouser",
+          "1911",
+          "ronin"
+        ],
+        550,
+        675,
+        800,
+        "Mouser 1911 Ronin"
+      ],
+      [
+        [
+          "mouser",
+          "1911",
+          "emissary"
+        ],
+        800,
+        950,
+        1100,
+        "Mouser 1911 Emissary"
+      ],
+      [
+        [
+          "mouser",
+          "1911",
+          "trp"
+        ],
+        1200,
+        1400,
+        1600,
+        "Mouser 1911 TRP"
+      ],
+      [
+        [
+          "mouser",
+          "prodigy",
+          "5"
+        ],
+        900,
+        1050,
+        1200,
+        "Mouser Prodigy 5.0"
+      ],
+      [
+        [
+          "mouser",
+          "prodigy",
+          "4.25"
+        ],
+        875,
+        1025,
+        1175,
+        "Mouser Prodigy 4.25"
+      ],
+      [
+        [
+          "mouser",
+          "prodigy"
+        ],
+        850,
+        1000,
+        1150,
+        "Mouser Prodigy"
+      ],
+      [
+        [
+          "mouser",
+          "echelon"
+        ],
+        425,
+        500,
+        575,
+        "Mouser Echelon"
+      ]
+    ],
+    "sturm, ruger & co": [
+      [
+        [
+          "ruger",
+          "57",
+          "5.7x28"
+        ],
+        450,
+        525,
+        625,
+        "Ruger-57 5.7x28mm"
+      ],
+      [
+        [
+          "ruger",
+          "lcp",
+          "max",
+          "380"
+        ],
+        225,
+        275,
+        350,
+        "Ruger LCP MAX .380 ACP"
+      ],
+      [
+        [
+          "ruger",
+          "lcp",
+          "ii",
+          "380"
+        ],
+        175,
+        225,
+        285,
+        "Ruger LCP II .380 ACP"
+      ],
+      [
+        [
+          "ruger",
+          "lcp",
+          "380"
+        ],
+        150,
+        200,
+        265,
+        "Ruger LCP .380 ACP"
+      ],
+      [
+        [
+          "ruger",
+          "max",
+          "9",
+          "pro"
+        ],
+        375,
+        450,
+        550,
+        "Ruger MAX-9 Pro"
+      ],
+      [
+        [
+          "ruger",
+          "max",
+          "9"
+        ],
+        325,
+        400,
+        485,
+        "Ruger MAX-9 9mm"
+      ],
+      [
+        [
+          "ruger",
+          "security",
+          "9",
+          "compact"
+        ],
+        275,
+        350,
+        425,
+        "Ruger Security-9 Compact"
+      ],
+      [
+        [
+          "ruger",
+          "security",
+          "9"
+        ],
+        250,
+        325,
+        400,
+        "Ruger Security-9 9mm"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "pistol",
+          "competition"
+        ],
+        375,
+        450,
+        550,
+        "Ruger American Pistol Competition"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "pistol"
+        ],
+        300,
+        375,
+        475,
+        "Ruger American Pistol"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "target"
+        ],
+        350,
+        425,
+        525,
+        "Ruger Mark IV Target .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "hunter"
+        ],
+        425,
+        525,
+        650,
+        "Ruger Mark IV Hunter .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "tactical"
+        ],
+        375,
+        450,
+        550,
+        "Ruger Mark IV Tactical .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "competition"
+        ],
+        425,
+        525,
+        650,
+        "Ruger Mark IV Competition .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "22/45",
+          "lite"
+        ],
+        375,
+        450,
+        550,
+        "Ruger Mark IV 22/45 Lite"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "22/45",
+          "tactical"
+        ],
+        350,
+        425,
+        525,
+        "Ruger Mark IV 22/45 Tactical"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv",
+          "22/45"
+        ],
+        300,
+        375,
+        475,
+        "Ruger Mark IV 22/45 .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "mark",
+          "iv"
+        ],
+        275,
+        350,
+        450,
+        "Ruger Mark IV Standard .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "sr22"
+        ],
+        250,
+        325,
+        400,
+        "Ruger SR22 .22 LR Pistol"
+      ],
+      [
+        [
+          "ruger",
+          "gp100",
+          "match",
+          "champion"
+        ],
+        650,
+        775,
+        925,
+        "Ruger GP100 Match Champion .357 Mag"
+      ],
+      [
+        [
+          "ruger",
+          "gp100",
+          "7",
+          "shot"
+        ],
+        525,
+        625,
+        750,
+        "Ruger GP100 7-Shot .357 Mag"
+      ],
+      [
+        [
+          "ruger",
+          "gp100",
+          "44",
+          "special"
+        ],
+        550,
+        650,
+        775,
+        "Ruger GP100 .44 Special"
+      ],
+      [
+        [
+          "ruger",
+          "gp100",
+          "357"
+        ],
+        475,
+        575,
+        700,
+        "Ruger GP100 .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "sp101",
+          "357",
+          "3"
+        ],
+        450,
+        550,
+        675,
+        "Ruger SP101 3\" .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "sp101",
+          "357"
+        ],
+        425,
+        525,
+        650,
+        "Ruger SP101 .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "sp101",
+          "22"
+        ],
+        425,
+        525,
+        650,
+        "Ruger SP101 .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "lcrx",
+          "357"
+        ],
+        400,
+        475,
+        575,
+        "Ruger LCRx .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "lcrx",
+          "38"
+        ],
+        375,
+        450,
+        550,
+        "Ruger LCRx .38 Special"
+      ],
+      [
+        [
+          "ruger",
+          "lcrx",
+          "22"
+        ],
+        350,
+        425,
+        525,
+        "Ruger LCRx .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "lcr",
+          "357"
+        ],
+        375,
+        450,
+        550,
+        "Ruger LCR .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "lcr",
+          "38"
+        ],
+        350,
+        425,
+        525,
+        "Ruger LCR .38 Special +P"
+      ],
+      [
+        [
+          "ruger",
+          "lcr",
+          "22",
+          "wmr"
+        ],
+        375,
+        450,
+        550,
+        "Ruger LCR .22 WMR"
+      ],
+      [
+        [
+          "ruger",
+          "lcr",
+          "22"
+        ],
+        325,
+        400,
+        500,
+        "Ruger LCR .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "lcr",
+          "9mm"
+        ],
+        375,
+        450,
+        550,
+        "Ruger LCR 9mm"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "redhawk",
+          "10mm"
+        ],
+        750,
+        900,
+        1100,
+        "Ruger Super Redhawk 10mm"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "redhawk",
+          "454"
+        ],
+        775,
+        925,
+        1150,
+        "Ruger Super Redhawk .454 Casull"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "redhawk",
+          "44"
+        ],
+        700,
+        850,
+        1050,
+        "Ruger Super Redhawk .44 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "redhawk",
+          "357"
+        ],
+        700,
+        850,
+        1050,
+        "Ruger Redhawk .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "redhawk",
+          "44"
+        ],
+        725,
+        875,
+        1075,
+        "Ruger Redhawk .44 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "blackhawk",
+          "hunter",
+          "44"
+        ],
+        650,
+        775,
+        950,
+        "Ruger Super Blackhawk Hunter .44 Mag"
+      ],
+      [
+        [
+          "ruger",
+          "super",
+          "blackhawk",
+          "44"
+        ],
+        525,
+        625,
+        775,
+        "Ruger Super Blackhawk .44 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "blackhawk",
+          "357"
+        ],
+        475,
+        575,
+        700,
+        "Ruger Blackhawk .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "blackhawk",
+          "41"
+        ],
+        525,
+        625,
+        775,
+        "Ruger Blackhawk .41 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "blackhawk",
+          "45",
+          "colt"
+        ],
+        500,
+        600,
+        750,
+        "Ruger Blackhawk .45 Colt"
+      ],
+      [
+        [
+          "ruger",
+          "new",
+          "vaquero",
+          "357"
+        ],
+        525,
+        625,
+        775,
+        "Ruger New Vaquero .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "new",
+          "vaquero",
+          "45"
+        ],
+        550,
+        650,
+        800,
+        "Ruger New Vaquero .45 Colt"
+      ],
+      [
+        [
+          "ruger",
+          "vaquero",
+          "357"
+        ],
+        525,
+        625,
+        775,
+        "Ruger Vaquero .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "vaquero",
+          "45"
+        ],
+        550,
+        650,
+        800,
+        "Ruger Vaquero .45 Colt"
+      ],
+      [
+        [
+          "ruger",
+          "single",
+          "six",
+          "convertible"
+        ],
+        425,
+        525,
+        650,
+        "Ruger Single-Six Convertible .22 LR/.22 WMR"
+      ],
+      [
+        [
+          "ruger",
+          "single",
+          "six"
+        ],
+        400,
+        500,
+        625,
+        "Ruger Single-Six .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "single",
+          "ten"
+        ],
+        425,
+        525,
+        650,
+        "Ruger Single-Ten .22 LR 10-Shot"
+      ],
+      [
+        [
+          "ruger",
+          "single",
+          "nine"
+        ],
+        425,
+        525,
+        650,
+        "Ruger Single-Nine .22 WMR 9-Shot"
+      ],
+      [
+        [
+          "ruger",
+          "wrangler"
+        ],
+        150,
+        200,
+        275,
+        "Ruger Wrangler .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "bearcat"
+        ],
+        425,
+        525,
+        650,
+        "Ruger New Bearcat .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "pc",
+          "carbine",
+          "9mm"
+        ],
+        425,
+        525,
+        650,
+        "Ruger PC Carbine 9mm"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "takedown",
+          "stainless"
+        ],
+        425,
+        525,
+        650,
+        "Ruger 10/22 Takedown Stainless"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "takedown"
+        ],
+        375,
+        475,
+        600,
+        "Ruger 10/22 Takedown"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "target",
+          "lite"
+        ],
+        425,
+        525,
+        650,
+        "Ruger 10/22 Target Lite"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "target"
+        ],
+        400,
+        500,
+        625,
+        "Ruger 10/22 Target"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "competition"
+        ],
+        450,
+        550,
+        675,
+        "Ruger 10/22 Competition"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "tactical"
+        ],
+        300,
+        375,
+        475,
+        "Ruger 10/22 Tactical"
+      ],
+      [
+        [
+          "ruger",
+          "10/22",
+          "carbine"
+        ],
+        200,
+        275,
+        375,
+        "Ruger 10/22 Carbine"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rimfire",
+          "target"
+        ],
+        325,
+        400,
+        500,
+        "Ruger American Rimfire Target"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rimfire",
+          "compact"
+        ],
+        250,
+        325,
+        425,
+        "Ruger American Rimfire Compact"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rimfire"
+        ],
+        275,
+        350,
+        450,
+        "Ruger American Rimfire"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rimfire"
+        ],
+        375,
+        475,
+        600,
+        "Ruger Precision Rimfire"
+      ],
+      [
+        [
+          "ruger",
+          "77/22"
+        ],
+        475,
+        575,
+        700,
+        "Ruger 77/22 .22 LR"
+      ],
+      [
+        [
+          "ruger",
+          "77/17"
+        ],
+        475,
+        575,
+        700,
+        "Ruger 77/17 .17 HMR"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "ranch",
+          "450"
+        ],
+        525,
+        625,
+        750,
+        "Ruger American Rifle Ranch .450 Bushmaster"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "ranch",
+          "300"
+        ],
+        475,
+        575,
+        700,
+        "Ruger American Rifle Ranch .300 Blackout"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "ranch",
+          "7.62x39"
+        ],
+        475,
+        575,
+        700,
+        "Ruger American Rifle Ranch 7.62x39"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "ranch",
+          "5.56"
+        ],
+        475,
+        575,
+        700,
+        "Ruger American Rifle Ranch 5.56 NATO"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "predator"
+        ],
+        425,
+        525,
+        650,
+        "Ruger American Rifle Predator"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "compact"
+        ],
+        375,
+        475,
+        600,
+        "Ruger American Rifle Compact"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle",
+          "go",
+          "wild"
+        ],
+        475,
+        575,
+        700,
+        "Ruger American Rifle Go Wild"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "rifle"
+        ],
+        400,
+        500,
+        625,
+        "Ruger American Rifle"
+      ],
+      [
+        [
+          "ruger",
+          "american",
+          "generation",
+          "ii"
+        ],
+        475,
+        575,
+        700,
+        "Ruger American Generation II"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rifle",
+          "6.5",
+          "creedmoor"
+        ],
+        1000,
+        1200,
+        1500,
+        "Ruger Precision Rifle 6.5 Creedmoor"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rifle",
+          "308"
+        ],
+        950,
+        1150,
+        1450,
+        "Ruger Precision Rifle .308 Win"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rifle",
+          "6mm"
+        ],
+        1050,
+        1250,
+        1550,
+        "Ruger Precision Rifle 6mm Creedmoor"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rifle",
+          "300",
+          "prc"
+        ],
+        1150,
+        1350,
+        1650,
+        "Ruger Precision Rifle .300 PRC"
+      ],
+      [
+        [
+          "ruger",
+          "precision",
+          "rifle"
+        ],
+        950,
+        1150,
+        1450,
+        "Ruger Precision Rifle"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye",
+          "long",
+          "range",
+          "target"
+        ],
+        900,
+        1100,
+        1400,
+        "Ruger Hawkeye Long-Range Target"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye",
+          "hunter"
+        ],
+        800,
+        975,
+        1250,
+        "Ruger Hawkeye Hunter"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye",
+          "predator"
+        ],
+        750,
+        900,
+        1150,
+        "Ruger Hawkeye Predator"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye",
+          "african"
+        ],
+        950,
+        1150,
+        1450,
+        "Ruger Hawkeye African"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye",
+          "alaskan"
+        ],
+        900,
+        1100,
+        1400,
+        "Ruger Hawkeye Alaskan"
+      ],
+      [
+        [
+          "ruger",
+          "hawkeye"
+        ],
+        700,
+        850,
+        1100,
+        "Ruger Hawkeye"
+      ],
+      [
+        [
+          "ruger",
+          "guide",
+          "gun"
+        ],
+        900,
+        1100,
+        1400,
+        "Ruger Guide Gun"
+      ],
+      [
+        [
+          "ruger",
+          "no",
+          "1",
+          "tropical"
+        ],
+        1100,
+        1350,
+        1700,
+        "Ruger No. 1 Tropical"
+      ],
+      [
+        [
+          "ruger",
+          "no",
+          "1",
+          "varminter"
+        ],
+        1000,
+        1250,
+        1600,
+        "Ruger No. 1 Varminter"
+      ],
+      [
+        [
+          "ruger",
+          "no",
+          "1"
+        ],
+        950,
+        1200,
+        1550,
+        "Ruger No. 1 Single Shot"
+      ],
+      [
+        [
+          "ruger",
+          "ar",
+          "556",
+          "mpr"
+        ],
+        625,
+        750,
+        925,
+        "Ruger AR-556 MPR"
+      ],
+      [
+        [
+          "ruger",
+          "ar",
+          "556",
+          "pistol"
+        ],
+        525,
+        625,
+        775,
+        "Ruger AR-556 Pistol"
+      ],
+      [
+        [
+          "ruger",
+          "ar",
+          "556",
+          "free",
+          "float"
+        ],
+        575,
+        700,
+        875,
+        "Ruger AR-556 Free-Float Handguard"
+      ],
+      [
+        [
+          "ruger",
+          "ar",
+          "556"
+        ],
+        500,
+        600,
+        750,
+        "Ruger AR-556"
+      ],
+      [
+        [
+          "ruger",
+          "sfar"
+        ],
+        900,
+        1100,
+        1400,
+        "Ruger SFAR .308 Win"
+      ],
+      [
+        [
+          "ruger",
+          "mini",
+          "14",
+          "tactical"
+        ],
+        800,
+        975,
+        1250,
+        "Ruger Mini-14 Tactical"
+      ],
+      [
+        [
+          "ruger",
+          "mini",
+          "14",
+          "ranch"
+        ],
+        750,
+        900,
+        1150,
+        "Ruger Mini-14 Ranch Rifle"
+      ],
+      [
+        [
+          "ruger",
+          "mini",
+          "14"
+        ],
+        700,
+        850,
+        1100,
+        "Ruger Mini-14"
+      ],
+      [
+        [
+          "ruger",
+          "mini",
+          "30"
+        ],
+        750,
+        900,
+        1150,
+        "Ruger Mini-30 7.62x39"
+      ],
+      [
+        [
+          "ruger",
+          "scout",
+          "rifle"
+        ],
+        900,
+        1100,
+        1400,
+        "Ruger Gunsite Scout Rifle"
+      ],
+      [
+        [
+          "ruger",
+          "77/44"
+        ],
+        650,
+        775,
+        975,
+        "Ruger 77/44 .44 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "77/357"
+        ],
+        700,
+        850,
+        1075,
+        "Ruger 77/357 .357 Magnum"
+      ],
+      [
+        [
+          "ruger",
+          "red",
+          "label"
+        ],
+        1100,
+        1350,
+        1700,
+        "Ruger Red Label Over/Under"
+      ],
+      [
+        [
+          "ruger",
+          "gold",
+          "label"
+        ],
+        2200,
+        2700,
+        3400,
+        "Ruger Gold Label Side-by-Side"
+      ]
+    ],
+    "savage arms, inc": [
+      [
+        [
+          "savage",
+          "110",
+          "elite",
+          "precision"
+        ],
+        1400,
+        1750,
+        2100,
+        "Savage 110 Elite Precision"
+      ],
+      [
+        [
+          "savage",
+          "110",
+          "tactical",
+          "desert"
+        ],
+        900,
+        1100,
+        1350,
+        "Savage 110 Tactical Desert"
+      ],
+      [
+        [
+          "savage",
+          "110",
+          "tactical"
+        ],
+        700,
+        875,
+        1050,
+        "Savage 110 Tactical"
+      ],
+      [
+        [
+          "savage",
+          "110",
+          "high",
+          "country"
+        ],
+        850,
+        1050,
+        1250,
+        "Savage 110 High Country"
+      ],
+      [
+        [
+          "savage",
+          "110",
+          "ultralite"
+        ],
+        950,
+        1150,
+        1400,
+        "Savage 110 Ultralite"
+      ],
+      [
+        [
+          "savage",
+          "110",
+          "timberline"
+        ],
+        750,
+        925,
+        1100,
+        "Savage 110 Timberline"
+      ],
+      [
+        [
+          "savage",
+          "110",
+          "apex",
+          "hunter"
+        ],
+        650,
+        800,
+        950,
+        "Savage 110 Apex Hunter"
+      ],
+      [
+        [
+          "savage",
+          "110",
+          "apex",
+          "predator"
+        ],
+        650,
+        800,
+        950,
+        "Savage 110 Apex Predator"
+      ],
+      [
+        [
+          "savage",
+          "110",
+          "storm"
+        ],
+        500,
+        625,
+        750,
+        "Savage 110 Storm"
+      ],
+      [
+        [
+          "savage",
+          "110",
+          "hog",
+          "hunter"
+        ],
+        550,
+        675,
+        800,
+        "Savage 110 Hog Hunter"
+      ],
+      [
+        [
+          "savage",
+          "110",
+          "classic"
+        ],
+        600,
+        750,
+        900,
+        "Savage 110 Classic"
+      ],
+      [
+        [
+          "savage",
+          "110",
+          "engage",
+          "hunter"
+        ],
+        550,
+        675,
+        825,
+        "Savage 110 Engage Hunter"
+      ],
+      [
+        [
+          "savage",
+          "110"
+        ],
+        450,
+        575,
+        700,
+        "Savage 110"
+      ],
+      [
+        [
+          "savage",
+          "axis",
+          "ii",
+          "precision"
+        ],
+        550,
+        675,
+        800,
+        "Savage Axis II Precision"
+      ],
+      [
+        [
+          "savage",
+          "axis",
+          "ii",
+          "overwatch"
+        ],
+        500,
+        625,
+        750,
+        "Savage Axis II Overwatch"
+      ],
+      [
+        [
+          "savage",
+          "axis",
+          "ii"
+        ],
+        300,
+        375,
+        475,
+        "Savage Axis II"
+      ],
+      [
+        [
+          "savage",
+          "axis"
+        ],
+        250,
+        325,
+        400,
+        "Savage Axis"
+      ],
+      [
+        [
+          "savage",
+          "212",
+          "turkey"
+        ],
+        600,
+        750,
+        900,
+        "Savage 212 Turkey Bolt Shotgun"
+      ],
+      [
+        [
+          "savage",
+          "212",
+          "slug"
+        ],
+        550,
+        700,
+        850,
+        "Savage 212 Slug Warrior"
+      ],
+      [
+        [
+          "savage",
+          "220",
+          "slug"
+        ],
+        600,
+        750,
+        900,
+        "Savage 220 Slug Gun"
+      ],
+      [
+        [
+          "savage",
+          "stevens",
+          "334"
+        ],
+        200,
+        275,
+        350,
+        "Savage Stevens 334"
+      ],
+      [
+        [
+          "savage",
+          "b",
+          "series",
+          "magnum"
+        ],
+        350,
+        450,
+        550,
+        "Savage B-Series Magnum Rimfire"
+      ],
+      [
+        [
+          "savage",
+          "b",
+          "series"
+        ],
+        275,
+        350,
+        425,
+        "Savage B-Series Rimfire"
+      ],
+      [
+        [
+          "savage",
+          "mark",
+          "ii",
+          "fv-sr"
+        ],
+        275,
+        350,
+        425,
+        "Savage Mark II FV-SR"
+      ],
+      [
+        [
+          "savage",
+          "mark",
+          "ii"
+        ],
+        225,
+        300,
+        375,
+        "Savage Mark II"
+      ],
+      [
+        [
+          "savage",
+          "93",
+          "fv-sr"
+        ],
+        275,
+        350,
+        425,
+        "Savage 93 FV-SR"
+      ],
+      [
+        [
+          "savage",
+          "93",
+          "minimalist"
+        ],
+        325,
+        400,
+        500,
+        "Savage 93 Minimalist"
+      ],
+      [
+        [
+          "savage",
+          "93"
+        ],
+        250,
+        325,
+        400,
+        "Savage 93"
+      ],
+      [
+        [
+          "savage",
+          "a22",
+          "target"
+        ],
+        400,
+        500,
+        600,
+        "Savage A22 Target"
+      ],
+      [
+        [
+          "savage",
+          "a22",
+          "precision"
+        ],
+        450,
+        550,
+        675,
+        "Savage A22 Precision"
+      ],
+      [
+        [
+          "savage",
+          "a22"
+        ],
+        325,
+        400,
+        500,
+        "Savage A22"
+      ],
+      [
+        [
+          "savage",
+          "a17",
+          "target"
+        ],
+        425,
+        525,
+        625,
+        "Savage A17 Target"
+      ],
+      [
+        [
+          "savage",
+          "a17"
+        ],
+        350,
+        450,
+        550,
+        "Savage A17"
+      ],
+      [
+        [
+          "savage",
+          "msr",
+          "15",
+          "recon"
+        ],
+        750,
+        925,
+        1100,
+        "Savage MSR 15 Recon"
+      ],
+      [
+        [
+          "savage",
+          "msr",
+          "15",
+          "patrol"
+        ],
+        650,
+        800,
+        950,
+        "Savage MSR 15 Patrol"
+      ],
+      [
+        [
+          "savage",
+          "msr",
+          "15",
+          "valkyrie"
+        ],
+        700,
+        875,
+        1050,
+        "Savage MSR 15 Valkyrie"
+      ],
+      [
+        [
+          "savage",
+          "msr",
+          "15"
+        ],
+        600,
+        750,
+        900,
+        "Savage MSR 15"
+      ],
+      [
+        [
+          "savage",
+          "msr",
+          "10",
+          "hunter"
+        ],
+        850,
+        1050,
+        1250,
+        "Savage MSR 10 Hunter"
+      ],
+      [
+        [
+          "savage",
+          "msr",
+          "10",
+          "long",
+          "range"
+        ],
+        1000,
+        1250,
+        1500,
+        "Savage MSR 10 Long Range"
+      ],
+      [
+        [
+          "savage",
+          "msr",
+          "10"
+        ],
+        900,
+        1100,
+        1350,
+        "Savage MSR 10"
+      ],
+      [
+        [
+          "savage",
+          "rascal",
+          "fv-sr"
+        ],
+        150,
+        200,
+        250,
+        "Savage Rascal FV-SR Youth"
+      ],
+      [
+        [
+          "savage",
+          "rascal"
+        ],
+        100,
+        140,
+        180,
+        "Savage Rascal Youth"
+      ],
+      [
+        [
+          "savage",
+          "model",
+          "42"
+        ],
+        450,
+        575,
+        700,
+        "Savage Model 42 Combo Gun"
+      ],
+      [
+        [
+          "savage",
+          "impulse",
+          "big",
+          "game"
+        ],
+        1100,
+        1350,
+        1600,
+        "Savage Impulse Big Game"
+      ],
+      [
+        [
+          "savage",
+          "impulse",
+          "predator"
+        ],
+        1100,
+        1350,
+        1600,
+        "Savage Impulse Predator"
+      ],
+      [
+        [
+          "savage",
+          "impulse",
+          "hog",
+          "hunter"
+        ],
+        1000,
+        1250,
+        1500,
+        "Savage Impulse Hog Hunter"
+      ],
+      [
+        [
+          "savage",
+          "impulse"
+        ],
+        1000,
+        1250,
+        1500,
+        "Savage Impulse Straight-Pull"
       ]
     ]
   },
