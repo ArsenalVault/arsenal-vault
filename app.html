@@ -10519,63 +10519,283 @@ function runGunIdentifier(input){
   if(modal) modal.innerHTML='<div style="background:#222835;border:2px solid #a0c0ff40;border-radius:12px;padding:32px;max-width:340px;width:100%;text-align:center">'
     +'<div class="id-pulse" style="font-size:36px;margin-bottom:14px">&#129302;</div>'
     +'<div style="font-size:16px;font-weight:700;color:#a0c0ff;margin-bottom:8px">Analyzing...</div>'
-    +'<div style="font-size:13px;color:#8a95a8">AI is identifying this firearm</div>'
+    +'<div style="font-size:13px;color:#8a95a8;line-height:1.5">Reading markings, analyzing features,<br/>cross-referencing database</div>'
     +'</div>';
 
   var reader=new FileReader();
   reader.onload=function(e){
-    var base64=e.target.result.split(',')[1];
-    var mediaType=file.type||'image/jpeg';
+    var rawDataUrl=e.target.result;
 
-    // Call Claude AI via BYO wrapper
-    var messages = [{
-      role:'user',
-      content:[
-        {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-        {type:'text',text:'Identify this firearm. Respond ONLY with a JSON object with these exact fields: {"make":"","model":"","type":"","caliber":"","barrelLength":"","year":"","confidence":"high/medium/low","notes":""}. Type must be one of: Pistol, Revolver, Rifle, Shotgun, AR-15/Semi-Auto Rifle, Bolt-Action Rifle, Lever-Action Rifle, Pump Shotgun, Semi-Auto Shotgun, Other. barrelLength should be numeric inches only (e.g. "4.5", "16", "20") or empty if unknown. If you cannot identify it, use your best guess and set confidence to low. Return ONLY the JSON, no other text.'}
-      ]
-    }];
-    _BYO_claudeCall(messages, {model:_BYO_VISION_MODEL, max_tokens:500})
-    .then(function(res){
-      var text = res.text || '';
-      try{
-        var clean=text.replace(/```json|```/g,'').trim();
-        var result=JSON.parse(clean);
-        showIdentifierResult(result, base64, mediaType);
-      }catch(ex){
-        showIdentifierError('Could not parse AI response');
-      }
-    })
-    .catch(function(err){
-      _BYO_showError(err);
-      showIdentifierError(err.errorType === 'no_key' ? 'AI key needed — set up in Settings' : 'AI request failed: '+(err.message||''));
+    // -K: Compress image to 1568px max edge before sending to API.
+    // Phone cameras produce 4000x3000+ images; Anthropic resizes >1568px
+    // server-side anyway. Compressing locally saves tokens and latency.
+    _compressPhoto(rawDataUrl, 1568, 0.85).then(function(compressedDataUrl){
+      var base64=compressedDataUrl.split(',')[1];
+      var mediaType='image/jpeg'; // _compressPhoto always outputs JPEG
+      _idRunAnalysis(base64, mediaType);
+    }).catch(function(){
+      // Fallback: send uncompressed if compression fails
+      var base64=rawDataUrl.split(',')[1];
+      var mediaType=file.type||'image/jpeg';
+      _idRunAnalysis(base64, mediaType);
     });
   };
   reader.readAsDataURL(file);
+}
+
+// Stash for retry flow
+var _idLastImage=null; // {base64, mediaType}
+
+// -K: System prompt establishing firearms expert identity
+var _ID_SYSTEM='You are an expert firearms identifier with 30 years of experience as a gunsmith, dealer, and collector. You can identify firearms from photos by reading roll marks, analyzing physical features, and cross-referencing your extensive knowledge of manufacturer models and variants. You are meticulous and honest — when you are uncertain, you say so clearly rather than guessing confidently.';
+
+function _idRunAnalysis(base64, mediaType){
+  // Stash image for potential retry
+  _idLastImage={base64:base64, mediaType:mediaType};
+
+  // -K: Structured reasoning prompt. Forces the model to observe before identifying.
+  var userPrompt='Analyze this firearm image carefully. Follow these steps IN ORDER:\n\n'
+    +'STEP 1 — READ TEXT: Look for any visible text, roll marks, logos, model designations, or serial number prefixes stamped or engraved on the firearm. Report exactly what text you can read.\n\n'
+    +'STEP 2 — DESCRIBE FEATURES: Describe the key physical features you observe:\n'
+    +'  - Action type (semi-auto, revolver, bolt-action, lever-action, pump, break-action)\n'
+    +'  - Frame/receiver material (polymer, steel, aluminum alloy)\n'
+    +'  - Slide or barrel profile shape\n'
+    +'  - Grip style and texture pattern\n'
+    +'  - Safety type and location (thumb, trigger, grip, decocker)\n'
+    +'  - Sight type (3-dot, fiber optic, notch, adjustable, optic-ready)\n'
+    +'  - Any distinctive design elements (accessory rail, serration pattern, grip angle, magazine release style)\n\n'
+    +'STEP 3 — IDENTIFY: Based on your observations from Steps 1-2, identify the firearm.\n\n'
+    +'COMMON MISTAKES TO AVOID:\n'
+    +'  - Glock vs S&W M&P: M&P has a higher grip angle, sear deactivation lever, and different trigger guard shape\n'
+    +'  - Beretta 92 vs Taurus PT92: PT92 has frame-mounted safety vs Beretta slide-mounted\n'
+    +'  - Sig P320 vs P365: Size difference is dramatic — P365 is micro-compact\n'
+    +'  - Springfield XD vs HS Produkt: Same gun, different importers\n'
+    +'  - AR-15 variants: Look at rollmarks, handguard style, and receiver markings to distinguish manufacturers\n'
+    +'  - CZ-75 clones: Many manufacturers clone the CZ-75 (Tanfoglio, SAR, IWI Jericho) — look for specific markings\n\n'
+    +'Respond with JSON in this exact format (no other text before or after):\n'
+    +'{"make":"","model":"","type":"","caliber":"","barrelLength":"","year":"","visibleText":"what text/markings you read","keyFeatures":"3-5 distinguishing features you observed","reasoning":"why you identified it as this specific model","notes":""}\n\n'
+    +'Type must be one of: Pistol, Revolver, Rifle, Shotgun, AR-15/Semi-Auto Rifle, Bolt-Action Rifle, Lever-Action Rifle, Pump Shotgun, Semi-Auto Shotgun, Other.\n'
+    +'barrelLength: numeric inches only (e.g. "4.5") or empty string if unknown.\n'
+    +'year: approximate year or range (e.g. "2018" or "2015-2020") or empty if unknown.\n'
+    +'If you truly cannot determine the make, say "Unknown" — do NOT guess a manufacturer you are not confident about.';
+
+  var messages=[{
+    role:'user',
+    content:[
+      {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+      {type:'text',text:userPrompt}
+    ]
+  }];
+
+  _BYO_claudeCall(messages, {
+    model:_BYO_VISION_MODEL,
+    max_tokens:1000,
+    temperature:0,
+    system:_ID_SYSTEM
+  })
+  .then(function(res){
+    var text=res.text||'';
+    try{
+      // Extract JSON — may have markdown fences
+      var clean=text.replace(/```json|```/g,'').trim();
+      // Handle case where model includes reasoning before JSON
+      var jsonStart=clean.indexOf('{');
+      var jsonEnd=clean.lastIndexOf('}');
+      if(jsonStart>=0&&jsonEnd>jsonStart) clean=clean.substring(jsonStart,jsonEnd+1);
+      var result=JSON.parse(clean);
+
+      // -K: PDB validation + computed confidence
+      result=_idValidateAndScore(result);
+
+      showIdentifierResult(result, base64, mediaType);
+    }catch(ex){
+      showIdentifierError('Could not parse AI response');
+    }
+  })
+  .catch(function(err){
+    _BYO_showError(err);
+    showIdentifierError(err.errorType==='no_key'?'AI key needed — set up in Settings':'AI request failed: '+(err.message||''));
+  });
+}
+
+// -K: PDB validation and computed confidence scoring
+function _idValidateAndScore(result){
+  var score=0;
+  var flags=[];
+
+  // 1. Normalize make through PDB_ALIASES
+  var rawMake=(result.make||'').toLowerCase().trim();
+  var canonicalMake=rawMake;
+  if(typeof PDB_ALIASES!=='undefined'){
+    for(var alias in PDB_ALIASES){
+      if(alias===rawMake){canonicalMake=PDB_ALIASES[alias];break;}
+    }
+  }
+  result._canonicalMake=canonicalMake;
+
+  // 2. Check if make exists in PDB_MODELS
+  var makeFound=false;
+  var modelFound=false;
+  if(typeof PDB_MODELS!=='undefined'&&PDB_MODELS[canonicalMake]){
+    makeFound=true;
+    score+=20;
+    // 3. Check if model matches any entry
+    var rawModel=(result.model||'').toLowerCase().trim();
+    var entries=PDB_MODELS[canonicalMake];
+    for(var i=0;i<entries.length;i++){
+      var patterns=entries[i][0];
+      var allMatch=true;
+      for(var p=0;p<patterns.length;p++){
+        if(rawModel.indexOf(patterns[p])<0){allMatch=false;break;}
+      }
+      if(allMatch&&patterns.length>0){modelFound=true;score+=30;break;}
+    }
+  }
+
+  // 4. Score based on reasoning quality
+  if(result.visibleText&&result.visibleText.length>5&&result.visibleText.toLowerCase()!=='none'){
+    score+=25; // Read actual text — strong signal
+    flags.push('text_read');
+  }
+  if(result.keyFeatures&&result.keyFeatures.length>20){
+    score+=15; // Detailed feature description
+    flags.push('features_detailed');
+  }
+  if(result.reasoning&&result.reasoning.length>20){
+    score+=10;
+  }
+
+  // 5. Penalty for hedging
+  var reasoning=(result.reasoning||'').toLowerCase();
+  if(reasoning.indexOf('possibly')>=0||reasoning.indexOf('might be')>=0||reasoning.indexOf('appears to')>=0||reasoning.indexOf('could be')>=0){
+    score-=15;
+    flags.push('hedging');
+  }
+
+  // 6. Penalty for Unknown make
+  if(rawMake==='unknown'||rawMake===''){
+    score=Math.min(score,10);
+  }
+
+  // 7. Compute confidence tier
+  var confidence,confLabel;
+  if(score>=60&&makeFound){
+    confidence='verified';confLabel='Verified';
+  } else if(score>=35){
+    confidence='probable';confLabel='Probable';
+  } else {
+    confidence='uncertain';confLabel='Uncertain';
+  }
+
+  result.confidence=confidence;
+  result._confLabel=confLabel;
+  result._confScore=score;
+  result._makeFound=makeFound;
+  result._modelFound=modelFound;
+  result._flags=flags;
+
+  return result;
 }
 
 function showIdentifierResult(result, imgBase64, mediaType){
   var modal=document.getElementById('identifier_modal');
   if(!modal) return;
 
-  var confColor=result.confidence==='high'?'#60e880':result.confidence==='medium'?'#ffd060':'#ff7070';
+  var confColors={verified:'#60e880',probable:'#ffd060',uncertain:'#ff7070'};
+  var confColor=confColors[result.confidence]||'#8a95a8';
+  var confLabel=result._confLabel||result.confidence;
 
-  modal.innerHTML='<div style="background:#222835;border:2px solid #a0c0ff40;border-radius:12px;padding:24px;max-width:340px;width:100%;max-height:90vh;overflow-y:auto">'
-    +'<div style="font-size:16px;font-weight:700;color:#a0c0ff;margin-bottom:12px">&#10003; Identified!</div>'
-    +'<img src="data:'+mediaType+';base64,'+imgBase64+'" style="width:100%;max-height:160px;object-fit:contain;border-radius:8px;border:1px solid #2e3545;margin-bottom:14px"/>'
-    +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:14px;margin-bottom:12px;text-align:left">'
-      +(result.make?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252c38;font-size:14px"><span style="color:#8a95a8">Make</span><span style="color:#f0f2f5;font-weight:700">'+result.make+'</span></div>':'')
-      +(result.model?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252c38;font-size:14px"><span style="color:#8a95a8">Model</span><span style="color:#f0f2f5;font-weight:700">'+result.model+'</span></div>':'')
-      +(result.type?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252c38;font-size:14px"><span style="color:#8a95a8">Type</span><span style="color:#f0f2f5;font-weight:700">'+result.type+'</span></div>':'')
-      +(result.caliber?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252c38;font-size:14px"><span style="color:#8a95a8">Caliber</span><span style="color:#f0f2f5;font-weight:700">'+result.caliber+'</span></div>':'')
-      +(result.barrelLength?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252c38;font-size:14px"><span style="color:#8a95a8">Barrel</span><span style="color:#f0f2f5;font-weight:700">'+result.barrelLength+'″</span></div>':'')
-      +(result.year?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252c38;font-size:14px"><span style="color:#8a95a8">Year</span><span style="color:#f0f2f5;font-weight:700">'+result.year+'</span></div>':'')
-      +'<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span style="color:#8a95a8">Confidence</span><span style="color:'+confColor+';font-weight:700">'+result.confidence+'</span></div>'
+  // PDB validation badges
+  var pdbBadge='';
+  if(result._makeFound&&result._modelFound){
+    pdbBadge='<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#60e880;margin-top:4px">&#10003; Verified in price database</div>';
+  } else if(result._makeFound&&!result._modelFound){
+    pdbBadge='<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#ffd060;margin-top:4px">&#9888; Make verified, model not in database</div>';
+  } else if(result.make&&result.make.toLowerCase()!=='unknown'){
+    pdbBadge='<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#ff707090;margin-top:4px">&#9675; Make not found in database</div>';
+  }
+
+  // Key features display (collapsible)
+  var featuresHtml='';
+  if(result.keyFeatures||result.visibleText||result.reasoning){
+    var feats='';
+    if(result.visibleText&&result.visibleText.toLowerCase()!=='none'&&result.visibleText.length>2){
+      feats+='<div style="margin-bottom:6px"><span style="font-size:10px;color:#a0c0ff;text-transform:uppercase;letter-spacing:.08em;font-weight:600">Markings Read</span><div style="font-size:12px;color:#d0d8e8;margin-top:2px">'+eh(result.visibleText)+'</div></div>';
+    }
+    if(result.keyFeatures){
+      feats+='<div style="margin-bottom:6px"><span style="font-size:10px;color:#a0c0ff;text-transform:uppercase;letter-spacing:.08em;font-weight:600">Features Observed</span><div style="font-size:12px;color:#c0c8d8;margin-top:2px">'+eh(result.keyFeatures)+'</div></div>';
+    }
+    if(result.reasoning){
+      feats+='<div><span style="font-size:10px;color:#a0c0ff;text-transform:uppercase;letter-spacing:.08em;font-weight:600">Reasoning</span><div style="font-size:12px;color:#8a95a8;margin-top:2px;font-style:italic">'+eh(result.reasoning)+'</div></div>';
+    }
+    featuresHtml='<div style="background:#13161d;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:12px;text-align:left">'+feats+'</div>';
+  }
+
+  // Escape result for onclick — use data attribute instead
+  var resultJson=JSON.stringify(result);
+  // Store on modal for button access
+  modal.dataset.idResult=resultJson;
+
+  modal.innerHTML='<div style="background:#222835;border:2px solid #a0c0ff40;border-radius:12px;padding:24px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+      +'<div style="font-size:16px;font-weight:700;color:#a0c0ff">&#10003; Identified</div>'
+      +'<div style="display:flex;align-items:center;gap:6px">'
+        +'<span style="font-size:11px;padding:3px 8px;border-radius:4px;font-weight:700;background:'+confColor+'20;color:'+confColor+';border:1px solid '+confColor+'50">'+confLabel+'</span>'
+      +'</div>'
     +'</div>'
-    +(result.notes?'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px;font-style:italic">'+result.notes+'</div>':'')
+    +'<img src="data:'+mediaType+';base64,'+imgBase64+'" style="width:100%;max-height:160px;object-fit:contain;border-radius:8px;border:1px solid #2e3545;margin-bottom:14px"/>'
+    +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:8px;padding:14px;margin-bottom:8px;text-align:left">'
+      +(result.make&&result.make!=='Unknown'?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252c38;font-size:14px"><span style="color:#8a95a8">Make</span><span style="color:#f0f2f5;font-weight:700">'+eh(result.make)+'</span></div>':'')
+      +(result.model?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252c38;font-size:14px"><span style="color:#8a95a8">Model</span><span style="color:#f0f2f5;font-weight:700">'+eh(result.model)+'</span></div>':'')
+      +(result.type?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252c38;font-size:14px"><span style="color:#8a95a8">Type</span><span style="color:#f0f2f5;font-weight:700">'+eh(result.type)+'</span></div>':'')
+      +(result.caliber?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252c38;font-size:14px"><span style="color:#8a95a8">Caliber</span><span style="color:#f0f2f5;font-weight:700">'+eh(result.caliber)+'</span></div>':'')
+      +(result.barrelLength?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252c38;font-size:14px"><span style="color:#8a95a8">Barrel</span><span style="color:#f0f2f5;font-weight:700">'+eh(result.barrelLength)+'\u2033</span></div>':'')
+      +(result.year?'<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span style="color:#8a95a8">Year</span><span style="color:#f0f2f5;font-weight:700">'+eh(result.year)+'</span></div>':'')
+      +pdbBadge
+    +'</div>'
+    +(result.notes?'<div style="font-size:12px;color:#8a95a8;margin-bottom:8px;font-style:italic">'+eh(result.notes)+'</div>':'')
+    +featuresHtml
     +'<div style="display:flex;flex-direction:column;gap:8px">'
-      +'<button onclick="applyIdentifierResult('+JSON.stringify(result).replace(/'/g,"&#39;")+')" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">+ Add to Inventory</button>'
+      +'<button onclick="_idApplyResult()" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">+ Add to Inventory</button>'
+      +(result.confidence!=='verified'?'<button onclick="_idRetryMarkings()" style="background:#1e2535;border:1.5px solid #a0c0ff50;color:#a0c0ff;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Not right? Try close-up of markings</button>':'')
       +'<button onclick="document.getElementById(\'identifier_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Dismiss</button>'
+    +'</div>'
+    +'</div>';
+}
+
+// -K: Apply result from data attribute
+function _idApplyResult(){
+  var modal=document.getElementById('identifier_modal');
+  if(!modal) return;
+  try{
+    var result=JSON.parse(modal.dataset.idResult);
+    applyIdentifierResult(result);
+  }catch(e){toast('Error applying result','err');}
+}
+
+// -K: Retry with guidance to photograph markings
+function _idRetryMarkings(){
+  var modal=document.getElementById('identifier_modal');
+  if(!modal) return;
+
+  modal.innerHTML='<div style="background:#222835;border:2px solid #a0c0ff40;border-radius:12px;padding:24px;max-width:340px;width:100%;text-align:center">'
+    +'<div style="font-size:28px;margin-bottom:10px">&#128269;</div>'
+    +'<div style="font-size:16px;font-weight:700;color:#a0c0ff;margin-bottom:6px">Get a Better ID</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:6px;line-height:1.6">Take a close-up photo of the <strong style="color:#e8c46a">manufacturer markings</strong> on the frame or slide.</div>'
+    +'<div style="background:#13161d;border:1px solid #2e3545;border-radius:8px;padding:12px;margin-bottom:16px;text-align:left">'
+      +'<div style="font-size:11px;color:#e8c46a;font-weight:700;margin-bottom:6px">Where to look:</div>'
+      +'<div style="font-size:12px;color:#c0c8d8;line-height:1.7">'
+        +'&#8226; Pistols: right side of slide, frame above trigger<br/>'
+        +'&#8226; Revolvers: barrel top, frame side<br/>'
+        +'&#8226; Rifles: receiver left side, barrel<br/>'
+        +'&#8226; Shotguns: receiver left side, barrel flat'
+      +'</div>'
+    +'</div>'
+    +'<input type="file" id="identifier_retry_input" accept="image/*" capture="environment" style="display:none" onchange="runGunIdentifier(this)"/>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+      +'<button onclick="document.getElementById(\'identifier_retry_input\').click()" style="background:linear-gradient(135deg,#1e2a40,#1a2535);border:2px solid #a0c0ff60;color:#a0c0ff;padding:14px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">'+_iM('camera')+' Take Close-Up</button>'
+      +'<button onclick="var inp=document.getElementById(\'identifier_retry_input\');inp.removeAttribute(\'capture\');inp.click();setTimeout(function(){inp.setAttribute(\'capture\',\'environment\');},500)" style="background:#1e2535;border:2px solid #3a4455;color:#c0c8d8;padding:14px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">&#128444; Choose from Gallery</button>'
+      +'<button onclick="document.getElementById(\'identifier_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
     +'</div>'
     +'</div>';
 }
@@ -10585,7 +10805,7 @@ function applyIdentifierResult(result){
   if(m) m.remove();
   // Pre-fill new gun form with identified data
   FORM=ef();
-  if(result.make) FORM.make=result.make;
+  if(result.make&&result.make!=='Unknown') FORM.make=result.make;
   if(result.model) FORM.model=result.model;
   if(result.type) FORM.type=result.type;
   if(result.caliber) FORM.caliber=result.caliber;
