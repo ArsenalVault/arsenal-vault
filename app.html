@@ -963,6 +963,7 @@ td{padding:13px 14px;font-size:15px;border-bottom:1px solid #252c38;vertical-ali
 <symbol id="M-badge-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><polygon fill="currentColor" stroke="none" points="12,8 12.93,10.71 15.8,10.76 13.51,12.49 14.35,15.24 12,13.59 9.65,15.24 10.49,12.49 8.2,10.76 11.07,10.71"/></symbol>
 <symbol id="M-storefront" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" d="M7 9h10l-.7 2H7.7z"/><path d="M8 11v5.5h8V11" stroke-width="1.4"/><path fill="currentColor" d="M11 13h2v3.5h-2z"/></symbol>
 <symbol id="M-notes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><rect x="8.5" y="7" width="7" height="9.5" rx="1" stroke-width="1.4"/><path d="M10 7V6h4v1" stroke-width="1.3"/><path d="M10.5 10h3M10.5 12h3M10.5 14h2" stroke-width="1.1" stroke-linecap="round"/></symbol>
+<symbol id="M-armorer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="none" stroke="currentColor" stroke-width="1.25"/><path fill="currentColor" d="M8.5 7.5h7c.8 0 1.5.7 1.5 1.5v4c0 .8-.7 1.5-1.5 1.5H11l-2 2.5v-2.5H8.5C7.7 14.5 7 13.8 7 13V9c0-.8.7-1.5 1.5-1.5Z"/><circle cx="12" cy="10.8" r="2" fill="none" stroke="#1a1d24" stroke-width="1.2"/><circle cx="12" cy="10.8" r=".6" fill="#1a1d24"/></symbol>
 <symbol id="B-printer" viewBox="0 0 512 512"><g filter="url(#shadow)">
     <polygon points="256,30 454,144 454,368 256,482 58,368 58,144" fill="url(#steel)"/>
     <polygon points="256,52 432,154 432,358 256,460 80,358 80,154" fill="#05070a" stroke="#1b2027" stroke-width="4"/>
@@ -6026,7 +6027,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-05-20-L';   // bump on every revision
+var BUILD_TAG   = '2026-05-20-M';   // bump on every revision
 var PDB_UPDATE_URL = 'https://arsenaldb.com/pricedb.json';
 var PDB_VERSION    = '2026-05-19';     // inline baseline version
 var _cachedPDB     = null;             // populated from localStorage on boot
@@ -10439,6 +10440,7 @@ function buildHamMenu(){
     +'<div class="ham-section">App</div>'
     +'<div class="ham-item" onclick="hamAction(function(){openMagnifier()})" style="color:#60e8c0"><span class="ham-item-icon">&#128269;</span><span>Serial # Magnifier</span></div>'
     +'<div class="ham-item" onclick="hamAction(function(){openGunIdentifier()})" style="color:#a0c0ff"><span class="ham-item-icon">'+_iM('camera')+'</span><span>AI Gun Identifier</span></div>'
+    +'<div class="ham-item" onclick="hamAction(function(){openArmorer()})" style="color:#60e8c0"><span class="ham-item-icon">'+_iM('armorer')+'</span><span>Armorer</span></div>'
     +'<div class="ham-item" onclick="hamAction(function(){openSettings()})">'
       +'<span class="ham-item-icon">'+_iM('gear')+'</span><span>Settings</span>'
     +'</div>'
@@ -10506,6 +10508,353 @@ function toggleEditMenu(id){
 
   document.body.appendChild(menu);
 }
+
+
+// ── ARMORER NAVIGATION ASSISTANT ─────────────────────────────────────
+var ARMORER_KB = [
+  // ── DASHBOARD ──
+  {keywords:['dashboard','home','main screen','overview','landing','start'], answer:'The <b>Dashboard</b> is your home screen. It shows status cards (total firearms, operational, needs repair, needs cleaning), a type breakdown chart, and quick-action buttons for CSV export, printing, photo view, and transfer worksheets. Tap the <b>Dashboard</b> tab in the bottom nav bar to get there from anywhere.', related:['inventory list','reports']},
+  {keywords:['status cards','asset count','operational','needs repair','needs cleaning'], answer:'The Dashboard has four status cards at the top: <b>Asset Count</b> (total firearms), <b>Readiness</b> (operational count), <b>Service</b> (needs repair), and <b>Maintenance</b> (needs cleaning). Tapping any card filters your inventory to show only those firearms.', related:['filter','work order']},
+  {keywords:['type breakdown','type chart','pistol count','rifle count','shotgun count'], answer:'The Dashboard shows a <b>type breakdown</b> with cards for each firearm type (Pistol, Rifle, Shotgun, etc.) and their counts. Tap any type card to filter your Inventory list to just that type.', related:['dashboard','filter']},
+  // ── INVENTORY LIST ──
+  {keywords:['inventory','list','browse','all firearms','my guns','collection list'], answer:'The <b>Inventory</b> tab in the bottom nav shows all your firearms in a scrollable list. Each row shows make, model, type, caliber, serial number, condition, and status. Tap any row to open its detail view.', related:['filter','search','add firearm']},
+  {keywords:['search','find','lookup','search bar'], answer:'At the top of the Inventory list there\'s a <b>search bar</b>. Type any text to filter by make, model, serial number, caliber, or notes. The list updates as you type.', related:['filter','inventory']},
+  {keywords:['filter','sort','working','not working','condition filter','type filter'], answer:'In the Inventory list, use the <b>filter dropdowns</b> below the search bar to filter by work status (All / Working / Not Working) and condition (All / Excellent / Good / Fair / Poor). You can also filter by type from the Dashboard type cards.', related:['search','dashboard']},
+  {keywords:['star','favorite','starred','bookmark','flag'], answer:'Tap the <b>star icon</b> on any firearm row in the Inventory list to star/unstar it. Starred firearms show a ★ badge. This is useful for marking priority items.', related:['inventory']},
+  {keywords:['bulk','bulk mode','bulk edit','select multiple','multi select'], answer:'Tap the <b>Bulk Mode</b> button at the top of the Inventory list to enter multi-select mode. Check the firearms you want, then use <b>Bulk Edit</b> to change fields across all selected items at once.', related:['inventory','edit']},
+  {keywords:['view inventory','photo view','picture page','gallery','photo grid'], answer:'Open the hamburger menu ☰ and tap <b>View Inventory</b>, or tap the camera icon button on the Dashboard. This shows a visual photo grid of all your firearms — great for quick visual browsing.', related:['photos','inventory']},
+  // ── ADD / EDIT FIREARM ──
+  {keywords:['add firearm','add gun','new firearm','new gun','add entry','create firearm'], answer:'Tap the <b>+ button</b> (gold floating button, bottom-right) from the Dashboard or Inventory list. This opens the Add Firearm form where you enter make, model, serial number, caliber, type, condition, and more. Tap <b>Add to Inventory</b> when done.', related:['edit','photos','save']},
+  {keywords:['edit','edit firearm','edit gun','modify','change','update fields'], answer:'From a firearm\'s detail view, tap the <b>Edit</b> button (pencil icon in the header). This opens the same form as Add, pre-filled with the current data. Make changes and tap <b>Save Changes</b>.', related:['add firearm','detail view']},
+  {keywords:['save','save changes','save button'], answer:'When adding or editing a firearm, the <b>Save</b> button is at the bottom of the form. It says "Add to Inventory" for new firearms or "Save Changes" for existing ones. All data saves locally to your device.', related:['add firearm','edit']},
+  {keywords:['make','manufacturer','brand'], answer:'The <b>Make</b> field is on the Add/Edit form. Enter the manufacturer name (e.g., "Glock", "Smith & Wesson", "Ruger"). This field is used for price estimation and reporting.', related:['model','add firearm']},
+  {keywords:['model','model name','model number'], answer:'The <b>Model</b> field is on the Add/Edit form, right below Make. Enter the specific model (e.g., "G19 Gen5", "M&P Shield", "10/22").', related:['make','add firearm']},
+  {keywords:['serial','serial number','sn'], answer:'The <b>Serial Number</b> field is on the Add/Edit form. This is critical for insurance and theft reporting. Use the <b>Serial # Magnifier</b> tool (hamburger menu ☰ → Serial # Magnifier) if the number is hard to read.', related:['magnifier','insurance report']},
+  {keywords:['caliber','gauge','chambering','ammunition type'], answer:'The <b>Caliber/Gauge</b> field is on the Add/Edit form. Enter the chambering (e.g., "9mm", "5.56 NATO", "12 Gauge", ".308 Win").', related:['add firearm']},
+  {keywords:['type','firearm type','pistol','rifle','shotgun','revolver','category'], answer:'The <b>Type</b> dropdown on the Add/Edit form lets you select: Pistol, Rifle, Shotgun, Revolver, Lever Action, Bolt Action, or Other. This affects Dashboard type counts and some Condition Profile questions.', related:['add firearm','condition profile']},
+  {keywords:['condition','firearm condition','excellent','good','fair','poor'], answer:'The <b>Condition</b> dropdown on the Add/Edit form has options: Excellent, Good, Fair, Poor. This is a quick general grade. For detailed condition assessment, use the <b>Condition Profile</b> after estimating value.', related:['condition profile','valuation']},
+  {keywords:['status','work status','working','not working','operational'], answer:'The <b>Status</b> field on the Add/Edit form toggles between Working and Not Working. "Not Working" flags the firearm as needing repair on the Dashboard.', related:['work order','dashboard']},
+  {keywords:['acquired','acquisition','purchase date','date acquired','bought','when bought'], answer:'The <b>Acquired</b> field on the Add/Edit form records when and how you got the firearm. After saving, ArsenalDB may prompt you for acquisition details (date, price, source) for chain of custody tracking.', related:['custody','chain of custody']},
+  {keywords:['notes','add note','firearm notes','timestamped notes'], answer:'Each firearm has a <b>Notes</b> system. In the Add/Edit form, look for the Notes section to add timestamped notes. Each note records the date/time automatically. You can add, edit, and delete individual notes.', related:['edit']},
+  // ── PHOTOS ──
+  {keywords:['photo','photos','picture','image','camera','take photo','add photo','upload photo'], answer:'In the Add/Edit form, scroll to the <b>Photos</b> section. Tap <b>Add Photo</b> to take a new photo or choose from your gallery. Photos are stored locally on your device. <br><br><em>Tip: The first photo capture per editing session may navigate away — just tap Edit again and try the photo a second time. This is a known quirk.</em>', related:['add firearm','edit']},
+  {keywords:['remove photo','delete photo'], answer:'In the Add/Edit form\'s Photos section, each photo has a small <b>✕ button</b> in the corner. Tap it to remove that photo from the firearm.', related:['photos']},
+  // ── DETAIL VIEW TABS ──
+  {keywords:['detail','detail view','firearm detail','view details','info page'], answer:'Tap any firearm in the Inventory list to open its <b>Detail View</b>. This has five tabs across the top: <b>Maintenance</b>, <b>Details</b>, <b>Schematics</b>, <b>Range</b>, and <b>Custody</b>.', related:['maintenance tab','info tab','schematics','range tab','custody tab']},
+  {keywords:['maintenance','maintenance tab','mnt','work order tab'], answer:'The <b>Maintenance</b> tab (wrench icon) in the detail view shows work orders, cleaning history, and the firearm\'s current status. This is where you manage repairs and maintenance tasks.', related:['work order','cleaning']},
+  {keywords:['info','info tab','details tab','firearm info','specifications'], answer:'The <b>Details</b> tab (info icon) in the detail view shows the firearm\'s full specifications, valuation estimate, estimate history, condition profile summary, and all stored data at a glance.', related:['valuation','condition profile']},
+  {keywords:['schematics','parts','exploded view','parts diagram','bolt nut'], answer:'The <b>Schematics</b> tab (bolt-nut icon) in the detail view. Open it from the detail tabs, or via hamburger menu ☰ → <b>Schematics & Parts</b> when editing. Shows parts diagrams and technical references.', related:['detail view']},
+  {keywords:['range tab','range log','round count','shooting log'], answer:'The <b>Range</b> tab (target icon) in the detail view shows range sessions logged for this specific firearm, including dates, round counts, and ammo used.', related:['range session']},
+  {keywords:['custody tab','custody events','chain of custody','coc'], answer:'The <b>Custody</b> tab (lock-open icon) in the detail view shows the full chain of custody history for a firearm — every transfer, loan, acquisition, and custody event with dates and parties.', related:['custody event','transfer wizard']},
+  // ── WORK ORDERS ──
+  {keywords:['work order','repair','service','gunsmith','maintenance order','wo'], answer:'To create a work order: open a firearm → <b>Maintenance</b> tab → tap <b>Add Work Order</b>. Fill in the description, status, parts, cost, and gunsmith info. Work orders track repairs and service history. <em>(Pro feature)</em>', related:['maintenance tab','parts']},
+  {keywords:['parts','parts list','replacement parts','work order parts'], answer:'Inside a Work Order, there\'s a <b>Parts</b> section where you can add individual parts with name, part number, quantity, and cost. Great for tracking replacement components.', related:['work order']},
+  {keywords:['test fire','function check','proof test'], answer:'Inside a Work Order, you can add <b>Test Fire</b> groups to record function checks after service — ammo type, round count, results, and notes.', related:['work order']},
+  {keywords:['cleaning','clean','needs cleaning','cleaning schedule','maintenance schedule'], answer:'Work orders can track cleaning tasks. The Dashboard\'s "Needs Cleaning" card shows firearms with open cleaning work orders. Check the <b>Reports → Cleaning</b> tab for a full cleaning overview.', related:['work order','cleaning report']},
+  // ── VALUATION / ESTIMATION ──
+  {keywords:['value','valuation','estimate','price','worth','how much','appraisal','what is it worth'], answer:'Open a firearm in Edit mode → scroll to the valuation section → tap <b>Get Estimate</b>. ArsenalDB uses a built-in price database (580+ entries) to generate a local estimate based on make, model, and condition. No internet needed for the local estimate.', related:['ai valuation','condition profile','price database']},
+  {keywords:['ai valuation','ai estimate','ai value','claude estimate','smart estimate'], answer:'After getting a local estimate, Pro+ users with a BYO API key can tap <b>AI Estimate</b> to get a more detailed AI-powered valuation that considers market trends, rarity, and condition. This uses your Anthropic API key. <em>(Pro+ feature)</em>', related:['valuation','api key','condition profile']},
+  {keywords:['condition profile','refine estimate','condition assessment','condition questions'], answer:'After getting a valuation estimate, tap <b>Refine Estimate</b> to open the <b>Condition Profile</b>. Answer 15 questions about completeness, physical condition, market modifiers, and category-specific details. This applies a detailed adjustment multiplier to your estimate.', related:['valuation','estimate history']},
+  {keywords:['estimate history','valuation history','price history','past estimates'], answer:'Each firearm stores its estimate history. View it in the <b>Details</b> tab under the Condition Profile section. Each estimate records the date, base value, condition adjustment, and final estimate.', related:['valuation','info tab']},
+  {keywords:['price database','pricedb','price db','update prices','price update'], answer:'ArsenalDB has a built-in local price database. To update it, go to <b>Settings</b> → scroll to <b>Price Database</b> → tap <b>Check for Updates</b>. Updates are downloaded from arsenaldb.com. No API key needed.', related:['valuation','settings']},
+  // ── REPORTS ──
+  {keywords:['reports','report','reporting'], answer:'Tap the <b>Reports</b> tab in the bottom nav. Six sub-tabs: <b>Worth</b> (total collection value), <b>Cleaning</b> (maintenance overview), <b>Milestones</b> (achievements), <b>Insurance</b> (claim sheets), <b>Theft</b> (stolen firearm reports), and <b>Custody</b> (chain of custody reports).', related:['worth report','insurance report','theft report','custody report']},
+  {keywords:['worth','worth report','total value','collection value','portfolio'], answer:'<b>Reports → Worth</b> shows your total collection value based on estimates. Includes a breakdown by firearm with individual estimated values.', related:['valuation','reports']},
+  {keywords:['cleaning report','maintenance report','cleaning tab'], answer:'<b>Reports → Cleaning</b> shows which firearms need cleaning, open cleaning work orders, and overall maintenance status across your collection.', related:['work order','cleaning']},
+  {keywords:['milestones','achievements','badges','rewards','gamification'], answer:'<b>Reports → Milestones</b> tracks your ArsenalDB achievements — like adding your first firearm, completing profiles, logging range sessions, and more. Fun way to track your progress.', related:['reports']},
+  {keywords:['insurance','insurance report','claim','claim sheet','insurance claim','policy'], answer:'<b>Reports → Insurance</b> lets you prepare claim-ready documentation. Fill in your policy details, then print individual <b>Claim Sheets</b> for each firearm with full specs, photos, serial numbers, condition profiles, and estimated values. <em>(Pro feature to print)</em>', related:['print','serial number','condition profile']},
+  {keywords:['theft','theft report','stolen','stolen firearm','police report','loss report'], answer:'<b>Reports → Theft</b> generates a stolen firearm report with incident details, serial numbers, distinguishing features, and condition profiles. Includes guidance to file a police report immediately. <em>(Pro feature to print)</em>', related:['serial number','reports']},
+  {keywords:['custody report','custody log','custody history report'], answer:'<b>Reports → Custody</b> shows chain-of-custody records across your collection. Print custody records and temporary custody agreements. <em>(Pro feature to print)</em>', related:['custody tab','chain of custody']},
+  // ── PRINT & EXPORT ──
+  {keywords:['print','print inventory','print all','print list'], answer:'Hamburger menu ☰ → <b>Print Full Inventory</b> opens a formatted print view of your entire collection. Use your browser\'s print dialog to print or save as PDF. <em>(Pro feature)</em>', related:['export csv','pdf']},
+  {keywords:['print sheet','print one','individual print','firearm sheet'], answer:'From a firearm\'s edit view or detail view, open the hamburger menu ☰ → <b>Print Sheet</b>. Or tap the ⋮ menu → Print Sheet. Generates a detailed single-firearm document. <em>(Pro feature)</em>', related:['print','pdf']},
+  {keywords:['pdf','save pdf','save as pdf','download pdf'], answer:'From a firearm\'s edit view, hamburger menu ☰ → <b>Save as PDF</b>. This generates a downloadable PDF of the firearm\'s complete record. <em>(Pro feature)</em>', related:['print']},
+  {keywords:['csv','export csv','export','spreadsheet','download csv','export data'], answer:'Hamburger menu ☰ → <b>Export CSV</b>, or tap the CSV button on the Dashboard. Exports your full inventory as a CSV spreadsheet file including all fields, estimates, and condition grades. <em>(Pro feature)</em>', related:['backup','print']},
+  {keywords:['qr labels','label sheet','print labels','qr label sheet','barcode labels'], answer:'Hamburger menu ☰ → <b>Print QR Labels</b>. Generates a sheet of QR code labels for your firearms — great for tagging gun cases, safes, or storage. <em>(Pro feature)</em>', related:['qr code','print']},
+  {keywords:['drop off','drop off receipt','gunsmith receipt','service receipt'], answer:'Hamburger menu ☰ → <b>Drop-Off Receipt</b>. Generates a receipt for leaving a firearm with a gunsmith or service provider — includes firearm details and owner info.', related:['work order','print']},
+  // ── COLLECTIONS ──
+  {keywords:['collection','collections','switch collection','multiple collections','manage collections'], answer:'Collections let you organize firearms into separate groups. The <b>collection dropdown</b> is at the top of the screen. Tap it to switch between collections, create new ones, rename, or delete. <em>(Pro+ feature for multiple collections)</em>', related:['create collection','import collection']},
+  {keywords:['create collection','new collection','add collection'], answer:'Tap the <b>collection dropdown</b> at the top → <b>+ New Collection</b>. Name it and tap Create. Free/Pro users get one collection; Pro+ users can have multiple. <em>(Pro+ for multiple)</em>', related:['collections','switch collection']},
+  {keywords:['import collection','merge collection','combine','import json','import backup'], answer:'Hamburger menu ☰ → <b>Import Collection</b>. Select a JSON backup file to merge firearms into your current collection. Built for dealers, estate sales, and combining inventories from multiple devices.', related:['backup','restore','collections']},
+  {keywords:['share collection','share','send collection'], answer:'Hamburger menu ☰ → <b>Share Collection</b>. Generates a shareable JSON file of your current collection that can be sent to another device or person for import.', related:['backup','import collection']},
+  // ── BACKUP & RESTORE ──
+  {keywords:['backup','backup data','save backup','export backup','backup collection'], answer:'Hamburger menu ☰ → <b>Backup Collection</b>. Downloads a JSON file with all your firearms data, photos, work orders, and settings. Keep this safe — it\'s your full data export.', related:['restore','import collection']},
+  {keywords:['restore','restore backup','import backup','load backup','recover data'], answer:'To restore from a backup, use hamburger menu ☰ → <b>Import Collection</b> and select your JSON backup file. This merges the backup data into your current collection.', related:['backup','import collection']},
+  // ── TRANSFER TOOLS ──
+  {keywords:['transfer','transfer wizard','bill of sale','bos','sell firearm','sold'], answer:'From a firearm\'s detail view, hamburger menu ☰ → <b>Transfer Wizard</b>. This walks you through generating a Bill of Sale with buyer/seller info, terms, and signatures. The firearm gets marked as "Transferred Out." <em>(Pro feature)</em>', related:['transfer worksheet','custody']},
+  {keywords:['transfer worksheet','multi transfer','batch transfer','transfer multiple'], answer:'From the Dashboard, tap the <b>Transfer Worksheet</b> button, or hamburger menu ☰ → more options. Select multiple firearms and generate a combined transfer document. <em>(Pro feature)</em>', related:['transfer wizard','bill of sale']},
+  {keywords:['qr code','generate qr','qr transfer','qr'], answer:'From a firearm\'s edit or detail view, hamburger menu ☰ → <b>Generate QR Code</b>. Creates a QR code containing the firearm\'s data for quick transfer scanning. <em>(Pro feature)</em>', related:['nfc','transfer wizard']},
+  {keywords:['nfc','nfc tag','write nfc','tap tag'], answer:'On supported Android devices, from a firearm\'s edit view, hamburger menu ☰ → <b>Write NFC Tag</b>. Writes the firearm\'s data to an NFC tag for physical tagging. <em>(Pro feature, Android only)</em>', related:['qr code']},
+  // ── AI FEATURES ──
+  {keywords:['gun identifier','identify','identify gun','ai identifier','photo identify','what gun is this'], answer:'Hamburger menu ☰ → <b>AI Gun Identifier</b>. Take or upload a photo of any firearm, and AI identifies the make, model, type, and caliber. Results are validated against the price database. You can then add the identified firearm directly to your inventory. <em>(Pro+ feature, requires API key)</em>', related:['api key','add firearm']},
+  {keywords:['identify wrong','wrong identification','not right','help identify','assist identify'], answer:'If the AI Gun Identifier gets it wrong, tap <b>"Not right? Help me identify it"</b> below the result. You can either enter details you can see (make, model, serial, caliber) or take a better close-up photo for a re-identification attempt.', related:['gun identifier']},
+  // ── RANGE SESSIONS ──
+  {keywords:['range','range session','shooting','range day','log range','log shooting','range sessions'], answer:'Hamburger menu ☰ → <b>Range Sessions</b>. Create sessions to log shooting trips. Each session records the date, location, firearms used, round counts, and ammo types. View per-firearm range history in the detail view\'s Range tab.', related:['range tab','ammo']},
+  {keywords:['ammo','ammunition','round count','rounds fired','rounds'], answer:'In a Range Session, add firearms and log the <b>round count</b> and ammo type for each. Total rounds are tracked per firearm and visible in the Range tab of each firearm\'s detail view.', related:['range session']},
+  // ── SETTINGS ──
+  {keywords:['settings','preferences','app settings','options','configure'], answer:'Hamburger menu ☰ → <b>Settings</b> (gear icon). Here you can manage your tier/license, set your API key for AI features, update the price database, view storage info, and configure app preferences.', related:['api key','tier','price database']},
+  {keywords:['api key','anthropic key','byo key','ai key','set api key','enter api key'], answer:'Go to <b>Settings</b> → scroll to the AI section → enter your <b>Anthropic API Key</b>. This enables AI features (Gun Identifier, AI Valuation) for Pro+ users. Get a key at console.anthropic.com. Your key is stored locally and never sent to ArsenalDB servers.', related:['gun identifier','ai valuation','settings']},
+  {keywords:['storage','storage info','data usage','how much space','indexeddb'], answer:'Go to <b>Settings</b> to view storage information. ArsenalDB stores all data locally on your device using IndexedDB. Your data never leaves your device unless you explicitly export or share it.', related:['settings','backup','privacy']},
+  {keywords:['profile','user profile','my profile','owner info'], answer:'Go to <b>Settings</b> → <b>Profile</b> section to enter your owner information (name, address, phone, email). This info appears on printed reports, Bills of Sale, and insurance documents.', related:['settings','insurance report','bill of sale']},
+  // ── TIERS ──
+  {keywords:['tier','plan','free','pricing','subscription','license','upgrade','pro','proplus','pro plus','premium'], answer:'ArsenalDB has three tiers:<br><b>Free</b> — Up to 5 firearms, basic features.<br><b>Pro ($9.99 one-time)</b> — Unlimited firearms, print/export, Bill of Sale, QR/NFC, reports printing.<br><b>Pro+ ($19.99 one-time)</b> — Everything in Pro, plus AI features (Gun Identifier, AI Valuation), 2-device installs, and multiple collections.', related:['upgrade','api key']},
+  {keywords:['upgrade','buy','purchase','unlock','activate','license key'], answer:'To upgrade, go to <b>Settings</b> → tap your current tier → follow the upgrade prompts. One-time purchase — no subscription. Pro is $9.99, Pro+ is $19.99. Payment handled securely through LemonSqueezy.', related:['tier','settings']},
+  {keywords:['free tier','free limit','5 firearms','five firearms','limit'], answer:'The Free tier supports up to <b>5 firearms</b>. You get full add/edit/view functionality, local valuations, reports viewing, and the Armorer assistant. Upgrade to Pro to remove the limit and unlock print/export features.', related:['tier','upgrade']},
+  // ── SERIAL # MAGNIFIER ──
+  {keywords:['magnifier','serial magnifier','zoom','magnify','read serial','hard to read'], answer:'Hamburger menu ☰ → <b>Serial # Magnifier</b>. Opens a live camera view with zoom and brightness controls to help you read worn or hard-to-see serial numbers. You can save the captured number directly to a firearm record.', related:['serial number','add firearm']},
+  // ── GENERAL NAVIGATION ──
+  {keywords:['tabs','bottom tabs','nav bar','navigation','navigate','get around'], answer:'The bottom nav has three main tabs: <b>Dashboard</b> (home), <b>Reports</b>, and <b>Inventory</b>. Tap any tab to switch views. The hamburger menu ☰ (top-left) has additional tools and actions.', related:['dashboard','inventory','reports','hamburger']},
+  {keywords:['hamburger','menu','three bar','side menu','ham menu','main menu'], answer:'The <b>☰ hamburger menu</b> is the three-bar button in the top-left corner. It opens a slide-out panel with all app features: Range Sessions, Add Firearm, collection management, print/export, tools (Magnifier, AI Identifier, Armorer), Settings, and more.', related:['tabs']},
+  {keywords:['back','go back','return','previous screen'], answer:'Tap the <b>← back button</b> (bottom-left floating button) to return to the previous screen. From the detail view it goes to Inventory, from Add/Edit it warns about unsaved changes first.', related:['navigation']},
+  {keywords:['duplicate','copy firearm','clone','duplicate firearm'], answer:'From a firearm\'s edit view, hamburger menu ☰ → <b>Duplicate Firearm</b>. Creates a copy with all fields pre-filled (except serial number) — handy for adding similar firearms quickly.', related:['add firearm','edit']},
+  {keywords:['delete','delete firearm','remove firearm','remove gun'], answer:'From a firearm\'s edit view, hamburger menu ☰ → <b>Delete Firearm</b> (in the Danger Zone). Requires confirmation. This permanently removes the firearm from your collection.', related:['clear all data']},
+  {keywords:['clear all','clear data','reset','erase everything','factory reset','wipe','start over'], answer:'Hamburger menu ☰ → scroll to <b>Danger Zone</b> → <b>Clear All Data</b>. This permanently deletes ALL your data. <b>Make a backup first!</b> Requires confirmation.', related:['backup','delete firearm']},
+  // ── PRIVACY & DATA ──
+  {keywords:['privacy','private','data privacy','where is my data','local','offline','security'], answer:'ArsenalDB is <b>100% local-first</b>. All your data stays on your device in the browser\'s IndexedDB storage. Nothing is sent to any server unless you explicitly share, export, or use AI features (which go directly to Anthropic\'s API with your own key). No accounts, no cloud sync, no tracking.', related:['storage','api key','backup']},
+  {keywords:['offline','no internet','works offline','airplane mode'], answer:'ArsenalDB works <b>fully offline</b> as a Progressive Web App (PWA). All features except AI-powered ones (Gun Identifier, AI Valuation) and price database updates work without internet. Install it to your home screen for the best experience.', related:['pwa','privacy']},
+  {keywords:['pwa','install','home screen','app install','add to home screen','progressive web app'], answer:'ArsenalDB is a <b>Progressive Web App</b>. On your phone, visit arsenaldb.com in Chrome → tap the browser menu → <b>Add to Home Screen</b> (or "Install App"). This gives you a full-screen app experience that works offline.', related:['offline']},
+  // ── TROUBLESHOOTING ──
+  {keywords:['photo bug','camera bug','first photo','photo problem','camera not working','photo navigate'], answer:'<b>Known issue:</b> The first photo capture attempt per editing session may navigate to the Dashboard instead of capturing. <b>Workaround:</b> Just tap Edit again and take the photo a second time — it works on the second attempt.', related:['photos']},
+  {keywords:['help','stuck','how to','how do i','where is','cant find','can\'t find','lost','confused'], answer:'I\'m the <b>Armorer</b> — your ArsenalDB navigation assistant. Just describe what you\'re trying to do and I\'ll point you in the right direction. Try things like "How do I export my collection?" or "Where do I add a work order?"', related:['hamburger','tabs']},
+  {keywords:['armorer','what is armorer','what are you','who are you','what can you do'], answer:'I\'m the <b>Armorer</b> — ArsenalDB\'s built-in navigation assistant. I help you find features, understand how things work, and get around the app. I know every screen, button, and feature in ArsenalDB. Ask me anything about the app!<br><br>I don\'t provide legal advice, firearm valuations, or compliance guidance — for those, please consult a qualified professional.', related:[]},
+  {keywords:['contact','support','email','help email','bug report','feedback'], answer:'For support, feature requests, or bug reports, email <b>hello@arsenaldb.com</b>. We read every message.', related:[]},
+  {keywords:['version','build','app version','what version'], answer:'You can find the ArsenalDB version and build number at the bottom of the <b>Settings</b> screen. Scroll all the way down to see the version string.', related:['settings']},
+  {keywords:['custody event','add custody','log custody','custody entry','transfer custody','loan','lend','borrow'], answer:'Open a firearm → <b>Custody</b> tab → <b>Add Custody Event</b>. Record transfers, loans, returns, and other custody changes with dates, parties involved, and notes. Each event is timestamped and stored in the chain of custody.', related:['custody tab','transfer wizard']},
+  {keywords:['custody agreement','temporary custody','loaner agreement'], answer:'From a custody event, you can print a <b>Temporary Custody Agreement</b> — a formal document recording the temporary transfer with both parties\' information. <em>(Pro feature)</em>', related:['custody event','print']},
+  {keywords:['acquisition prompt','where did you get','acquisition details'], answer:'After saving a new firearm, ArsenalDB may prompt you for <b>acquisition details</b> — how and when you acquired it (purchase, gift, trade, inheritance, etc.), the date, price paid, and source. This populates the chain of custody.', related:['custody','add firearm']}
+];
+
+var _armorerLog = [];
+
+function openArmorer(){
+  _armorerLog = [];
+  var modal = document.createElement('div');
+  modal.id = 'armorer_modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#0f1117;z-index:9999;display:flex;flex-direction:column';
+  modal.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #2e3545;flex-shrink:0">'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+        +'<span style="color:#60e8c0">'+_iM('armorer',22)+'</span>'
+        +'<span style="font-size:16px;font-weight:800;color:#60e8c0;letter-spacing:.06em">Armorer</span>'
+        +'<span style="font-size:10px;color:#4a5568;font-weight:600;letter-spacing:.08em;margin-left:4px">NAV ASSISTANT</span>'
+      +'</div>'
+      +'<button onclick="_armorerClose()" style="background:none;border:none;color:#8a95a8;font-size:20px;cursor:pointer;padding:4px">'+_iM('x-close')+'</button>'
+    +'</div>'
+    +'<div id="armorer_chat" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px">'
+      +'<div style="background:#1a2a2a;border:1px solid #60e8c030;border-radius:10px;padding:14px;max-width:85%">'
+        +'<div style="font-size:13px;color:#60e8c0;font-weight:700;margin-bottom:4px">Armorer</div>'
+        +'<div style="font-size:13px;color:#d0d8e8;line-height:1.6">I\'m your ArsenalDB navigation assistant. Ask me how to find any feature, tool, or setting in the app.</div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="padding:12px 16px;border-top:1px solid #2e3545;display:flex;gap:8px;flex-shrink:0">'
+      +'<input id="armorer_input" type="text" placeholder="Ask about any feature\u2026" '
+        +'style="flex:1;background:#1a1d24;border:2px solid #3a4455;border-radius:8px;padding:12px;color:#f0f2f5;font-size:14px;font-family:inherit;outline:none" '
+        +'onkeydown="if(event.key===\'Enter\')_armorerSend()" />'
+      +'<button onclick="_armorerSend()" style="background:#60e8c0;color:#1a1d24;border:none;padding:12px 18px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0">Send</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+  setTimeout(function(){ document.getElementById('armorer_input').focus(); },100);
+}
+
+function _armorerClose(){
+  var m = document.getElementById('armorer_modal');
+  if(m) m.remove();
+  _armorerLog = [];
+}
+
+function _armorerSend(){
+  var inp = document.getElementById('armorer_input');
+  if(!inp) return;
+  var q = inp.value.trim();
+  if(!q) return;
+  inp.value = '';
+
+  // Add user message
+  var chat = document.getElementById('armorer_chat');
+  chat.innerHTML +=
+    '<div style="align-self:flex-end;background:#2a3040;border:1px solid #3a4455;border-radius:10px;padding:12px;max-width:85%">'
+      +'<div style="font-size:13px;color:#f0f2f5;line-height:1.5">'+_eh(q)+'</div>'
+    +'</div>';
+
+  // Try local match first
+  var match = _armorerLocalMatch(q);
+  if(match){
+    _armorerShowAnswer(match.answer, match.related, false);
+  } else {
+    // Check if Pro+ with API key for AI escalation
+    var hasKey = (typeof appSettings !== 'undefined') && appSettings.anthropicKey;
+    var isProPlus = (typeof appSettings !== 'undefined') && (appSettings.tier === 'proplus');
+    if(hasKey && isProPlus){
+      _armorerAICall(q);
+    } else {
+      _armorerShowAnswer('I couldn\'t find a match for that. Try rephrasing your question — for example, "How do I export my collection?" or "Where is the condition profile?" <br><br>You can also browse features in the <b>☰ hamburger menu</b> or check <b>Settings</b>.', [], false);
+    }
+  }
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function _armorerLocalMatch(query){
+  var q = query.toLowerCase().replace(/[^a-z0-9\s]/g,'');
+  var tokens = q.split(/\s+/).filter(function(t){ return t.length > 1; });
+  if(!tokens.length) return null;
+
+  var best = null, bestScore = 0;
+  for(var i = 0; i < ARMORER_KB.length; i++){
+    var entry = ARMORER_KB[i];
+    var score = 0;
+    for(var j = 0; j < tokens.length; j++){
+      for(var k = 0; k < entry.keywords.length; k++){
+        if(entry.keywords[k].indexOf(tokens[j]) >= 0){
+          score++;
+          break; // one point per token, not per keyword
+        }
+      }
+    }
+    // Bonus: exact multi-word keyword match
+    for(var k = 0; k < entry.keywords.length; k++){
+      if(q.indexOf(entry.keywords[k]) >= 0 && entry.keywords[k].indexOf(' ') >= 0){
+        score += 2;
+      }
+    }
+    if(score > bestScore){
+      bestScore = score;
+      best = entry;
+    }
+  }
+  // Require at least 1 token match
+  return bestScore >= 1 ? best : null;
+}
+
+function _armorerShowAnswer(html, related, isAI){
+  var chat = document.getElementById('armorer_chat');
+  if(!chat) return;
+
+  // Remove any loading indicator
+  var loader = document.getElementById('armorer_loading');
+  if(loader) loader.remove();
+
+  var relHtml = '';
+  if(related && related.length){
+    relHtml = '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #2e354530">'
+      +'<div style="font-size:10px;color:#4a5568;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-weight:700">Related topics</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:4px">';
+    for(var i = 0; i < related.length && i < 4; i++){
+      relHtml += '<button onclick="_armorerQuickAsk(\''+related[i].replace(/'/g,"\\'")+'\')" '
+        +'style="background:#1e2535;border:1px solid #3a4455;color:#60e8c0;padding:5px 10px;border-radius:12px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">'
+        +related[i]+'</button>';
+    }
+    relHtml += '</div></div>';
+  }
+
+  var badge = isAI
+    ? '<span style="display:inline-block;font-size:9px;color:#a0c0ff;background:#1a2040;border:1px solid #a0c0ff40;border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:700;letter-spacing:.04em;vertical-align:middle">AI</span>'
+    : '';
+
+  chat.innerHTML +=
+    '<div style="background:#1a2a2a;border:1px solid #60e8c030;border-radius:10px;padding:14px;max-width:85%">'
+      +'<div style="font-size:13px;color:#60e8c0;font-weight:700;margin-bottom:6px">Armorer'+badge+'</div>'
+      +'<div style="font-size:13px;color:#d0d8e8;line-height:1.7">'+html+'</div>'
+      +relHtml
+    +'</div>';
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function _armorerQuickAsk(topic){
+  var inp = document.getElementById('armorer_input');
+  if(inp){
+    inp.value = topic;
+    _armorerSend();
+  }
+}
+
+function _armorerAICall(query){
+  var chat = document.getElementById('armorer_chat');
+  if(!chat) return;
+
+  // Show loading spinner
+  chat.innerHTML +=
+    '<div id="armorer_loading" style="background:#1a2a2a;border:1px solid #60e8c030;border-radius:10px;padding:14px;max-width:85%">'
+      +'<div style="font-size:13px;color:#60e8c0;font-weight:700;margin-bottom:6px">Armorer</div>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+        +'<div style="display:flex;gap:3px" class="armorer-dots">'
+          +'<span style="width:6px;height:6px;background:#60e8c0;border-radius:50%;animation:armorerPulse 1.2s ease-in-out infinite"></span>'
+          +'<span style="width:6px;height:6px;background:#60e8c0;border-radius:50%;animation:armorerPulse 1.2s ease-in-out .2s infinite"></span>'
+          +'<span style="width:6px;height:6px;background:#60e8c0;border-radius:50%;animation:armorerPulse 1.2s ease-in-out .4s infinite"></span>'
+        +'</div>'
+        +'<span style="font-size:12px;color:#8a95a8">Checking with Armorer AI\u2026</span>'
+      +'</div>'
+    +'</div>';
+  chat.scrollTop = chat.scrollHeight;
+
+  // Inject animation if not already present
+  if(!document.getElementById('armorer_pulse_style')){
+    var sty = document.createElement('style');
+    sty.id = 'armorer_pulse_style';
+    sty.textContent = '@keyframes armorerPulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}';
+    document.head.appendChild(sty);
+  }
+
+  var sysPrompt = 'You are the Armorer, ArsenalDB\'s in-app navigation assistant. '
+    +'ArsenalDB is a privacy-first local firearm inventory management app (PWA). '
+    +'Your ONLY job is to help users find features and navigate the app. '
+    +'NEVER provide legal advice, firearm valuations, compliance guidance, or anything outside app navigation. '
+    +'If asked about legal/valuation/compliance topics, respond: "I\'m here to help you navigate ArsenalDB — for legal, valuation, or compliance questions, please consult a qualified professional."\n\n'
+    +'APP STRUCTURE:\n'
+    +'- Bottom nav: Dashboard | Reports | Inventory\n'
+    +'- Hamburger menu (☰ top-left): Range Sessions, Add Firearm, Backup/Share/Import Collection, View Inventory, Print Full Inventory, Drop-Off Receipt, Export CSV, Print QR Labels, Serial # Magnifier, AI Gun Identifier, Armorer, Settings, Clear All Data\n'
+    +'- Add/Edit form: Make, Model, Serial#, Caliber, Type, Condition, Status, Acquired, Notes, Photos, Valuation\n'
+    +'- Detail view tabs: Maintenance (work orders, cleaning), Details (specs, estimates, condition profile), Schematics (parts), Range (per-firearm sessions), Custody (chain of custody events)\n'
+    +'- Report tabs: Worth, Cleaning, Milestones, Insurance (claim sheets), Theft (stolen firearm reports), Custody\n'
+    +'- Valuation: "Get Estimate" button on edit form -> local price DB estimate. "Refine Estimate" -> Condition Profile (15 questions). AI Estimate for Pro+ with BYO key\n'
+    +'- AI Features (Pro+ only, BYO Anthropic API key): Gun Identifier (photo -> ID), AI Valuation\n'
+    +'- Tiers: Free (5 firearms), Pro $9.99 one-time (unlimited, print/export), Pro+ $19.99 one-time (AI, multi-collection, 2 devices)\n'
+    +'- Collections: dropdown at top to switch. Pro+ for multiple\n'
+    +'- Transfer tools: Transfer Wizard (Bill of Sale), Transfer Worksheet (multi-firearm), QR Code, NFC Tag (Android)\n'
+    +'- Settings: tier, API key, price DB updates, profile, storage info, version\n'
+    +'- All data is 100% local (IndexedDB). No cloud. No accounts. Works offline.\n'
+    +'- Known issue: first photo capture per edit session may navigate to dashboard; works on second attempt\n\n'
+    +'Keep answers concise (2-4 sentences). Use bold for feature names. Mention tier requirements where relevant (Pro/Pro+).';
+
+  var key = appSettings.anthropicKey;
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 500,
+      temperature: 0,
+      system: sysPrompt,
+      messages: [{ role: 'user', content: query }]
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    var text = '';
+    if(data.content && data.content.length){
+      for(var i = 0; i < data.content.length; i++){
+        if(data.content[i].type === 'text') text += data.content[i].text;
+      }
+    }
+    if(!text && data.error){
+      text = 'AI request failed: '+(data.error.message||'Unknown error')+'. Try rephrasing or check your API key in Settings.';
+    }
+    if(!text) text = 'No response received. Please try again.';
+    // Convert markdown bold to HTML bold
+    text = text.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+    _armorerShowAnswer(text, [], true);
+  })
+  .catch(function(err){
+    _armorerShowAnswer('Couldn\'t reach the AI service. Check your internet connection and API key in Settings. Error: '+_eh(err.message||'Unknown'), [], true);
+  });
+}
+
+// _eh helper might not be in scope everywhere — safe wrapper
+function _eh(s){ return typeof eh === 'function' ? eh(s) : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 
 // ── AI GUN IDENTIFIER ────────────────────────────────────────────────
