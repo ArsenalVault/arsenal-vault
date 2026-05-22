@@ -17612,6 +17612,10 @@ function _pmigFinish(){
       +'</div>'
       +'<button onclick="document.getElementById(\'pcomp_modal\').remove();rnd();" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Done</button>';
   }
+  // After migration, photos are ph_xxx IDs (lightweight), so sv() is safe.
+  // Critical: persists migrated records to per-collection store, preventing
+  // stale base64 data from overwriting on next boot (collection-aware load).
+  try { sv(); } catch(_){}
   setTimeout(function(){ try { rnd(); } catch(_){} }, 200);
 }
 
