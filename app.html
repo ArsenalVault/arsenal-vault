@@ -11456,7 +11456,7 @@ function rPicturePage(){
 
     // Info
     +'<div class="pic-info">'
-      +'<div class="pic-title">'+eh(g.make)+' '+eh(g.model)+'</div>'
+      +'<div class="pic-title">'+(g.inventoryNumber?'<span style="color:#8a95a8;font-size:12px;font-weight:600;letter-spacing:.04em">'+eh(g.inventoryNumber)+'</span> ':'')+eh(g.make)+' '+eh(g.model)+'</div>'
       +'<div class="pic-sub">'+(g.type||'Firearm')+(g.caliber?' &middot; '+g.caliber:'')+(g.year?' &middot; '+g.year:'')+'</div>'
       +'<div class="pic-badges">'
         +'<span class="pic-badge" style="background:'+condColor+'25;color:'+condColor+';border:1px solid '+condColor+'50">'+g.condition+'</span>'
@@ -11514,8 +11514,9 @@ function rPicturePage(){
 
     // Action buttons
     +'<div class="pic-actions">'
+      +'<button onclick="openDet(\''+g.id+'\')" style="flex:1;background:#1e3050;border:2px solid #a0c0ff60;color:#a0c0ff;padding:14px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">'+_iM('info')+' View Details</button>'
       +'<button onclick="editGun(\''+g.id+'\')" style="flex:1;background:#e8c46a;color:#1a1d24;border:none;padding:14px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">'+_iM('pencil')+' Edit Firearm</button>'
-      +'<button onclick="openQR(\''+g.id+'\')" style="background:#1e2535;border:2px solid #3a4455;color:#c0c8d8;padding:14px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px">'+_qrSvg(16)+' QR Code</button>'
+      +'<button onclick="openQR(\''+g.id+'\')" style="background:#1e2535;border:2px solid #3a4455;color:#c0c8d8;padding:14px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px">'+_qrSvg(16)+' QR</button>'
     +'</div>'
 
     // Swipe detection overlay
