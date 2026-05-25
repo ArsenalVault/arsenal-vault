@@ -1534,7 +1534,7 @@ var fCond='All';
 var fWork='All';
 var fType='All';
 var srtBy='make';
-var dTab='mnt';
+var dTab='info';
 var scTab='dis';
 var SCH=null;
 var scLoad=false;
@@ -1583,7 +1583,35 @@ function acceptArsenalPhoto(dataUrl){
   rnd();
 }
 
-function ef(){return{make:'',model:'',type:'',caliber:'',barrelLength:'',serialNumber:'',year:'',purchasePrice:'',currentValue:'',condition:'Good',working:true,repairNotes:'',maintenanceLog:'',photo:'',photos:[],storageLocation:'',ammoType:'',ammoCount:'',ammoLocation:'',insuranceValue:'',lastCleaned:'',starred:false,custody:[],totalRounds:0,serviceInterval:0,notes:[],estimateHistory:[],conditionProfile:null};}
+function ef(){return{make:'',model:'',type:'',caliber:'',barrelLength:'',serialNumber:'',year:'',purchasePrice:'',currentValue:'',condition:'Good',working:true,repairNotes:'',maintenanceLog:'',photo:'',photos:[],storageLocation:'',ammoType:'',ammoCount:'',ammoLocation:'',insuranceValue:'',lastCleaned:'',starred:false,custody:[],totalRounds:0,serviceInterval:0,notes:[],estimateHistory:[],conditionProfile:null,inventoryNumber:''};}
+
+// ── INVENTORY NUMBERING ──────────────────────────────────────────────
+// Per-collection auto-sequential: INV-001, INV-002, etc.
+function _nextInventoryNumber(){
+  var max = 0;
+  for(var i = 0; i < guns.length; i++){
+    var num = guns[i].inventoryNumber;
+    if(num && typeof num === 'string'){
+      var m = num.match(/^INV-(\d+)$/);
+      if(m) { var n = parseInt(m[1], 10); if(n > max) max = n; }
+    }
+  }
+  var next = max + 1;
+  return 'INV-' + String(next).padStart(3, '0');
+}
+
+// Backfill: assign inventory numbers to any guns missing them.
+// Called once after data load. Preserves existing numbers.
+function _backfillInventoryNumbers(){
+  var changed = false;
+  for(var i = 0; i < guns.length; i++){
+    if(!guns[i].inventoryNumber){
+      guns[i].inventoryNumber = _nextInventoryNumber();
+      changed = true;
+    }
+  }
+  if(changed) sv();
+}
 
 // ── RANGE SESSIONS ────────────────────────────────────────────────────
 var rangeSessions=[];
@@ -2203,6 +2231,7 @@ function ld(){
       loadGunsFromCollection(activeCollection);
       // loadGunsFromCollection calls rnd() on completion
     } else {
+      _backfillInventoryNumbers();
       rnd();
     }
     _ONB_afterLoadHook();
@@ -2543,7 +2572,7 @@ function filtered(){
   var f=[];
   for(var i=0;i<guns.length;i++){
     var g=guns[i],q=srch.toLowerCase();
-    var ms=!q||[g.make,g.model,g.caliber,g.serialNumber,g.type,g.storageLocation,g.ammoType,g.ammoLocation].some(function(x){return x&&x.toLowerCase().indexOf(q)>=0;});
+    var ms=!q||[g.make,g.model,g.caliber,g.serialNumber,g.type,g.storageLocation,g.ammoType,g.ammoLocation,g.inventoryNumber].some(function(x){return x&&x.toLowerCase().indexOf(q)>=0;});
     var mc=fCond==='All'||g.condition===fCond;
     var mw;
     if(fWork==='All') mw=true;
@@ -4759,11 +4788,12 @@ function rList(){
       +'<div style="display:flex;align-items:center;justify-content:space-between">'
         +'<div>'
           +'<div style="font-weight:700;color:#f0f2f5;font-size:15px">'
+            +(g.inventoryNumber?'<span style="color:#8a95a8;font-weight:600;font-size:11px;letter-spacing:.04em">'+eh(g.inventoryNumber)+'</span> ':'')
             +eh(g.make)+' '+eh(g.model)+(g.starred?' &#9733;':'')+((g.notes&&g.notes.length)?' <span style="color:#e8c46a;font-size:11px" title="Has notes">'+_iM('notes',13)+'</span>':'')
             +(_hasOpenCleaningWO(g)?' <span style="display:inline-block;background:#8EB4D820;color:#8EB4D8;border:1px solid #8EB4D850;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.06em;vertical-align:middle;margin-left:4px">CLEANING</span>':'')
           +'</div>'
           +'<div style="font-size:12px;color:#8a95a8;margin-top:3px">'
-            +eh(g.type||'—')+' &middot; '+eh(g.caliber)
+            +eh(g.type||'—')+' &middot; '+eh(g.caliber)+(g.serialNumber?' &middot; SN: '+eh(g.serialNumber):'')
           +'</div>'
         +'</div>'
         +'<div style="text-align:right">'
@@ -5035,7 +5065,8 @@ function doSave(){
       notes:'Origin not yet specified — tap to add acquisition details',
       autoLogged:true
     }];
-    var newGun=Object.assign({},FORM,{id:newId,custody:initCoc});
+    var invNum = _nextInventoryNumber();
+    var newGun=Object.assign({},FORM,{id:newId,custody:initCoc,inventoryNumber:invNum});
     guns.push(newGun);
     if(window._arsenal&&window._arsenal.createFirearm){window._arsenal.createFirearm(newGun);}
     toast('Added to inventory');haptic('save');
@@ -5049,7 +5080,7 @@ function doSave(){
 
 function openDet(id){
   _pushViewState();
-  selId=id;dTab='mnt';VIEW='detail';rnd();
+  selId=id;dTab='info';VIEW='detail';rnd();
   _historyPush();
 }
 
@@ -9829,6 +9860,7 @@ function loadGunsFromCollection(collId){
             else guns=[];
             _logSetGuns('loadGunsFromCollection:idb-empty-fallback-ls:'+collId, guns.length, _prevLn);
           }
+          _backfillInventoryNumbers();
           rnd();
         };
         req.onerror=function(){
@@ -9836,6 +9868,7 @@ function loadGunsFromCollection(collId){
           if(s){try{guns=JSON.parse(s);}catch(ex){guns=[];}}
           else guns=[];
           _logSetGuns('loadGunsFromCollection:idb-error-fallback-ls:'+collId, guns.length, _prevLn);
+          _backfillInventoryNumbers();
           rnd();
         };
       }catch(e){
@@ -9848,6 +9881,7 @@ function loadGunsFromCollection(collId){
       if(s){try{guns=JSON.parse(s);}catch(ex){guns=[];}}
       else guns=[];
       _logSetGuns('loadGunsFromCollection:no-db-ls:'+collId, guns.length, _prevLn);
+      _backfillInventoryNumbers();
       rnd();
     }
   });
@@ -10621,7 +10655,8 @@ var ARMORER_KB = [
   {keywords:['version','build','app version','what version'], answer:'You can find the ArsenalDB version and build number at the bottom of the <b>Settings</b> screen. Scroll all the way down to see the version string.', related:['settings']},
   {keywords:['custody event','add custody','log custody','custody entry','transfer custody','loan','lend','borrow'], answer:'Open a firearm → <b>Custody</b> tab → <b>Add Custody Event</b>. Record transfers, loans, returns, and other custody changes with dates, parties involved, and notes. Each event is timestamped and stored in the chain of custody.', related:['custody tab','transfer wizard']},
   {keywords:['custody agreement','temporary custody','loaner agreement'], answer:'From a custody event, you can print a <b>Temporary Custody Agreement</b> — a formal document recording the temporary transfer with both parties\' information. <em>(Pro feature)</em>', related:['custody event','print']},
-  {keywords:['acquisition prompt','where did you get','acquisition details'], answer:'After saving a new firearm, ArsenalDB may prompt you for <b>acquisition details</b> — how and when you acquired it (purchase, gift, trade, inheritance, etc.), the date, price paid, and source. This populates the chain of custody.', related:['custody','add firearm']}
+  {keywords:['acquisition prompt','where did you get','acquisition details'], answer:'After saving a new firearm, ArsenalDB may prompt you for <b>acquisition details</b> — how and when you acquired it (purchase, gift, trade, inheritance, etc.), the date, price paid, and source. This populates the chain of custody.', related:['custody','add firearm']},
+  {keywords:['inventory number','inv number','inv-','asset number','numbering','inv 001'], answer:'Each firearm is automatically assigned an <b>Inventory Number</b> (INV-001, INV-002, etc.) when added. Numbers are per-collection and sequential. They appear on the Inventory list, detail view header, CSV exports, and printed reports. You can search by inventory number in the search bar.', related:['add firearm','inventory','csv']}
 ];
 
 var _armorerLog = [];
@@ -12468,7 +12503,7 @@ function rDet(){
     +'</div>'
   +'</div>'+
   '<div class="panel" style="border-color:#e8c46a40"><div style="display:flex;gap:18px;flex-wrap:wrap">'+ph+
-  '<div style="flex:1;min-width:200px"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px"><div><div style="font-size:24px;font-weight:700;color:#f0f2f5">'+eh(g.make)+' '+eh(g.model)+'</div><div style="color:#a0aab8;font-size:14px;margin-top:4px">'+eh(g.type||'')+(g.type?' · ':'')+eh(g.caliber)+(g.barrelLength?' · '+eh(g.barrelLength)+'″ bbl':'')+'</div><div style="color:#7a8598;font-size:13px;margin-top:3px">SN: '+(eh(g.serialNumber)||'N/A')+(g.year?' · '+eh(g.year):'')+'</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:700;color:#e8c46a">'+fm(g.currentValue)+'</div><div style="font-size:12px;color:#8a95a8">current value</div><div style="margin-top:6px">'+bj(g.condition,CC[g.condition]||'#8a95a8')+'</div></div></div>'+
+  '<div style="flex:1;min-width:200px"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px"><div>'+(g.inventoryNumber?'<div style="font-size:11px;color:#8a95a8;font-weight:700;letter-spacing:.08em;margin-bottom:2px">'+eh(g.inventoryNumber)+'</div>':'')+'<div style="font-size:24px;font-weight:700;color:#f0f2f5">'+eh(g.make)+' '+eh(g.model)+'</div><div style="color:#a0aab8;font-size:14px;margin-top:4px">'+eh(g.type||'')+(g.type?' · ':'')+eh(g.caliber)+(g.barrelLength?' · '+eh(g.barrelLength)+'″ bbl':'')+'</div><div style="color:#7a8598;font-size:13px;margin-top:3px">SN: '+(eh(g.serialNumber)||'N/A')+(g.year?' · '+eh(g.year):'')+'</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:700;color:#e8c46a">'+fm(g.currentValue)+'</div><div style="font-size:12px;color:#8a95a8">current value</div><div style="margin-top:6px">'+bj(g.condition,CC[g.condition]||'#8a95a8')+'</div></div></div>'+
   '<div style="margin-top:11px;display:flex;gap:18px;flex-wrap:wrap"><span style="color:'+(g.working?'#60e880':'#ff7070')+';font-size:14px;font-weight:700">'+(g.working?'✓ Operational':'✗ Needs Repair')+'</span>'+(g.purchasePrice?'<span style="color:#8a95a8;font-size:13px">Paid: '+fm(g.purchasePrice)+'</span>':'')+(gainStr?'<span style="color:'+(gain>=0?'#60e880':'#ff7070')+';font-size:13px;font-weight:600">'+gainStr+'</span>':'')+'</div>'+investedRow+'</div></div></div>'+
   // REPORT-T12 / -N: per-firearm quick-report shortcuts with section header
   '<div style="font-size:10px;color:#7a8598;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;padding-left:2px">Quick Reports &mdash; This Firearm</div>'+
@@ -12482,7 +12517,7 @@ function rDet(){
   '<div style="display:flex;gap:6px;margin-bottom:14px">'
     +'<button onclick="printTransferWorksheet(\''+g.id+'\')" style="flex:0 1 auto;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 14px;background:#1a1d24;border:1px solid #8a95a850;border-radius:8px;color:#c8d4e8;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('document')+' Transfer Worksheet</button>'
   +'</div>'+
-  '<div class="tabs"><button class="tab'+(dTab==='mnt'?' on':'')+'" onclick="dTab=\'mnt\';rnd()"><span class="tab-icon">'+_iM('wrench')+'</span>Maintenance</button><button class="tab'+(dTab==='info'?' on':'')+'" onclick="dTab=\'info\';rnd()"><span class="tab-icon">'+_iM('info')+'</span>Details</button><button class="tab'+(dTab==='sch'?' on':'')+'" onclick="dTab=\'sch\';rnd()"><span class="tab-icon">'+_iM('bolt-nut')+'</span>Schematics</button><button class="tab'+(dTab==='range'?' on':'')+'" onclick="dTab=\'range\';rnd()"><span class="tab-icon">'+_iM('target')+'</span>Range</button><button class="tab'+(dTab==='coc'?' on':'')+'" onclick="dTab=\'coc\';rnd()"><span class="tab-icon">'+_iM('lock-open')+'</span>Custody</button></div>'+tc;
+  '<div class="tabs"><button class="tab'+(dTab==='info'?' on':'')+'" onclick="dTab=\'info\';rnd()"><span class="tab-icon">'+_iM('info')+'</span>Details</button><button class="tab'+(dTab==='mnt'?' on':'')+'" onclick="dTab=\'mnt\';rnd()"><span class="tab-icon">'+_iM('wrench')+'</span>Maintenance</button><button class="tab'+(dTab==='sch'?' on':'')+'" onclick="dTab=\'sch\';rnd()"><span class="tab-icon">'+_iM('bolt-nut')+'</span>Schematics</button><button class="tab'+(dTab==='range'?' on':'')+'" onclick="dTab=\'range\';rnd()"><span class="tab-icon">'+_iM('target')+'</span>Range</button><button class="tab'+(dTab==='coc'?' on':'')+'" onclick="dTab=\'coc\';rnd()"><span class="tab-icon">'+_iM('lock-open')+'</span>Custody</button></div>'+tc;
 }
 
 // ── TIMESTAMPED NOTES SYSTEM (-G: #1/2) ────────────────────────────────
@@ -18004,8 +18039,8 @@ function remSch(id){
 // ── EXPORT / PRINT ────────────────────────────────────────────────────
 function expCSV(){
   if(!requirePro('Print & Export')) return;
-  var h=['Make','Model','Type','Caliber','Serial Number','Year','Condition','Working','Purchase Price','Current Value','Condition Grade','Repair Notes','Notes','Est. Low','Est. Mid','Est. High','Est. Date','Maintenance Log'];
-  var rows=guns.map(function(g){var _n=(g.notes||[]).map(function(n){return (n.created?n.created.split('T')[0]+': ':'')+n.text;}).join('\n');var _e=(g.estimateHistory||[]);var _el=_e.length?_e[_e.length-1]:null;var _cg='';if(g.conditionProfile&&g.conditionProfile.totalMultiplier){var _pct=Math.round((g.conditionProfile.totalMultiplier-1)*100);_cg=(_pct>=0?'+':'')+_pct+'%';}return[g.make,g.model,g.type,g.caliber,g.serialNumber,g.year,g.condition,g.working?'Yes':'No',g.purchasePrice,g.currentValue,_cg,g.repairNotes,_n,_el?_el.low:'',_el?_el.mid:'',_el?_el.high:'',_el?_el.date:'',g.maintenanceLog].map(function(v){return'"'+((v||'').toString().replace(/"/g,'""'))+'"';}).join(',');});
+  var h=['Inventory #','Make','Model','Type','Caliber','Serial Number','Year','Condition','Working','Purchase Price','Current Value','Condition Grade','Repair Notes','Notes','Est. Low','Est. Mid','Est. High','Est. Date','Maintenance Log'];
+  var rows=guns.map(function(g){var _n=(g.notes||[]).map(function(n){return (n.created?n.created.split('T')[0]+': ':'')+n.text;}).join('\n');var _e=(g.estimateHistory||[]);var _el=_e.length?_e[_e.length-1]:null;var _cg='';if(g.conditionProfile&&g.conditionProfile.totalMultiplier){var _pct=Math.round((g.conditionProfile.totalMultiplier-1)*100);_cg=(_pct>=0?'+':'')+_pct+'%';}return[g.inventoryNumber||'',g.make,g.model,g.type,g.caliber,g.serialNumber,g.year,g.condition,g.working?'Yes':'No',g.purchasePrice,g.currentValue,_cg,g.repairNotes,_n,_el?_el.low:'',_el?_el.mid:'',_el?_el.high:'',_el?_el.date:'',g.maintenanceLog].map(function(v){return'"'+((v||'').toString().replace(/"/g,'""'))+'"';}).join(',');});
   var csv=[h.join(',')].concat(rows).join('\n');
   var blob=new Blob([csv],{type:'text/csv'});
   var url=URL.createObjectURL(blob);
@@ -18017,11 +18052,11 @@ function pAll(){
   if(!requirePro('Print & Export')) return;
   var st=stats();
   var W=window.open('','_blank');
-  var rows=guns.map(function(g,i){return '<tr><td>'+(i+1)+'</td><td>'+g.make+'</td><td>'+g.model+'</td><td>'+(g.type||'-')+'</td><td>'+g.caliber+'</td><td>'+(g.serialNumber||'-')+'</td><td>'+(g.year||'-')+'</td><td>'+g.condition+'</td><td>'+(g.working?'Yes':'No')+'</td><td>'+fm(g.purchasePrice)+'</td><td>'+fm(g.currentValue)+'</td></tr>';}).join('');
+  var rows=guns.map(function(g,i){return '<tr><td>'+(g.inventoryNumber||i+1)+'</td><td>'+g.make+'</td><td>'+g.model+'</td><td>'+(g.type||'-')+'</td><td>'+g.caliber+'</td><td>'+(g.serialNumber||'-')+'</td><td>'+(g.year||'-')+'</td><td>'+g.condition+'</td><td>'+(g.working?'Yes':'No')+'</td><td>'+fm(g.purchasePrice)+'</td><td>'+fm(g.currentValue)+'</td></tr>';}).join('');
   W.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>ArsenalDB</title><style>body{font-family:Georgia,serif;padding:30px;color:#000}h1{margin:0}p{color:#555;font-size:13px}table{width:100%;border-collapse:collapse;font-size:11px;margin-top:16px}th,td{border:1px solid #ccc;padding:5px 7px;text-align:left}th{background:#f0f0f0}tr:nth-child(even){background:#fafafa}footer{margin-top:14px;font-size:12px;border-top:1px solid #ccc;padding-top:10px}</style></head><body>');
   W.document.write('<h1>ArsenalDB &mdash; Full Inventory</h1>');
   W.document.write('<p>Printed '+new Date().toLocaleDateString()+' &middot; '+guns.length+' firearms &middot; Value: '+fm(st.totalValue)+'</p>');
-  W.document.write('<table><thead><tr><th>#</th><th>Make</th><th>Model</th><th>Type</th><th>Caliber</th><th>Serial</th><th>Year</th><th>Condition</th><th>Working</th><th>Paid</th><th>Value</th></tr></thead><tbody>'+rows+'</tbody></table>');
+  W.document.write('<table><thead><tr><th>INV #</th><th>Make</th><th>Model</th><th>Type</th><th>Caliber</th><th>Serial</th><th>Year</th><th>Condition</th><th>Working</th><th>Paid</th><th>Value</th></tr></thead><tbody>'+rows+'</tbody></table>');
   W.document.write('<footer>Total: '+st.total+' &middot; Working: '+st.working+' &middot; Needs Repair: '+st.needsRepair+' &middot; Value: '+fm(st.totalValue)+' &middot; Basis: '+fm(st.totalCost)+'</footer>');
   W.document.write('</body></html>');
   W.document.close();W.print();
