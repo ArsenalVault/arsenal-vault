@@ -5215,17 +5215,31 @@ function _setReportTab(t){
 }
 
 function rReports(){
-  // -N: tabs reorganized into two semantic groups.
-  //   INSIGHTS: Worth · Cleaning · Milestones (analytics about your inventory)
-  //   REPORTS:  Insurance · Theft · Custody (printable documents for external use)
-  // -S2: 2-row grid layout with equal-width buttons, no divider
-  var tabs='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px">'
-    +'<button class="tab-h'+(reportTab==='worth'?' on':'')+'" onclick="_setReportTab(\'worth\')" style="width:100%;justify-content:center">&#128176; Worth</button>'
-    +'<button class="tab-h'+(reportTab==='maint'?' on':'')+'" onclick="_setReportTab(\'maint\')" style="width:100%;justify-content:center">&#129529; Cleaning</button>'
-    +'<button class="tab-h'+(reportTab==='milestones'?' on':'')+'" onclick="_setReportTab(\'milestones\')" style="width:100%;justify-content:center">&#127942; Milestones</button>'
-    +'<button class="tab-h'+(reportTab==='ins'?' on':'')+'" onclick="_setReportTab(\'ins\')" style="width:100%;justify-content:center">'+_iM('document')+' Insurance</button>'
-    +'<button class="tab-h'+(reportTab==='theft'?' on':'')+'" onclick="_setReportTab(\'theft\')" style="width:100%;justify-content:center">'+_iM('lock')+' Theft</button>'
-    +'<button class="tab-h'+(reportTab==='custody'?' on':'')+'" onclick="_setReportTab(\'custody\')" style="width:100%;justify-content:center">'+_iM('lock-open')+' Custody</button>'
+  // -N (2026-06-04): Reports tab bar rebuilt. Old .tab-h 3-col grid overflowed
+  // narrow screens: .tab-h has white-space:nowrap, and grid items default to
+  // min-width:auto, so long labels forced the grid wider than the page.
+  // Now uses the detail-view .tab icon-stacked pattern (all tabs visible, no
+  // scroll, shrinks cleanly) in two labeled semantic groups:
+  //   INSIGHTS:  Worth · Cleaning · Milestones (analytics about your inventory)
+  //   DOCUMENTS: Insurance · Theft · Custody (printable docs for external use)
+  // Emoji icons replaced with _iM SVGs so all six tabs match house style.
+  function _rtab(id,icon,label){
+    return '<button class="tab'+(reportTab===id?' on':'')+'" onclick="_setReportTab(\''+id+'\')"><span class="tab-icon">'+_iM(icon,20)+'</span>'+label+'</button>';
+  }
+  function _rtLbl(t){
+    return '<div style="font-size:10px;color:#7a8598;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;padding-left:2px">'+t+'</div>';
+  }
+  var tabs=_rtLbl('Insights')
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">'
+    +_rtab('worth','chart','Worth')
+    +_rtab('maint','wrench','Cleaning')
+    +_rtab('milestones','badge-star','Milestones')
+    +'</div>'
+    +_rtLbl('Documents')
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">'
+    +_rtab('ins','document','Insurance')
+    +_rtab('theft','lock','Theft')
+    +_rtab('custody','lock-open','Custody')
     +'</div>';
 
   var body='';
@@ -6058,7 +6072,7 @@ function printLabelSheet(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-05-20-M';   // bump on every revision
+var BUILD_TAG   = '2026-06-04-N';   // bump on every revision
 var PDB_UPDATE_URL = 'https://arsenaldb.com/pricedb.json';
 var PDB_VERSION    = '2026-05-19';     // inline baseline version
 var _cachedPDB     = null;             // populated from localStorage on boot
@@ -9922,6 +9936,12 @@ function createCollection(){
 }
 
 function renameCollection(collId){
+  // -N: naming/renaming collections is part of the Multiple Collections
+  // Pro+ feature set. Free tier is locked to the single default
+  // "My Collection". (The dropdown never shows a rename button for the
+  // default collection, so this only fires on extra collections anyway —
+  // defense-in-depth for stale multi-collection Free accounts.)
+  if(!requireProPlus('Multiple Collections')) return;
   var old=collections[collId]?collections[collId].name:'';
   var name=prompt('Rename collection:',old);
   if(!name||!name.trim()) return;
@@ -10026,7 +10046,14 @@ function rCollDropdown(){
   var menu=collMenuOpen?'<div class="coll-menu">'
     +menuItems
     +'<div class="coll-item" onclick="createCollection()" style="color:#e8c46a">'
-      +'<span>&#43; New Collection</span>'
+      +'<span>&#43; New Collection'
+      // -N: show a PRO+ badge for sub-Pro+ users so the gate is
+      // discoverable upsell, not a broken-feeling button. Tap still
+      // routes through createCollection() → requireProPlus() modal.
+      +(_tierLevel(appSettings.tier)<_tierLevel('proplus')
+        ?' <span style="font-size:9px;font-weight:800;letter-spacing:.08em;background:#e8c46a20;border:1px solid #e8c46a50;color:#e8c46a;border-radius:4px;padding:1px 5px;vertical-align:middle">PRO+</span>'
+        :'')
+      +'</span>'
     +'</div>'
     +'</div>':'';
 
@@ -20976,6 +21003,13 @@ function _selectImportMode(mode){
     requireProPlus('Merge Collections');
     return; // don't select the card
   }
+  // -N: same pre-flight gate on 'new' — importing into a NEW collection
+  // creates a second collection, which is a Pro+ feature. This was the
+  // leak that let Free users end up with multiple collections.
+  if(mode === 'new' && _tierLevel(appSettings.tier) < _tierLevel('proplus')){
+    requireProPlus('Multiple Collections');
+    return; // don't select the card
+  }
   // Reset all cards to idle state
   var cards = [
     {id:'import_card_new',     color:'#e8c46a'},
@@ -21032,6 +21066,10 @@ function doImport(data){
   if(m) m.remove();
 
   if(mode==='new'){
+    // -N: Pro+ gate (belt & suspenders — _selectImportMode also gates).
+    // Without this, Free users could import a backup as a new collection
+    // and bypass the Multiple Collections gate in createCollection().
+    if(!requireProPlus('Multiple Collections')) return;
     // Create new collection
     // T7: silently disambiguate if this name collides with existing collection
     var _resolved=_resolveCollectionName(name);
