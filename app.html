@@ -11115,18 +11115,44 @@ function _idCamShutter(){
   var v=document.getElementById('id_cam_video');
   if(!v||v.readyState<2) return;
   haptic('save');
-  // Capture full frame, capped at 1920 longest edge (compression to 1568
-  // happens later in the existing _compressPhoto path)
+
+  // -N: CROP TO THE BRACKET WINDOW. The video is shown object-fit:cover,
+  // so we map the on-screen bracket rectangle back into source-video pixels
+  // (accounting for the cover scale/offset), then crop to just that region.
+  // The AI receives ONLY the boxed area — nothing outside the frame.
+  var ov=document.getElementById('id_cam_overlay');
+  var W=ov?ov.clientWidth:window.innerWidth;
+  var H=ov?ov.clientHeight:window.innerHeight;
   var vw=v.videoWidth,vh=v.videoHeight;
-  var scale=Math.min(1,1920/Math.max(vw,vh));
+
+  var aspect=_idCam.step===1?2:1.5;
+  var bw=0.86*W;            // left 7% + right 7%
+  var bh=bw/aspect;
+  var bleft=0.07*W;
+  var btop=H/2-bh/2;
+
+  var coverScale=Math.max(W/vw,H/vh);
+  var offX=(W-vw*coverScale)/2;
+  var offY=(H-vh*coverScale)/2;
+
+  var vx0=Math.max(0,(bleft-offX)/coverScale);
+  var vy0=Math.max(0,(btop-offY)/coverScale);
+  var vx1=Math.min(vw,(bleft+bw-offX)/coverScale);
+  var vy1=Math.min(vh,(btop+bh-offY)/coverScale);
+  var cw=Math.max(1,vx1-vx0), ch=Math.max(1,vy1-vy0);
+
+  // Output cropped region, capped at 1600px longest edge
+  var outScale=Math.min(1,1600/Math.max(cw,ch));
   var c=document.createElement('canvas');
-  c.width=Math.round(vw*scale);c.height=Math.round(vh*scale);
-  c.getContext('2d').drawImage(v,0,0,c.width,c.height);
-  var dataUrl=c.toDataURL('image/jpeg',0.9);
+  c.width=Math.round(cw*outScale);c.height=Math.round(ch*outScale);
+  c.getContext('2d').drawImage(v,vx0,vy0,cw,ch,0,0,c.width,c.height);
+  var dataUrl=c.toDataURL('image/jpeg',0.92);
+
   _idCam.pending=dataUrl;
   _idCam.frozen=true;
+  // Preview shows the CROP (letterboxed) so it's clear what gets analyzed
   var fr=document.getElementById('id_cam_freeze');
-  if(fr){fr.src=dataUrl;fr.style.display='block';}
+  if(fr){fr.src=dataUrl;fr.style.objectFit='contain';fr.style.background='#000';fr.style.display='block';}
   var controls=document.getElementById('id_cam_controls');
   var confirmBar=document.getElementById('id_cam_confirm');
   if(controls) controls.style.display='none';
@@ -11184,29 +11210,68 @@ function _idCamFinish(){
   var ov=document.getElementById('id_cam_overlay');
   if(ov) ov.remove();
   if(!shots.length&&!prefix.length){toast('No photo captured','err');return;}
+  _idProceedWithImages(shots, prefix);
+}
 
-  _idShowAnalyzing();
-
-  // Compress shots SEQUENTIALLY (throttled pattern — one image in heap at
-  // a time), then hand the array to analysis. prefix images are already
-  // compressed base64 from the earlier run.
-  var images=prefix.slice();
-  function next(i){
-    if(i>=shots.length){
-      _idRunAnalysis(images);
-      return;
+// -N: offer the optional hints sheet (after photos, before analysis), then
+// compress raw shots SEQUENTIALLY (one image in heap at a time) and run
+// analysis. prefixImages are already-compressed {base64,mediaType} objects.
+function _idProceedWithImages(rawShots, prefixImages){
+  _idHintsSheet(function(hints){
+    _idShowAnalyzing();
+    var images=prefixImages.slice();
+    function next(i){
+      if(i>=rawShots.length){_idRunAnalysis(images, hints);return;}
+      _compressPhoto(rawShots[i],1568,0.85).then(function(cd){
+        images.push({base64:cd.split(',')[1],mediaType:'image/jpeg'});
+        rawShots[i]=null;next(i+1);
+      }).catch(function(){
+        images.push({base64:rawShots[i].split(',')[1],mediaType:'image/jpeg'});
+        rawShots[i]=null;next(i+1);
+      });
     }
-    _compressPhoto(shots[i],1568,0.85).then(function(cd){
-      images.push({base64:cd.split(',')[1],mediaType:'image/jpeg'});
-      shots[i]=null;
-      next(i+1);
-    }).catch(function(){
-      images.push({base64:shots[i].split(',')[1],mediaType:'image/jpeg'});
-      shots[i]=null;
-      next(i+1);
-    });
+    next(0);
+  });
+}
+
+// -N: optional "Add what you know" sheet. Brand/Model/free-notes. Filled
+// values are folded into the analysis prompt as authoritative user hints.
+var _idHintsDone=null;
+function _idHintsSheet(onDone){
+  var modal=document.getElementById('identifier_modal');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='identifier_modal';
+    modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+    document.body.appendChild(modal);
   }
-  next(0);
+  _idHintsDone=onDone;
+  modal.innerHTML='<div style="background:#222835;border:2px solid #a0c0ff40;border-radius:12px;padding:22px;max-width:340px;width:100%;margin:auto">'
+    +'<div style="font-size:16px;font-weight:700;color:#a0c0ff;margin-bottom:4px;text-align:center">Add What You Know</div>'
+    +'<div style="font-size:12px;color:#8a95a8;margin-bottom:16px;text-align:center;line-height:1.5">Optional &mdash; anything you can see helps accuracy. Leave blank to skip.</div>'
+    +'<label style="font-size:11px;color:#8a95a8;font-weight:700;letter-spacing:.04em">BRAND / MAKE</label>'
+    +'<input id="id_hint_make" type="text" placeholder="e.g. Colt" style="width:100%;box-sizing:border-box;background:#13161d;border:1px solid #2e3545;border-radius:8px;color:#f0f2f5;padding:10px 12px;font-size:14px;margin:4px 0 12px;font-family:inherit"/>'
+    +'<label style="font-size:11px;color:#8a95a8;font-weight:700;letter-spacing:.04em">MODEL</label>'
+    +'<input id="id_hint_model" type="text" placeholder="e.g. Police Positive" style="width:100%;box-sizing:border-box;background:#13161d;border:1px solid #2e3545;border-radius:8px;color:#f0f2f5;padding:10px 12px;font-size:14px;margin:4px 0 12px;font-family:inherit"/>'
+    +'<label style="font-size:11px;color:#8a95a8;font-weight:700;letter-spacing:.04em">MARKINGS / NOTES</label>'
+    +'<textarea id="id_hint_notes" rows="2" placeholder="Any stamped text, caliber, serial prefix…" style="width:100%;box-sizing:border-box;background:#13161d;border:1px solid #2e3545;border-radius:8px;color:#f0f2f5;padding:10px 12px;font-size:14px;margin:4px 0 16px;font-family:inherit;resize:vertical"></textarea>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+      +'<button onclick="_idHintsSubmit(true)" style="background:linear-gradient(135deg,#1e2a40,#1a2535);border:2px solid #a0c0ff60;color:#a0c0ff;padding:13px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Analyze &#9656;</button>'
+      +'<button onclick="_idHintsSubmit(false)" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Skip &amp; Analyze</button>'
+    +'</div>'
+    +'</div>';
+  setTimeout(function(){var el=document.getElementById('id_hint_make');if(el)el.focus();},80);
+}
+function _idHintsSubmit(useHints){
+  var hints=null;
+  if(useHints){
+    var mk=((document.getElementById('id_hint_make')||{}).value||'').trim();
+    var md=((document.getElementById('id_hint_model')||{}).value||'').trim();
+    var nt=((document.getElementById('id_hint_notes')||{}).value||'').trim();
+    if(mk||md||nt) hints={make:mk,model:md,notes:nt};
+  }
+  var cb=_idHintsDone;_idHintsDone=null;
+  if(cb) cb(hints);
 }
 
 function _idShowAnalyzing(){
@@ -11226,33 +11291,17 @@ function _idShowAnalyzing(){
 
 function runGunIdentifier(input){
   // -N: accepts 1-2 files (gallery multi-select or native-camera fallback).
+  // Read to data URLs, then offer the optional hints sheet before analysis.
   var files=Array.prototype.slice.call(input.files||[],0,2);
   if(!files.length)return;
-
-  _idShowAnalyzing();
-
-  // Read + compress sequentially (throttled pattern — one image in heap
-  // at a time), then run analysis with the full array.
-  var images=[];
-  function next(i){
-    if(i>=files.length){_idRunAnalysis(images);return;}
+  var raw=[];
+  function read(i){
+    if(i>=files.length){_idProceedWithImages(raw, []);return;}
     var reader=new FileReader();
-    reader.onload=function(e){
-      var rawDataUrl=e.target.result;
-      // -K: Compress to 1568px max edge before sending to API. Phone
-      // cameras produce 4000x3000+ images; Anthropic resizes >1568px
-      // server-side anyway. Compressing locally saves tokens and latency.
-      _compressPhoto(rawDataUrl, 1568, 0.85).then(function(compressedDataUrl){
-        images.push({base64:compressedDataUrl.split(',')[1],mediaType:'image/jpeg'});
-        next(i+1);
-      }).catch(function(){
-        images.push({base64:rawDataUrl.split(',')[1],mediaType:files[i].type||'image/jpeg'});
-        next(i+1);
-      });
-    };
+    reader.onload=function(e){raw.push(e.target.result);read(i+1);};
     reader.readAsDataURL(files[i]);
   }
-  next(0);
+  read(0);
 }
 
 // Stash for retry flow
@@ -11261,9 +11310,10 @@ var _idLastImages=null; // array of {base64, mediaType}; [0] = full profile
 // -K: System prompt establishing firearms expert identity
 var _ID_SYSTEM='You are an expert firearms identifier with 30 years of experience as a gunsmith, dealer, and collector. You can identify firearms from photos by reading roll marks, analyzing physical features, and cross-referencing your extensive knowledge of manufacturer models and variants. You are meticulous and honest — when you are uncertain, you say so clearly rather than guessing confidently.';
 
-function _idRunAnalysis(images){
+function _idRunAnalysis(images, hints){
   // -N: accepts an ARRAY of {base64, mediaType}. Image 1 = full profile,
   // image 2 (optional) = markings close-up. Both go in one API call.
+  // hints (optional) = {make,model,notes} from the "Add what you know" sheet.
   if(!images||!images.length){showIdentifierError('No image to analyze');return;}
   // Stash images for potential retry
   _idLastImages=images;
@@ -11273,8 +11323,18 @@ function _idRunAnalysis(images){
     ?'You are given TWO images of the SAME firearm. Image 1 is a full side profile. Image 2 is a close-up of the markings/rollmarks — treat Image 2 as the most reliable source when reading text in Step 1.\n\n'
     :'';
 
+  // -N: optional user-provided hints, treated as authoritative
+  var hintsBlock='';
+  if(hints&&(hints.make||hints.model||hints.notes)){
+    var hb=[];
+    if(hints.make) hb.push('Brand/Make: '+hints.make);
+    if(hints.model) hb.push('Model: '+hints.model);
+    if(hints.notes) hb.push('Markings/notes: '+hints.notes);
+    hintsBlock='USER-PROVIDED DETAILS (the user can see the firearm in person — treat these as MORE reliable than the photo and prioritize them; use the image to confirm and fill in the rest):\n'+hb.join('\n')+'\n\n';
+  }
+
   // -K: Structured reasoning prompt. Forces the model to observe before identifying.
-  var userPrompt=preamble+'Analyze this firearm image carefully. Follow these steps IN ORDER:\n\n'
+  var userPrompt=preamble+hintsBlock+'Analyze this firearm image carefully. Follow these steps IN ORDER:\n\n'
     +'STEP 1 — READ TEXT: Look for any visible text, roll marks, logos, model designations, or serial number prefixes stamped or engraved on the firearm. Report exactly what text you can read.\n\n'
     +'STEP 2 — DESCRIBE FEATURES: Describe the key physical features you observe:\n'
     +'  - Action type (semi-auto, revolver, bolt-action, lever-action, pump, break-action)\n'
