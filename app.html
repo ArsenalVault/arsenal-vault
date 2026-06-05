@@ -2579,7 +2579,10 @@ function filtered(){
     else if(fWork==='CleaningOpen') mw=_hasOpenCleaningWO(g);
     else if(fWork==='Working') mw=g.working;
     else mw=!g.working;
-    var mt=fType==='All'||g.type===fType;
+    // -N: 'Other' filter matches guns whose type is blank OR not in the
+    // standard TYPES list (matches how the dashboard By Type counts them),
+    // in addition to guns literally typed 'Other'.
+    var mt=fType==='All'||g.type===fType||(fType==='Other'&&(!g.type||TYPES.indexOf(g.type)<0));
     if(ms&&mc&&mw&&mt)f.push(g);
   }
   f.sort(function(a,b){
@@ -4629,9 +4632,12 @@ function rDash(){
   // ── Breakdown Tabs ─────────────────────────────────────────────────
   var typeCounts={};
   TYPES.forEach(function(t){typeCounts[t]=0;});
+  // -N: EVERY gun lands in a bucket so the breakdown always sums to the
+  // total. Blank types and legacy/non-standard values both fold into
+  // 'Other' (previously blank-type guns were counted nowhere).
   guns.forEach(function(g){
-    if(g.type&&typeCounts[g.type]!==undefined)typeCounts[g.type]++;
-    else if(g.type)typeCounts['Other']=(typeCounts['Other']||0)+1;
+    var key=(g.type&&typeCounts[g.type]!==undefined)?g.type:'Other';
+    typeCounts[key]++;
   });
   var typeCards=TYPES.filter(function(t){return typeCounts[t]>0;}).map(function(t){
     return '<div class="type-card" onclick="goFilter(\'All\',\'All\',\'\',\''+t+'\')"><div class="type-card-num">'+typeCounts[t]+'</div><div class="type-card-lbl">'+t+'</div></div>';
