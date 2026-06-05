@@ -10647,7 +10647,7 @@ var ARMORER_KB = [
   {keywords:['qr code','generate qr','qr transfer','qr'], answer:'From a firearm\'s edit or detail view, hamburger menu ☰ → <b>Generate QR Code</b>. Creates a QR code containing the firearm\'s data for quick transfer scanning. <em>(Pro feature)</em>', related:['nfc','transfer wizard']},
   {keywords:['nfc','nfc tag','write nfc','tap tag'], answer:'On supported Android devices, from a firearm\'s edit view, hamburger menu ☰ → <b>Write NFC Tag</b>. Writes the firearm\'s data to an NFC tag for physical tagging. <em>(Pro feature, Android only)</em>', related:['qr code']},
   // ── AI FEATURES ──
-  {keywords:['gun identifier','identify','identify gun','ai identifier','photo identify','what gun is this'], answer:'Hamburger menu ☰ → <b>AI Gun Identifier</b>. Take or upload a photo of any firearm, and AI identifies the make, model, type, and caliber. Results are validated against the price database. You can then add the identified firearm directly to your inventory. <em>(Pro+ feature, requires API key)</em>', related:['api key','add firearm']},
+  {keywords:['gun identifier','identify','identify gun','ai identifier','photo identify','what gun is this'], answer:'Hamburger menu ☰ → <b>AI Gun Identifier</b>. A live viewfinder opens — frame the firearm and when the brackets turn <b>green</b> (sharp, steady, well-lit), tap to capture. You\'ll then be offered an optional close-up of the markings for a more accurate ID. AI identifies the make, model, type, and caliber, validated against the price database. You can add the result directly to your inventory. <em>(Pro+ feature, requires API key)</em>', related:['api key','add firearm']},
   {keywords:['identify wrong','wrong identification','not right','help identify','assist identify'], answer:'If the AI Gun Identifier gets it wrong, tap <b>"Not right? Help me identify it"</b> below the result. You can either enter details you can see (make, model, serial, caliber) or take a better close-up photo for a re-identification attempt.', related:['gun identifier']},
   // ── RANGE SESSIONS ──
   {keywords:['range','range session','shooting','range day','log range','log shooting','range sessions'], answer:'Hamburger menu ☰ → <b>Range Sessions</b>. Create sessions to log shooting trips. Each session records the date, location, firearms used, round counts, and ammo types. View per-firearm range history in the detail view\'s Range tab.', related:['range tab','ammo']},
@@ -10929,11 +10929,11 @@ function openGunIdentifier(){
   modal.innerHTML='<div style="background:#222835;border:2px solid #a0c0ff40;border-radius:12px;padding:24px;max-width:340px;width:100%;text-align:center">'
     +'<div style="font-size:28px;margin-bottom:10px">'+_iM('camera')+'</div>'
     +'<div style="font-size:16px;font-weight:700;color:#a0c0ff;margin-bottom:6px">AI Gun Identifier</div>'
-    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:18px;line-height:1.6">Take or upload a photo of any firearm. AI will identify the make, model, type, and caliber.</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:18px;line-height:1.6">Frame the firearm in the live viewfinder. When the brackets turn <strong style="color:#4ED36F">green</strong>, the shot is sharp and steady &mdash; tap to capture.</div>'
     +'<input type="file" id="identifier_input" accept="image/*" capture="environment" style="display:none" onchange="runGunIdentifier(this)"/>'
     +'<div style="display:flex;flex-direction:column;gap:8px">'
-      +'<button onclick="document.getElementById(\'identifier_input\').click()" style="background:linear-gradient(135deg,#1e2a40,#1a2535);border:2px solid #a0c0ff60;color:#a0c0ff;padding:14px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">'+_iM('camera')+' Take Photo</button>'
-      +'<button onclick="var inp=document.getElementById(\'identifier_input\');inp.removeAttribute(\'capture\');inp.click();setTimeout(function(){inp.setAttribute(\'capture\',\'environment\');},500)" style="background:#1e2535;border:2px solid #3a4455;color:#c0c8d8;padding:14px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">&#128444; Choose from Gallery</button>'
+      +'<button onclick="_idOpenCamera(1)" style="background:linear-gradient(135deg,#1e2a40,#1a2535);border:2px solid #a0c0ff60;color:#a0c0ff;padding:14px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">'+_iM('camera')+' Open Camera</button>'
+      +'<button onclick="var inp=document.getElementById(\'identifier_input\');inp.removeAttribute(\'capture\');inp.setAttribute(\'multiple\',\'\');inp.click();setTimeout(function(){inp.setAttribute(\'capture\',\'environment\');inp.removeAttribute(\'multiple\');},500)" style="background:#1e2535;border:2px solid #3a4455;color:#c0c8d8;padding:14px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">&#128444; Choose from Gallery (1-2 photos)</button>'
       +'<button onclick="document.getElementById(\'identifier_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
     +'</div>'
     +'</div>';
@@ -10941,50 +10941,334 @@ function openGunIdentifier(){
   document.body.appendChild(modal);
 }
 
-function runGunIdentifier(input){
-  var file=input.files[0];if(!file)return;
+// ── -N: LIVE LOCK-ON VIEWFINDER ──────────────────────────────────────
+// In-app camera via getUserMedia. Replaces the native-camera intent for
+// the Gun Identifier: keeps the PWA in the foreground (native camera
+// backgrounds the app and Android may kill it) and adds coin-app-style
+// "lock-on" UX. The lock is a quality heuristic, not object detection:
+// every 250ms we sample a small center crop and check (a) exposure,
+// (b) sharpness (gradient variance), (c) stability (frame diff). Three
+// consecutive passes = locked: brackets turn green, user taps to snap.
+// Two-shot flow: step 1 full side profile, step 2 close-up of markings
+// (skippable). Both photos go to the AI in one call.
+var _idCam={stream:null,timer:null,locked:false,passes:0,prev:null,step:1,shots:[],retry:false,frozen:false,pending:null};
 
-  // Show loading state
+function _idOpenCamera(step, opts){
+  opts=opts||{};
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    toast('Live camera not supported — using system camera','err');
+    var inp=document.getElementById('identifier_input')||document.getElementById('identifier_retry_input');
+    if(inp) inp.click();
+    return;
+  }
+  _idCam.step=step||1;
+  if(step===1){_idCam.shots=[];}
+  _idCam.retry=!!opts.retry;
+  if(_idCam.retry){_idCam.shots=[];}
+  _idCam.locked=false;_idCam.passes=0;_idCam.prev=null;_idCam.frozen=false;_idCam.pending=null;
+
+  navigator.mediaDevices.getUserMedia({
+    video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}},
+    audio:false
+  }).then(function(stream){
+    _idCam.stream=stream;
+    _idCamBuildOverlay();
+  }).catch(function(err){
+    toast('Camera unavailable ('+(err.name||'error')+') — using system camera','err');
+    var inp=document.getElementById('identifier_input')||document.getElementById('identifier_retry_input');
+    if(inp) inp.click();
+  });
+}
+
+function _idCamBuildOverlay(){
+  var old=document.getElementById('id_cam_overlay');
+  if(old) old.remove();
+  var step=_idCam.step;
+  var title=step===1?'STEP 1 — FULL SIDE PROFILE':'STEP 2 — MARKINGS CLOSE-UP';
+  var hint=step===1?'Frame the entire firearm inside the brackets':'Fill the brackets with the rollmark / engravings';
+
+  var ov=document.createElement('div');
+  ov.id='id_cam_overlay';
+  ov.style.cssText='position:fixed;inset:0;background:#000;z-index:10002;display:flex;flex-direction:column';
+  ov.innerHTML=''
+    +'<video id="id_cam_video" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>'
+    +'<img id="id_cam_freeze" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/>'
+    +'<div style="position:relative;z-index:2;padding:14px 16px;background:linear-gradient(180deg,#000c,#0000);display:flex;justify-content:space-between;align-items:center">'
+      +'<div style="font-size:12px;font-weight:800;color:#e8c46a;letter-spacing:.1em">'+title+'</div>'
+      +'<div style="font-size:11px;color:#8a95a8">'+(step===2?'optional':'')+'</div>'
+    +'</div>'
+    +'<div id="id_cam_bracket" style="position:absolute;left:7%;right:7%;top:50%;transform:translateY(-50%);aspect-ratio:'+(step===1?'2/1':'1.5/1')+';z-index:2;pointer-events:none">'
+      +_idCamCorner('top:0;left:0;border-top:3px solid;border-left:3px solid;border-top-left-radius:8px')
+      +_idCamCorner('top:0;right:0;border-top:3px solid;border-right:3px solid;border-top-right-radius:8px')
+      +_idCamCorner('bottom:0;left:0;border-bottom:3px solid;border-left:3px solid;border-bottom-left-radius:8px')
+      +_idCamCorner('bottom:0;right:0;border-bottom:3px solid;border-right:3px solid;border-bottom-right-radius:8px')
+    +'</div>'
+    +'<div id="id_cam_status" style="position:absolute;left:0;right:0;top:calc(50% + '+(step===1?'13%':'17%')+');z-index:2;text-align:center;font-size:13px;font-weight:700;color:#e8c46a;text-shadow:0 1px 4px #000">'+hint+'</div>'
+    +'<div id="id_cam_controls" style="position:absolute;left:0;right:0;bottom:0;z-index:2;padding:18px 24px 30px;background:linear-gradient(0deg,#000d,#0000);display:flex;align-items:center;justify-content:space-between">'
+      +'<button onclick="_idCamClose()" style="background:#0008;border:1px solid #3a4455;color:#c0c8d8;padding:10px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;min-width:72px">Cancel</button>'
+      +'<button id="id_cam_shutter" onclick="_idCamShutter()" style="width:70px;height:70px;border-radius:50%;border:4px solid #fff;background:#fff3;cursor:pointer;flex-shrink:0"></button>'
+      +(step===2
+        ?'<button onclick="_idCamFinish()" style="background:#0008;border:1px solid #e8c46a60;color:#e8c46a;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;min-width:72px">Skip &amp; Analyze</button>'
+        :'<div style="min-width:72px"></div>')
+    +'</div>'
+    +'<div id="id_cam_confirm" style="display:none;position:absolute;left:0;right:0;bottom:0;z-index:3;padding:18px 24px 30px;background:linear-gradient(0deg,#000d,#0000);justify-content:space-between;align-items:center">'
+      +'<button onclick="_idCamRetake()" style="background:#0008;border:1px solid #3a4455;color:#c0c8d8;padding:13px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">&#8634; Retake</button>'
+      +'<button onclick="_idCamUseShot()" style="background:linear-gradient(135deg,#4ED36F,#2ea052);border:none;color:#0c1420;padding:13px 26px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Use Photo &#10003;</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+
+  var v=document.getElementById('id_cam_video');
+  v.srcObject=_idCam.stream;
+  v.onloadedmetadata=function(){
+    v.play().catch(function(){});
+    _idCamSetLock(false);
+    if(_idCam.timer) clearInterval(_idCam.timer);
+    _idCam.timer=setInterval(_idCamSample,250);
+  };
+}
+
+function _idCamCorner(css){
+  return '<div class="id-cam-corner" style="position:absolute;width:28px;height:28px;border-color:#e8c46a;'+css+'"></div>';
+}
+
+// Quality sampling: 96x96 center crop -> exposure, sharpness, stability
+var _idCamCanvas=null;
+function _idCamSample(){
+  if(_idCam.frozen) return;
+  var v=document.getElementById('id_cam_video');
+  if(!v||v.readyState<2) return;
+  if(!_idCamCanvas){_idCamCanvas=document.createElement('canvas');_idCamCanvas.width=96;_idCamCanvas.height=96;}
+  var ctx=_idCamCanvas.getContext('2d',{willReadFrequently:true});
+  var vw=v.videoWidth,vh=v.videoHeight;
+  if(!vw||!vh) return;
+  var crop=Math.min(vw,vh)*0.6;
+  ctx.drawImage(v,(vw-crop)/2,(vh-crop)/2,crop,crop,0,0,96,96);
+  var d;
+  try{d=ctx.getImageData(0,0,96,96).data;}catch(e){return;}
+
+  var luma=new Float32Array(96*96);
+  var sum=0;
+  for(var i=0,p=0;i<d.length;i+=4,p++){
+    var l=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;
+    luma[p]=l;sum+=l;
+  }
+  var mean=sum/(96*96);
+  var gsum=0,gcount=0;
+  for(var y=1;y<95;y++){
+    for(var x=1;x<95;x++){
+      var idx=y*96+x;
+      var gx=luma[idx+1]-luma[idx-1];
+      var gy=luma[idx+96]-luma[idx-96];
+      gsum+=gx*gx+gy*gy;gcount++;
+    }
+  }
+  var sharpness=gsum/gcount;
+
+  var motion=0;
+  if(_idCam.prev){
+    var msum=0;
+    for(var k=0;k<luma.length;k+=4){msum+=Math.abs(luma[k]-_idCam.prev[k]);}
+    motion=msum/(luma.length/4);
+  } else { motion=999; }
+  _idCam.prev=luma;
+
+  var okLight=mean>35&&mean<225;
+  var okSharp=sharpness>110;
+  var okSteady=motion<6;
+
+  var status=document.getElementById('id_cam_status');
+  if(okLight&&okSharp&&okSteady){
+    _idCam.passes++;
+    if(_idCam.passes>=3&&!_idCam.locked){
+      _idCamSetLock(true);
+      haptic('star');
+    }
+  } else {
+    _idCam.passes=0;
+    if(_idCam.locked) _idCamSetLock(false);
+    if(status){
+      if(!okLight) status.textContent=mean<=35?'Too dark — add light':'Too bright — reduce glare';
+      else if(!okSteady) status.textContent='Hold steady…';
+      else status.textContent='Move closer / let camera focus';
+      status.style.color='#e8c46a';
+    }
+  }
+}
+
+function _idCamSetLock(on){
+  _idCam.locked=on;
+  var corners=document.querySelectorAll('#id_cam_bracket .id-cam-corner');
+  corners.forEach(function(c){c.style.borderColor=on?'#4ED36F':'#e8c46a';});
+  var status=document.getElementById('id_cam_status');
+  if(status&&on){status.textContent='READY — tap to capture';status.style.color='#4ED36F';}
+  var shutter=document.getElementById('id_cam_shutter');
+  if(shutter){shutter.style.borderColor=on?'#4ED36F':'#fff';shutter.style.background=on?'#4ED36F55':'#fff3';}
+}
+
+function _idCamShutter(){
+  var v=document.getElementById('id_cam_video');
+  if(!v||v.readyState<2) return;
+  haptic('save');
+  // Capture full frame, capped at 1920 longest edge (compression to 1568
+  // happens later in the existing _compressPhoto path)
+  var vw=v.videoWidth,vh=v.videoHeight;
+  var scale=Math.min(1,1920/Math.max(vw,vh));
+  var c=document.createElement('canvas');
+  c.width=Math.round(vw*scale);c.height=Math.round(vh*scale);
+  c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+  var dataUrl=c.toDataURL('image/jpeg',0.9);
+  _idCam.pending=dataUrl;
+  _idCam.frozen=true;
+  var fr=document.getElementById('id_cam_freeze');
+  if(fr){fr.src=dataUrl;fr.style.display='block';}
+  var controls=document.getElementById('id_cam_controls');
+  var confirmBar=document.getElementById('id_cam_confirm');
+  if(controls) controls.style.display='none';
+  if(confirmBar) confirmBar.style.display='flex';
+}
+
+function _idCamRetake(){
+  _idCam.pending=null;_idCam.frozen=false;_idCam.passes=0;_idCam.prev=null;
+  var fr=document.getElementById('id_cam_freeze');
+  if(fr) fr.style.display='none';
+  var controls=document.getElementById('id_cam_controls');
+  var confirmBar=document.getElementById('id_cam_confirm');
+  if(confirmBar) confirmBar.style.display='none';
+  if(controls) controls.style.display='flex';
+  _idCamSetLock(false);
+}
+
+function _idCamUseShot(){
+  if(!_idCam.pending) return;
+  _idCam.shots.push(_idCam.pending);
+  _idCam.pending=null;
+  if(_idCam.step===1){
+    // Transition to step 2 (markings close-up, skippable); reuses the stream
+    _idCam.step=2;_idCam.frozen=false;_idCam.passes=0;_idCam.prev=null;
+    _idCamBuildOverlay();
+  } else {
+    _idCamFinish();
+  }
+}
+
+function _idCamStopStream(){
+  if(_idCam.timer){clearInterval(_idCam.timer);_idCam.timer=null;}
+  if(_idCam.stream){
+    _idCam.stream.getTracks().forEach(function(t){t.stop();});
+    _idCam.stream=null;
+  }
+  _idCam.prev=null;_idCam.frozen=false;
+}
+
+function _idCamClose(){
+  _idCamStopStream();
+  _idCam.shots=[];_idCam.pending=null;
+  var ov=document.getElementById('id_cam_overlay');
+  if(ov) ov.remove();
+}
+
+function _idCamFinish(){
+  var shots=_idCam.shots.slice();
+  // Retry-markings mode: combine the original profile shot with the new close-up
+  var prefix=[];
+  if(_idCam.retry&&_idLastImages&&_idLastImages.length){
+    prefix=[_idLastImages[0]];
+  }
+  _idCamStopStream();
+  var ov=document.getElementById('id_cam_overlay');
+  if(ov) ov.remove();
+  if(!shots.length&&!prefix.length){toast('No photo captured','err');return;}
+
+  _idShowAnalyzing();
+
+  // Compress shots SEQUENTIALLY (throttled pattern — one image in heap at
+  // a time), then hand the array to analysis. prefix images are already
+  // compressed base64 from the earlier run.
+  var images=prefix.slice();
+  function next(i){
+    if(i>=shots.length){
+      _idRunAnalysis(images);
+      return;
+    }
+    _compressPhoto(shots[i],1568,0.85).then(function(cd){
+      images.push({base64:cd.split(',')[1],mediaType:'image/jpeg'});
+      shots[i]=null;
+      next(i+1);
+    }).catch(function(){
+      images.push({base64:shots[i].split(',')[1],mediaType:'image/jpeg'});
+      shots[i]=null;
+      next(i+1);
+    });
+  }
+  next(0);
+}
+
+function _idShowAnalyzing(){
   var modal=document.getElementById('identifier_modal');
-  if(modal) modal.innerHTML='<div style="background:#222835;border:2px solid #a0c0ff40;border-radius:12px;padding:32px;max-width:340px;width:100%;text-align:center">'
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='identifier_modal';
+    modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML='<div style="background:#222835;border:2px solid #a0c0ff40;border-radius:12px;padding:32px;max-width:340px;width:100%;text-align:center">'
     +'<div class="id-pulse" style="font-size:36px;margin-bottom:14px">&#129302;</div>'
     +'<div style="font-size:16px;font-weight:700;color:#a0c0ff;margin-bottom:8px">Analyzing...</div>'
     +'<div style="font-size:13px;color:#8a95a8;line-height:1.5">Reading markings, analyzing features,<br/>cross-referencing database</div>'
     +'</div>';
+}
 
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var rawDataUrl=e.target.result;
+function runGunIdentifier(input){
+  // -N: accepts 1-2 files (gallery multi-select or native-camera fallback).
+  var files=Array.prototype.slice.call(input.files||[],0,2);
+  if(!files.length)return;
 
-    // -K: Compress image to 1568px max edge before sending to API.
-    // Phone cameras produce 4000x3000+ images; Anthropic resizes >1568px
-    // server-side anyway. Compressing locally saves tokens and latency.
-    _compressPhoto(rawDataUrl, 1568, 0.85).then(function(compressedDataUrl){
-      var base64=compressedDataUrl.split(',')[1];
-      var mediaType='image/jpeg'; // _compressPhoto always outputs JPEG
-      _idRunAnalysis(base64, mediaType);
-    }).catch(function(){
-      // Fallback: send uncompressed if compression fails
-      var base64=rawDataUrl.split(',')[1];
-      var mediaType=file.type||'image/jpeg';
-      _idRunAnalysis(base64, mediaType);
-    });
-  };
-  reader.readAsDataURL(file);
+  _idShowAnalyzing();
+
+  // Read + compress sequentially (throttled pattern — one image in heap
+  // at a time), then run analysis with the full array.
+  var images=[];
+  function next(i){
+    if(i>=files.length){_idRunAnalysis(images);return;}
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var rawDataUrl=e.target.result;
+      // -K: Compress to 1568px max edge before sending to API. Phone
+      // cameras produce 4000x3000+ images; Anthropic resizes >1568px
+      // server-side anyway. Compressing locally saves tokens and latency.
+      _compressPhoto(rawDataUrl, 1568, 0.85).then(function(compressedDataUrl){
+        images.push({base64:compressedDataUrl.split(',')[1],mediaType:'image/jpeg'});
+        next(i+1);
+      }).catch(function(){
+        images.push({base64:rawDataUrl.split(',')[1],mediaType:files[i].type||'image/jpeg'});
+        next(i+1);
+      });
+    };
+    reader.readAsDataURL(files[i]);
+  }
+  next(0);
 }
 
 // Stash for retry flow
-var _idLastImage=null; // {base64, mediaType}
+var _idLastImages=null; // array of {base64, mediaType}; [0] = full profile
 
 // -K: System prompt establishing firearms expert identity
 var _ID_SYSTEM='You are an expert firearms identifier with 30 years of experience as a gunsmith, dealer, and collector. You can identify firearms from photos by reading roll marks, analyzing physical features, and cross-referencing your extensive knowledge of manufacturer models and variants. You are meticulous and honest — when you are uncertain, you say so clearly rather than guessing confidently.';
 
-function _idRunAnalysis(base64, mediaType){
-  // Stash image for potential retry
-  _idLastImage={base64:base64, mediaType:mediaType};
+function _idRunAnalysis(images){
+  // -N: accepts an ARRAY of {base64, mediaType}. Image 1 = full profile,
+  // image 2 (optional) = markings close-up. Both go in one API call.
+  if(!images||!images.length){showIdentifierError('No image to analyze');return;}
+  // Stash images for potential retry
+  _idLastImages=images;
+
+  // -N: image-role preamble so the model knows what each shot is
+  var preamble=images.length>1
+    ?'You are given TWO images of the SAME firearm. Image 1 is a full side profile. Image 2 is a close-up of the markings/rollmarks — treat Image 2 as the most reliable source when reading text in Step 1.\n\n'
+    :'';
 
   // -K: Structured reasoning prompt. Forces the model to observe before identifying.
-  var userPrompt='Analyze this firearm image carefully. Follow these steps IN ORDER:\n\n'
+  var userPrompt=preamble+'Analyze this firearm image carefully. Follow these steps IN ORDER:\n\n'
     +'STEP 1 — READ TEXT: Look for any visible text, roll marks, logos, model designations, or serial number prefixes stamped or engraved on the firearm. Report exactly what text you can read.\n\n'
     +'STEP 2 — DESCRIBE FEATURES: Describe the key physical features you observe:\n'
     +'  - Action type (semi-auto, revolver, bolt-action, lever-action, pump, break-action)\n'
@@ -11009,13 +11293,11 @@ function _idRunAnalysis(base64, mediaType){
     +'year: approximate year or range (e.g. "2018" or "2015-2020") or empty if unknown.\n'
     +'If you truly cannot determine the make, say "Unknown" — do NOT guess a manufacturer you are not confident about.';
 
-  var messages=[{
-    role:'user',
-    content:[
-      {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-      {type:'text',text:userPrompt}
-    ]
-  }];
+  var content=images.map(function(img){
+    return {type:'image',source:{type:'base64',media_type:img.mediaType,data:img.base64}};
+  });
+  content.push({type:'text',text:userPrompt});
+  var messages=[{role:'user',content:content}];
 
   _BYO_claudeCall(messages, {
     model:_BYO_VISION_MODEL,
@@ -11042,7 +11324,7 @@ function _idRunAnalysis(base64, mediaType){
       // -K: PDB validation + computed confidence
       result=_idValidateAndScore(result);
 
-      showIdentifierResult(result, base64, mediaType);
+      showIdentifierResult(result, images[0].base64, images[0].mediaType);
     }catch(ex){
       // Show diagnostic info so user can report the issue
       var preview=text.length>200?text.substring(0,200)+'...':text;
@@ -11289,8 +11571,8 @@ function _idRunAssisted(){
     return;
   }
 
-  // Must have the original image stashed
-  if(!_idLastImage){
+  // Must have the original image(s) stashed
+  if(!_idLastImages||!_idLastImages.length){
     toast('No image available — take a new photo','err');
     _idRetryMarkings();
     return;
@@ -11328,13 +11610,12 @@ function _idRunAssisted(){
     +'barrelLength: numeric inches only (e.g. "4.5") or empty string if unknown.\n'
     +'year: approximate year or range (e.g. "2018" or "2015-2020") or empty if unknown.';
 
-  var messages=[{
-    role:'user',
-    content:[
-      {type:'image',source:{type:'base64',media_type:_idLastImage.mediaType,data:_idLastImage.base64}},
-      {type:'text',text:assistedPrompt}
-    ]
-  }];
+  // -N: include ALL stashed images (profile + markings close-up if present)
+  var content=_idLastImages.map(function(img){
+    return {type:'image',source:{type:'base64',media_type:img.mediaType,data:img.base64}};
+  });
+  content.push({type:'text',text:assistedPrompt});
+  var messages=[{role:'user',content:content}];
 
   _BYO_claudeCall(messages, {
     model:_BYO_VISION_MODEL,
@@ -11355,7 +11636,7 @@ function _idRunAssisted(){
       }
       var result=JSON.parse(clean);
       result=_idValidateAndScore(result);
-      showIdentifierResult(result, _idLastImage.base64, _idLastImage.mediaType);
+      showIdentifierResult(result, _idLastImages[0].base64, _idLastImages[0].mediaType);
     }catch(ex){
       var preview=text.length>200?text.substring(0,200)+'...':text;
       if(!text) preview='(empty response)';
@@ -11388,7 +11669,7 @@ function _idRetryMarkings(){
     +'</div>'
     +'<input type="file" id="identifier_retry_input" accept="image/*" capture="environment" style="display:none" onchange="runGunIdentifier(this)"/>'
     +'<div style="display:flex;flex-direction:column;gap:8px">'
-      +'<button onclick="document.getElementById(\'identifier_retry_input\').click()" style="background:linear-gradient(135deg,#1e2a40,#1a2535);border:2px solid #a0c0ff60;color:#a0c0ff;padding:14px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">'+_iM('camera')+' Take Close-Up</button>'
+      +'<button onclick="_idOpenCamera(2,{retry:true})" style="background:linear-gradient(135deg,#1e2a40,#1a2535);border:2px solid #a0c0ff60;color:#a0c0ff;padding:14px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">'+_iM('camera')+' Take Close-Up</button>'
       +'<button onclick="var inp=document.getElementById(\'identifier_retry_input\');inp.removeAttribute(\'capture\');inp.click();setTimeout(function(){inp.setAttribute(\'capture\',\'environment\');},500)" style="background:#1e2535;border:2px solid #3a4455;color:#c0c8d8;padding:14px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">&#128444; Choose from Gallery</button>'
       +'<button onclick="document.getElementById(\'identifier_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
     +'</div>'
