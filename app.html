@@ -10993,7 +10993,11 @@ function _idCamBuildOverlay(){
   ov.innerHTML=''
     +'<video id="id_cam_video" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>'
     +'<img id="id_cam_freeze" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/>'
-    +'<div style="position:relative;z-index:2;padding:14px 16px;background:linear-gradient(180deg,#000c,#0000);display:flex;justify-content:space-between;align-items:center">'
+    // -N: spotlight scrim — dims everything OUTSIDE the bracket window so
+    // only the framed firearm stands out (coin-app style). The huge
+    // box-shadow paints the dark area; the element itself is the clear hole.
+    +'<div id="id_cam_scrim" style="position:absolute;left:7%;right:7%;top:50%;transform:translateY(-50%);aspect-ratio:'+(step===1?'2/1':'1.5/1')+';z-index:1;border-radius:12px;box-shadow:0 0 0 9999px rgba(8,10,16,.74);outline:2px solid #e8c46a55;transition:box-shadow .25s,outline-color .2s;pointer-events:none"></div>'
+    +'<div style="position:relative;z-index:3;padding:14px 16px;background:linear-gradient(180deg,#000c,#0000);display:flex;justify-content:space-between;align-items:center">'
       +'<div style="font-size:12px;font-weight:800;color:#e8c46a;letter-spacing:.1em">'+title+'</div>'
       +'<div style="font-size:11px;color:#8a95a8">'+(step===2?'optional':'')+'</div>'
     +'</div>'
@@ -11003,15 +11007,15 @@ function _idCamBuildOverlay(){
       +_idCamCorner('bottom:0;left:0;border-bottom:3px solid;border-left:3px solid;border-bottom-left-radius:8px')
       +_idCamCorner('bottom:0;right:0;border-bottom:3px solid;border-right:3px solid;border-bottom-right-radius:8px')
     +'</div>'
-    +'<div id="id_cam_status" style="position:absolute;left:0;right:0;top:calc(50% + '+(step===1?'13%':'17%')+');z-index:2;text-align:center;font-size:13px;font-weight:700;color:#e8c46a;text-shadow:0 1px 4px #000">'+hint+'</div>'
-    +'<div id="id_cam_controls" style="position:absolute;left:0;right:0;bottom:0;z-index:2;padding:18px 24px 30px;background:linear-gradient(0deg,#000d,#0000);display:flex;align-items:center;justify-content:space-between">'
+    +'<div id="id_cam_status" style="position:absolute;left:0;right:0;top:calc(50% + '+(step===1?'13%':'17%')+');z-index:3;text-align:center;font-size:13px;font-weight:700;color:#e8c46a;text-shadow:0 1px 4px #000">'+hint+'</div>'
+    +'<div id="id_cam_controls" style="position:absolute;left:0;right:0;bottom:0;z-index:3;padding:18px 24px 30px;background:linear-gradient(0deg,#000d,#0000);display:flex;align-items:center;justify-content:space-between">'
       +'<button onclick="_idCamClose()" style="background:#0008;border:1px solid #3a4455;color:#c0c8d8;padding:10px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;min-width:72px">Cancel</button>'
       +'<button id="id_cam_shutter" onclick="_idCamShutter()" style="width:70px;height:70px;border-radius:50%;border:4px solid #fff;background:#fff3;cursor:pointer;flex-shrink:0"></button>'
       +(step===2
         ?'<button onclick="_idCamFinish()" style="background:#0008;border:1px solid #e8c46a60;color:#e8c46a;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;min-width:72px">Skip &amp; Analyze</button>'
         :'<div style="min-width:72px"></div>')
     +'</div>'
-    +'<div id="id_cam_confirm" style="display:none;position:absolute;left:0;right:0;bottom:0;z-index:3;padding:18px 24px 30px;background:linear-gradient(0deg,#000d,#0000);justify-content:space-between;align-items:center">'
+    +'<div id="id_cam_confirm" style="display:none;position:absolute;left:0;right:0;bottom:0;z-index:4;padding:18px 24px 30px;background:linear-gradient(0deg,#000d,#0000);justify-content:space-between;align-items:center">'
       +'<button onclick="_idCamRetake()" style="background:#0008;border:1px solid #3a4455;color:#c0c8d8;padding:13px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">&#8634; Retake</button>'
       +'<button onclick="_idCamUseShot()" style="background:linear-gradient(135deg,#4ED36F,#2ea052);border:none;color:#0c1420;padding:13px 26px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Use Photo &#10003;</button>'
     +'</div>';
@@ -11041,8 +11045,8 @@ function _idCamSample(){
   var ctx=_idCamCanvas.getContext('2d',{willReadFrequently:true});
   var vw=v.videoWidth,vh=v.videoHeight;
   if(!vw||!vh) return;
-  var crop=Math.min(vw,vh)*0.6;
-  ctx.drawImage(v,(vw-crop)/2,(vh-crop)/2,crop,crop,0,0,96,96);
+  var bandW=vw*0.72, bandH=vh*0.30;
+  ctx.drawImage(v,(vw-bandW)/2,(vh-bandH)/2,bandW,bandH,0,0,96,96);
   var d;
   try{d=ctx.getImageData(0,0,96,96).data;}catch(e){return;}
 
@@ -11072,14 +11076,14 @@ function _idCamSample(){
   } else { motion=999; }
   _idCam.prev=luma;
 
-  var okLight=mean>35&&mean<225;
-  var okSharp=sharpness>110;
-  var okSteady=motion<6;
+  var okLight=mean>28&&mean<235;
+  var okSharp=sharpness>32;
+  var okSteady=motion<14;
 
   var status=document.getElementById('id_cam_status');
   if(okLight&&okSharp&&okSteady){
     _idCam.passes++;
-    if(_idCam.passes>=3&&!_idCam.locked){
+    if(_idCam.passes>=2&&!_idCam.locked){
       _idCamSetLock(true);
       haptic('star');
     }
@@ -11103,6 +11107,8 @@ function _idCamSetLock(on){
   if(status&&on){status.textContent='READY — tap to capture';status.style.color='#4ED36F';}
   var shutter=document.getElementById('id_cam_shutter');
   if(shutter){shutter.style.borderColor=on?'#4ED36F':'#fff';shutter.style.background=on?'#4ED36F55':'#fff3';}
+  var scrim=document.getElementById('id_cam_scrim');
+  if(scrim){scrim.style.boxShadow='0 0 0 9999px rgba(8,10,16,'+(on?'.58':'.74')+')';scrim.style.outlineColor=on?'#4ED36F':'#e8c46a55';}
 }
 
 function _idCamShutter(){
