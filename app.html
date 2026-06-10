@@ -6109,6 +6109,12 @@ var appSettings = {
 var LS_API_BASE           = 'https://api.lemonsqueezy.com';
 var LS_API_PROXY          = 'https://api-cors-anywhere.lemonsqueezy.com';
 var LS_STORE_ID           = null;   // e.g. 123456 — fill in after LS activation
+// -N: checkout links. Paste the "Share" checkout URLs from the LemonSqueezy
+// dashboard after creating the products (test-mode URLs work for the demo
+// video; swap to live URLs at launch). While null, upgrade modals fall back
+// to the "Get Launch Updates" mailto behavior.
+var LS_PRO_CHECKOUT_URL     = null; // e.g. 'https://arsenaldb.lemonsqueezy.com/buy/xxxx'
+var LS_PROPLUS_CHECKOUT_URL = null; // e.g. 'https://arsenaldb.lemonsqueezy.com/buy/yyyy'
 var LS_PRO_PRODUCT_ID     = null;   // e.g. 789012 — fill in after Pro product created
 var LS_PROPLUS_PRODUCT_ID = null;   // e.g. 789013 — fill in after Pro+ product created
 var LS_REVALIDATE_HOURS   = 24;     // re-check cached license every N hours
@@ -6176,6 +6182,17 @@ function _lsActivate(licenseKey){
   }).catch(function(){
     return {ok:false, tier:null, error:'Network error — check your connection'};
   });
+}
+
+// -N: Deactivate the current instance server-side (frees an activation
+// slot). Best-effort — local removal proceeds even if this fails.
+function _lsDeactivate(){
+  var key=appSettings.licenseKey, instanceId=appSettings.licenseInstanceId;
+  if(!key||!instanceId) return Promise.resolve({ok:false});
+  var body='license_key='+encodeURIComponent(key)+'&instance_id='+encodeURIComponent(instanceId);
+  return _lsFetch('/v1/licenses/deactivate', body).then(function(data){
+    return {ok:!!(data&&data.deactivated)};
+  }).catch(function(){return {ok:false};});
 }
 
 // Validate the currently-saved license. Updates tier based on server response.
@@ -6279,6 +6296,15 @@ function requireTier(minTier, featureName){
     'Sent from the ArsenalDB app on '+new Date().toLocaleDateString()+'.'
   );
   var mailHref='mailto:hello@arsenaldb.com?subject='+mailSubject+'&body='+mailBody;
+  // -N: when a checkout URL is configured, the primary CTA is a real Buy
+  // button (opens LemonSqueezy checkout in a new tab) plus an "already
+  // purchased" path to the Settings license card. Pre-launch (URL null),
+  // the mailto launch-updates button remains the primary CTA.
+  var buyUrl=isProPlus?LS_PROPLUS_CHECKOUT_URL:LS_PRO_CHECKOUT_URL;
+  var primaryCta=buyUrl
+    ?'<button onclick="window.open(\''+buyUrl+'\',\'_blank\');document.getElementById(\'pro_gate_modal\').remove()" style="display:block;width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px;box-sizing:border-box">Buy '+tierLabel+' &mdash; '+tierPrice+'</button>'
+     +'<button onclick="document.getElementById(\'pro_gate_modal\').remove();openSettings()" style="display:block;width:100%;background:transparent;border:none;color:#8a95a8;padding:4px;font-size:12px;cursor:pointer;font-family:inherit;margin-bottom:8px;text-decoration:underline">Already purchased? Enter your license key</button>'
+    :'<a href="'+mailHref+'" onclick="setTimeout(function(){var m=document.getElementById(\'pro_gate_modal\');if(m)m.remove();},150)" style="display:block;width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px;text-decoration:none;box-sizing:border-box">Get Launch Updates</a>';
   var modal=document.createElement('div');
   modal.id='pro_gate_modal';
   modal.style.cssText='position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -6291,7 +6317,7 @@ function requireTier(minTier, featureName){
       +'<div style="font-size:13px;font-weight:700;color:#e8c46a;margin-bottom:6px">ArsenalDB '+tierLabel+' &mdash; '+tierPrice+'</div>'
       +'<div style="font-size:12px;color:#8a95a8;line-height:1.6">'+tierDetails+'</div>'
     +'</div>'
-    +'<a href="'+mailHref+'" onclick="setTimeout(function(){var m=document.getElementById(\'pro_gate_modal\');if(m)m.remove();},150)" style="display:block;width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px;text-decoration:none;box-sizing:border-box">Get Launch Updates</a>'
+    +primaryCta
     +'<button onclick="document.getElementById(\'pro_gate_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Maybe Later</button>'
   +'</div>';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
@@ -6346,6 +6372,12 @@ function _showInventoryCapModal(){
     'I hit the 5-firearm free-tier cap on '+new Date().toLocaleDateString()+'.'
   );
   var mailHref='mailto:hello@arsenaldb.com?subject='+mailSubject+'&body='+mailBody;
+  // -N: real Buy button when the Pro checkout URL is configured (see
+  // requireTier for the same pattern); mailto fallback pre-launch.
+  var capCta=LS_PRO_CHECKOUT_URL
+    ?'<button onclick="window.open(\''+LS_PRO_CHECKOUT_URL+'\',\'_blank\');document.getElementById(\'inv_cap_modal\').remove()" style="display:block;width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px;box-sizing:border-box">Buy Pro &mdash; $9.99 one-time</button>'
+     +'<button onclick="document.getElementById(\'inv_cap_modal\').remove();openSettings()" style="display:block;width:100%;background:transparent;border:none;color:#8a95a8;padding:4px;font-size:12px;cursor:pointer;font-family:inherit;margin-bottom:8px;text-decoration:underline">Already purchased? Enter your license key</button>'
+    :'<a href="'+mailHref+'" onclick="setTimeout(function(){var m=document.getElementById(\'inv_cap_modal\');if(m)m.remove();},150)" style="display:block;width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px;text-decoration:none;box-sizing:border-box">Get Launch Updates</a>';
   var modal=document.createElement('div');
   modal.id='inv_cap_modal';
   modal.style.cssText='position:fixed;inset:0;background:#000000dd;z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -6358,11 +6390,92 @@ function _showInventoryCapModal(){
       +'<div style="font-size:13px;font-weight:700;color:#e8c46a;margin-bottom:6px">ArsenalDB Pro &mdash; $9.99 one-time</div>'
       +'<div style="font-size:12px;color:#8a95a8;line-height:1.6">Unlimited firearms &bull; Schematics &amp; parts &bull; Bill of Sale &bull; Print &amp; export</div>'
     +'</div>'
-    +'<a href="'+mailHref+'" onclick="setTimeout(function(){var m=document.getElementById(\'inv_cap_modal\');if(m)m.remove();},150)" style="display:block;width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px;text-decoration:none;box-sizing:border-box">Get Launch Updates</a>'
+    +capCta
     +'<button onclick="document.getElementById(\'inv_cap_modal\').remove()" style="width:100%;background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Maybe Later</button>'
   +'</div>';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
   document.body.appendChild(modal);
+}
+
+// ── -N: SETTINGS LICENSE CARD ────────────────────────────────────────
+// UI layer over _lsActivate/_lsValidate/_lsDeactivate. Two states:
+// no key → paste field + Activate; key present → masked key, tier badge,
+// status, Check License + Remove.
+function _licCard(){
+  var hdr='<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">License</div>';
+  if(!appSettings.licenseKey){
+    return '<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
+      +hdr
+      +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px;line-height:1.5">Already purchased? Paste the license key from your receipt email to unlock your tier on this device.</div>'
+      +'<input id="lic_key_input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" style="width:100%;box-sizing:border-box;background:#13161d;border:1px solid #2e3545;border-radius:8px;color:#f0f2f5;padding:10px 12px;font-size:13px;margin-bottom:10px;font-family:inherit"/>'
+      +'<button id="lic_activate_btn" onclick="_licActivateFromSettings()" style="width:100%;background:linear-gradient(135deg,#e8c46a,#c8a040);color:#1a1d24;border:none;padding:11px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">Activate License</button>'
+    +'</div>';
+  }
+  var tier=appSettings.tier==='proplus'?'PRO+':(appSettings.tier==='pro'?'PRO':String(appSettings.tier||'').toUpperCase());
+  var status=appSettings.licenseStatus||'unknown';
+  var statusColor=status==='active'?'#4ED36F':'#ff7070';
+  var masked=appSettings.licenseKey.slice(0,8)+'\u2026';
+  return '<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
+    +hdr
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+      +'<span style="font-size:13px;color:#f0f2f5;font-family:monospace">'+masked+'</span>'
+      +'<span style="font-size:10px;font-weight:800;letter-spacing:.08em;background:#e8c46a20;border:1px solid #e8c46a50;color:#e8c46a;border-radius:4px;padding:2px 7px">'+tier+'</span>'
+    +'</div>'
+    +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px">Status: <span style="color:'+statusColor+';font-weight:700">'+eh(status)+'</span>'
+    +(appSettings.licenseEmail?' &middot; '+eh(appSettings.licenseEmail):'')+'</div>'
+    +'<div style="display:flex;gap:8px">'
+      +'<button onclick="_licCheck(this)" style="flex:1;background:transparent;border:1px solid #e8c46a60;color:#e8c46a;padding:9px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Check License</button>'
+      +'<button onclick="_licRemove()" style="flex:1;background:transparent;border:1px solid #3a4455;color:#fc8181;padding:9px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Remove</button>'
+    +'</div>'
+  +'</div>';
+}
+
+function _licActivateFromSettings(){
+  var inp=document.getElementById('lic_key_input');
+  var btn=document.getElementById('lic_activate_btn');
+  var key=inp?inp.value.trim():'';
+  if(!key){toast('Paste your license key first','err');return;}
+  if(btn){btn.disabled=true;btn.textContent='Activating\u2026';btn.style.opacity='0.7';}
+  _lsActivate(key).then(function(res){
+    if(res.ok){
+      haptic('star');
+      toast('ArsenalDB '+(res.tier==='proplus'?'Pro+':'Pro')+' activated!');
+      var m=document.getElementById('settings_modal');if(m)m.remove();
+      openSettings();
+      rnd();
+    } else {
+      toast(res.error||'Activation failed','err');
+      if(btn){btn.disabled=false;btn.textContent='Activate License';btn.style.opacity='1';}
+    }
+  });
+}
+
+function _licCheck(btn){
+  if(btn){btn.disabled=true;btn.textContent='Checking\u2026';}
+  _lsValidate().then(function(res){
+    if(res.offline){toast('Offline \u2014 using cached license','err');}
+    else if(res.ok){toast('License active \u2713');}
+    else {toast(res.error||'License not active','err');}
+    var m=document.getElementById('settings_modal');if(m)m.remove();
+    openSettings();
+    rnd();
+  });
+}
+
+function _licRemove(){
+  if(!confirm('Remove this license from this device? Your tier will revert to Free. You can re-activate with the same key later.'))return;
+  _lsDeactivate().then(function(){
+    appSettings.licenseKey=null;
+    appSettings.licenseInstanceId=null;
+    appSettings.licenseStatus=null;
+    appSettings.licenseEmail=null;
+    appSettings.tier='free';
+    saveSettings();
+    toast('License removed');
+    var m=document.getElementById('settings_modal');if(m)m.remove();
+    openSettings();
+    rnd();
+  });
 }
 
 function loadSettings(){
@@ -6440,6 +6553,7 @@ function openSettings(){
         +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px">Replay the welcome tours from the start. The app will reload.</div>'
         +'<button onclick="this.disabled=true;this.textContent=\'\u2713 Tours reset \u2014 reloading\u2026\';this.style.opacity=\'0.7\';_ONB_resetAll();toast(\'Tours reset \u2014 reloading\u2026\');setTimeout(function(){location.reload();},800);" style="width:100%;background:transparent;border:1px solid #3a4455;color:#f0f2f5;padding:10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Replay onboarding tours</button>'
       +'</div>'
+    +_licCard()
     +'<div style="background:#0f1218;border:1px solid #e8c46a40;border-radius:10px;padding:16px;margin-bottom:12px">'
         +'<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e8c46a;margin-bottom:4px">Photo Storage</div>'
         +'<div style="font-size:12px;color:#8a95a8;margin-bottom:12px;line-height:1.5">Convert existing photos to the new storage format. Run this once to fix low-memory crashes when adding new firearms.</div>'
@@ -10666,6 +10780,7 @@ var ARMORER_KB = [
   // ── TIERS ──
   {keywords:['tier','plan','free','pricing','subscription','license','upgrade','pro','proplus','pro plus','premium'], answer:'ArsenalDB has three tiers:<br><b>Free</b> — Up to 5 firearms, basic features.<br><b>Pro ($9.99 one-time)</b> — Unlimited firearms, print/export, Bill of Sale, QR/NFC, reports printing.<br><b>Pro+ ($19.99 one-time)</b> — Everything in Pro, plus AI features (Gun Identifier, AI Valuation), 2-device installs, and multiple collections.', related:['upgrade','api key']},
   {keywords:['upgrade','buy','purchase','unlock','activate','license key'], answer:'To upgrade, go to <b>Settings</b> → tap your current tier → follow the upgrade prompts. One-time purchase — no subscription. Pro is $9.99, Pro+ is $19.99. Payment handled securely through LemonSqueezy.', related:['tier','settings']},
+  {keywords:['license','license key','activate','activation','purchased','receipt','unlock pro','enter key'], answer:'After purchasing, you\'ll receive a <b>license key</b> in your receipt email. Open the hamburger menu \u2630 \u2192 <b>Settings</b> \u2192 <b>License</b> card, paste the key, and tap <b>Activate License</b>. Your tier unlocks immediately on this device. Use <b>Check License</b> anytime to re-verify, or <b>Remove</b> to free the activation for another device.', related:['tier','upgrade']},
   {keywords:['free tier','free limit','5 firearms','five firearms','limit'], answer:'The Free tier supports up to <b>5 firearms</b>. You get full add/edit/view functionality, local valuations, reports viewing, and the Armorer assistant. Upgrade to Pro to remove the limit and unlock print/export features.', related:['tier','upgrade']},
   // ── SERIAL # MAGNIFIER ──
   {keywords:['magnifier','serial magnifier','zoom','magnify','read serial','hard to read'], answer:'Hamburger menu ☰ → <b>Serial # Magnifier</b>. Opens a live camera view with zoom and brightness controls to help you read worn or hard-to-see serial numbers. You can save the captured number directly to a firearm record.', related:['serial number','add firearm']},
