@@ -1467,6 +1467,13 @@ var QRGen = (function(){
   return {draw: draw, generate: generate};
 })();
 
+// ── ON-DEVICE QR ENCODER (qrcode-generator by Kazuhiko Arase, MIT license) ──
+// Inlined + minified. Capacity-scaling (auto version 1-40), byte mode.
+// Used by QR Transfer so firearm/seller data is rendered on-device and
+// never sent to a third-party image service. ArsenalQR(typeNumber, ecc).
+var ArsenalQR=(function(){var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(o*r,n*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}(function(){return qrcode});;return qrcode;})();
+
+
 
 var SK='arsenal_v6';
 // -P: Conditions follow industry-standard NRA grading. "Needs Repair"
@@ -4877,7 +4884,9 @@ function rAdd(){
     avb='<div class="ai-box">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap">'
         +'<div style="display:flex;align-items:center;gap:8px"><div style="font-size:12px;color:#a0b8ff;letter-spacing:.1em;font-weight:700">&#10022; MARKET ESTIMATE</div>'
-        +'<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.05em;'+(aiVal.source==='ai'?'background:#a0c0ff25;color:#a0c0ff':'background:#60e88025;color:#60e880')+'">'+(aiVal.source==='ai'?'AI':'LOCAL')+'</span></div>'
+        +'<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.05em;'+(aiVal.source==='ai'?'background:#a0c0ff25;color:#a0c0ff':'background:#60e88025;color:#60e880')+'">'+(aiVal.source==='ai'?'AI':'LOCAL')+'</span>'
+        +((aiVal.source==='ai'&&aiVal.confidence)?'<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.05em;'+(aiVal.confidence==='high'?'background:#60e88025;color:#60e880':aiVal.confidence==='low'?'background:#ff906025;color:#ff9060':'background:#e8c46a25;color:#e8c46a')+'">'+eh(String(aiVal.confidence).toUpperCase())+' CONF</span>':'')
+        +'</div>'
         +'<div style="display:flex;gap:6px;align-items:center">'+_saveEstBtn+_applyBtn+'</div>'
       +'</div>'
       +'<div style="display:flex;gap:24px;margin-bottom:9px">'
@@ -4886,6 +4895,7 @@ function rAdd(){
       +'<div><div style="font-size:11px;color:#8a95a8;margin-bottom:2px">HIGH</div><div style="font-size:16px;color:#d0d8e8;font-weight:600">'+fm(aiVal.high)+'</div></div>'
       +'</div>'
       +(aiVal.adjustmentReason?'<div style="font-size:12px;color:#a0c0ff;line-height:1.4;margin-bottom:6px;font-style:italic">&#9650; '+eh(aiVal.adjustmentReason)+'</div>':'')
+      +((aiVal.source==='ai'&&aiVal.compsFound!=null)?'<div style="font-size:11px;color:#8a95a8;margin-bottom:6px">Based on '+eh(String(aiVal.compsFound))+' recent market data point'+(Number(aiVal.compsFound)===1?'':'s')+'</div>':'')
       +'<div style="font-size:13px;color:#b0bac8;line-height:1.5">'+eh(aiVal.notes||'')+'</div>'
       +(aiVal.caveats?'<div style="font-size:11px;color:#8a95a8;margin-top:4px;font-style:italic">'+eh(aiVal.caveats)+'</div>':'')
       +'<div style="border-top:1px solid #2e3545;margin-top:10px;padding-top:10px;text-align:center">'
@@ -5954,131 +5964,11 @@ function printTheft(){
 }
 
 
-// ── QR CODE ───────────────────────────────────────────────────────────
-
-// ── QR LABEL SHEET ────────────────────────────────────────────────────
-function openLabelSheet(){
-  // Build gun selection modal
-  var modal=document.createElement('div');
-  modal.id='label_modal';
-  modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
-
-  var rows=guns.map(function(g){
-    return '<label style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid #252c38;cursor:pointer;-webkit-tap-highlight-color:rgba(232,196,106,0.1)">'
-      +'<input type="checkbox" class="label-chk" data-id="'+g.id+'" style="width:18px;height:18px;accent-color:#e8c46a;flex-shrink:0"/>'
-      +'<div style="flex:1;min-width:0">'
-        +'<div style="font-weight:700;color:#f0f2f5;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+g.make+' '+g.model+'</div>'
-        +'<div style="font-size:12px;color:#8a95a8;margin-top:2px">'+g.caliber+(g.serialNumber?' &middot; SN: '+g.serialNumber:'')+'</div>'
-      +'</div>'
-      +'</label>';
-  }).join('');
-
-  modal.innerHTML='<div style="background:#222835;border:2px solid #3a4455;border-radius:12px;max-width:380px;width:100%;margin:auto">'
-    +'<div style="padding:20px 20px 0">'
-      +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:4px">&#9646;&#9646; Print QR Labels</div>'
-      +'<div style="font-size:12px;color:#8a95a8;margin-bottom:14px">Select firearms to print labels for</div>'
-      +'<div style="display:flex;gap:8px;margin-bottom:12px">'
-        +'<button onclick="labelSelectAll(true)" style="flex:1;background:#1e3050;border:1px solid #a0c0ff40;color:#a0c0ff;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Select All</button>'
-        +'<button onclick="labelSelectAll(false)" style="flex:1;background:#1e2535;border:1px solid #3a4455;color:#8a95a8;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Clear All</button>'
-      +'</div>'
-    +'</div>'
-    +'<div style="max-height:340px;overflow-y:auto;border-top:1px solid #2e3545;border-bottom:1px solid #2e3545">'+rows+'</div>'
-    +'<div style="padding:16px 20px;display:flex;flex-direction:column;gap:8px">'
-      +'<div style="font-size:11px;color:#4a5568;margin-bottom:4px">Labels print 8 per page — uses QRServer API (requires wifi)</div>'
-      +'<button onclick="printLabelSheet()" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.02em">'+_iM('printer')+' Print Label Sheet</button>'
-      +'<button onclick="document.getElementById(\'label_modal\').remove()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>'
-    +'</div>'
-    +'</div>';
-
-  modal.onclick=function(e){if(e.target===modal)modal.remove();};
-  document.body.appendChild(modal);
-}
-
-function labelSelectAll(sel){
-  var chks=document.querySelectorAll('.label-chk');
-  chks.forEach(function(c){c.checked=sel;});
-}
-
-function printLabelSheet(){
-  var chks=document.querySelectorAll('.label-chk:checked');
-  if(!chks.length){toast('Select at least one firearm','err');return;}
-
-  var selected=[];
-  chks.forEach(function(c){
-    var g=guns.find(function(x){return x.id===c.dataset.id;});
-    if(g) selected.push(g);
-  });
-
-  // Build label HTML for print window
-  var NETLIFY='https://arsenaldb.com/app.html';
-
-  // Generate label HTML - we'll use QRServer API img tags
-  var labelHtml=selected.map(function(g){
-    // Encode gun data for QR URL
-    var shareData={
-      make:g.make,model:g.model,type:g.type,caliber:g.caliber,barrelLength:g.barrelLength,
-      serialNumber:g.serialNumber,year:g.year,condition:g.condition,
-      working:g.working,storageLocation:g.storageLocation,
-      currentValue:g.currentValue,insuranceValue:g.insuranceValue,
-      lastCleaned:g.lastCleaned,ammoType:g.ammoType,ammoCount:g.ammoCount
-    };
-    var encoded='';
-    try{encoded=btoa(unescape(encodeURIComponent(JSON.stringify(shareData))));}catch(e){}
-    var scanUrl=NETLIFY+(encoded?'?view='+encoded:'');
-    var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=120x120&ecc=M&color=000000&bgcolor=ffffff&data='+encodeURIComponent(scanUrl);
-
-    return '<div class="label">'
-      +'<img class="qr" src="'+qrUrl+'" width="100" height="100"/>'
-      +'<div class="label-info">'
-        +'<div class="label-make">'+g.make+'</div>'
-        +'<div class="label-model">'+g.model+'</div>'
-        +'<div class="label-cal">'+g.caliber+'</div>'
-        +(g.serialNumber?'<div class="label-sn">SN: '+g.serialNumber+'</div>':'')
-        +'<div class="label-brand">&#9654; ArsenalDB</div>'
-      +'</div>'
-      +'</div>';
-  }).join('');
-
-  var W=window.open('','_blank');
-  W.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>ArsenalDB — QR Labels</title>'
-    +'<style>'
-    +'*{box-sizing:border-box;margin:0;padding:0}'
-    +'body{background:#0f1117;font-family:-apple-system,sans-serif;padding:12px}'
-    +'.page-title{font-size:13px;color:#4a5568;text-align:center;margin-bottom:12px;font-style:italic}'
-    +'.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}'
-    +'.label{border:2px solid #e8c46a;border-radius:8px;padding:8px;background:#0f1117;display:flex;gap:8px;align-items:center;background:#fff;page-break-inside:avoid}'
-    +'.qr{flex-shrink:0;display:block}'
-    +'.label-info{flex:1;min-width:0;overflow:hidden}'
-    +'.label-make{font-size:10px;font-weight:800;color:#e8c46a;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
-    +'.label-model{font-size:13px;font-weight:700;color:#f0f2f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:1px 0}'
-    +'.label-cal{font-size:10px;color:#8a95a8;font-weight:600}'
-    +'.label-sn{font-size:9px;color:#6a7585;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
-    +'.label-brand{font-size:8px;color:#c8a050;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-top:4px}'
-    +'@media print{'
-      +'.no-print{display:none}'
-      +'body{padding:6px}'
-      +'.grid{gap:6px}'
-      +'@page{margin:8mm}'
-    +'}'
-    +'</style></head><body>');
-  W.document.write('<div class="no-print" style="text-align:center;margin-bottom:14px">'
-    +'<button onclick="window.print()" style="background:#1a1d24;color:#e8c46a;border:2px solid #e8c46a;padding:10px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;margin-right:8px">'+_iM('printer')+' Print Labels</button>'
-    +'<span style="font-size:12px;color:#999">'+selected.length+' label'+(selected.length!==1?'s':'')+' &middot; 8 per page &middot; QR codes load via wifi</span>'
-    +'</div>');
-  W.document.write('<div class="grid">'+labelHtml+'</div>');
-  W.document.write('</body></html>');
-  W.document.close();
-
-  // Close modal
-  var m=document.getElementById('label_modal');
-  if(m) m.remove();
-  toast('Label sheet opening...');
-}
 
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-06-04-N';   // bump on every revision
+var BUILD_TAG   = '2026-06-04-O';   // bump on every revision
 var PDB_UPDATE_URL = 'https://arsenaldb.com/pricedb.json';
 var PDB_VERSION    = '2026-05-19';     // inline baseline version
 var _cachedPDB     = null;             // populated from localStorage on boot
@@ -7090,186 +6980,6 @@ function saveOwnerProfile(){
 
 
 
-// ── SERIAL NUMBER MAGNIFIER ───────────────────────────────────────────
-function openMagnifier(){
-  var existing=document.getElementById('magnifier_modal');
-  if(existing){existing.remove();return;}
-  var modal=document.createElement('div');
-  modal.id='magnifier_modal';
-  modal.style.cssText='position:fixed;inset:0;background:#000;z-index:10000;display:flex;flex-direction:column;';
-  modal.innerHTML=
-    '<div id="mag_bar" style="position:absolute;top:0;left:0;right:0;z-index:2;padding:12px 16px;background:linear-gradient(180deg,rgba(0,0,0,0.85) 0%,transparent 100%);display:flex;justify-content:space-between;align-items:center">'+
-      '<div style="display:flex;align-items:center;gap:10px">'+
-        '<span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:#60e8c0">&#128269; MAGNIFIER</span>'+
-        '<span id="mag_zoom_label" style="font-size:12px;color:#e8c46a;font-weight:700">2x</span>'+
-      '</div>'+
-      '<button onclick="closeMagnifier()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&times;</button>'+
-    '</div>'+
-    '<video id="mag_video" autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>'+
-    '<canvas id="mag_grid" style="position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .2s;z-index:1;"></canvas>'+
-    '<canvas id="mag_freeze" style="position:absolute;inset:0;display:none;z-index:1;"></canvas>'+
-    '<div id="mag_controls" style="position:absolute;bottom:0;left:0;right:0;z-index:2;padding:16px 20px 32px;background:linear-gradient(0deg,rgba(0,0,0,0.9) 0%,transparent 100%)">'+
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'+
-        '<span style="font-size:11px;color:#8a95a8;font-weight:700;width:20px">1x</span>'+
-        '<input id="mag_zoom" type="range" min="1" max="8" step="0.5" value="2" style="flex:1;height:4px;accent-color:#60e8c0;cursor:pointer" oninput="magSetZoom(this.value)"/>'+
-        '<span style="font-size:11px;color:#8a95a8;font-weight:700;width:20px">8x</span>'+
-      '</div>'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'+
-        '<button id="mag_grid_btn" onclick="magToggleGrid()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#d0d8e8;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex:1">&#9638; Grid</button>'+
-        '<button id="mag_freeze_btn" onclick="magFreeze()" style="width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid #60e8c0;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div style="width:48px;height:48px;border-radius:50%;background:#e8f8f4;border:2px solid #60e8c0"></div></button>'+
-        '<button id="mag_torch_btn" onclick="magToggleTorch()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#d0d8e8;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex:1">&#128294; Light</button>'+
-      '</div>'+
-      '<div id="mag_frozen_bar" style="display:none;margin-top:14px">'+
-        '<div style="display:flex;gap:10px">'+
-          '<button onclick="magResume()" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#f0f2f5;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">&#9654; Resume</button>'+
-          '<button onclick="magSaveToGun()" style="flex:1;background:#60e8c020;border:2px solid #60e8c050;color:#60e8c0;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+_iM('save')+' Save to Record</button>'+
-        '</div>'+
-      '</div>'+
-    '</div>';
-  document.body.appendChild(modal);
-  magStart();
-}
-
-var _magStream=null;
-var _magTrack=null;
-var _magFrozen=false;
-var _magTorchOn=false;
-var _magGridOn=false;
-var _magZoom=2;
-
-function magStart(){
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}}).then(function(stream){
-    _magStream=stream;
-    _magTrack=stream.getVideoTracks()[0];
-    var video=document.getElementById('mag_video');
-    if(!video){stream.getTracks().forEach(function(t){t.stop();});return;}
-    video.srcObject=stream;
-    video.play();
-    magSetZoom(_magZoom);
-    magDrawGrid();
-  }).catch(function(){
-    toast('Camera access denied or unavailable','err');
-    closeMagnifier();
-  });
-}
-
-function magSetZoom(val){
-  _magZoom=parseFloat(val);
-  var label=document.getElementById('mag_zoom_label');
-  if(label) label.textContent=_magZoom+'x';
-  var video=document.getElementById('mag_video');
-  if(!video) return;
-  video.style.transform='scale('+_magZoom+')';
-  video.style.transformOrigin='center center';
-  if(_magTrack){
-    try{
-      var caps=_magTrack.getCapabilities?_magTrack.getCapabilities():{};
-      if(caps.zoom){
-        var hw=Math.min(caps.zoom.max,Math.max(caps.zoom.min,_magZoom));
-        _magTrack.applyConstraints({advanced:[{zoom:hw}]});
-      }
-    }catch(e){}
-  }
-}
-
-function magDrawGrid(){
-  var canvas=document.getElementById('mag_grid');
-  if(!canvas) return;
-  canvas.width=window.innerWidth;
-  canvas.height=window.innerHeight;
-  var ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.strokeStyle='rgba(96,232,192,0.35)';
-  ctx.lineWidth=0.5;
-  var sx=Math.round(canvas.width/12);
-  for(var x=0;x<canvas.width;x+=sx){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
-  var sy=Math.round(canvas.height/18);
-  for(var y=0;y<canvas.height;y+=sy){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
-  ctx.strokeStyle='rgba(96,232,192,0.7)';
-  ctx.lineWidth=1;
-  var cx=canvas.width/2,cy=canvas.height/2;
-  ctx.beginPath();ctx.moveTo(cx-20,cy);ctx.lineTo(cx+20,cy);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(cx,cy-20);ctx.lineTo(cx,cy+20);ctx.stroke();
-}
-
-function magToggleGrid(){
-  _magGridOn=!_magGridOn;
-  var canvas=document.getElementById('mag_grid');
-  if(canvas) canvas.style.opacity=_magGridOn?'1':'0';
-  var btn=document.getElementById('mag_grid_btn');
-  if(btn){btn.style.color=_magGridOn?'#60e8c0':'#d0d8e8';btn.style.borderColor=_magGridOn?'rgba(96,232,192,0.5)':'rgba(255,255,255,0.15)';}
-}
-
-function magToggleTorch(){
-  if(!_magTrack){toast('Camera not ready','err');return;}
-  var caps=_magTrack.getCapabilities?_magTrack.getCapabilities():{};
-  if(!caps.torch){toast('Flashlight not supported on this device');return;}
-  _magTorchOn=!_magTorchOn;
-  _magTrack.applyConstraints({advanced:[{torch:_magTorchOn}]}).catch(function(){
-    toast('Could not toggle flashlight','err');_magTorchOn=false;
-  });
-  var btn=document.getElementById('mag_torch_btn');
-  if(btn){btn.style.color=_magTorchOn?'#ffd060':'#d0d8e8';btn.style.borderColor=_magTorchOn?'rgba(255,208,96,0.5)':'rgba(255,255,255,0.15)';}
-}
-
-function magFreeze(){
-  var video=document.getElementById('mag_video');
-  var fc=document.getElementById('mag_freeze');
-  var fb=document.getElementById('mag_frozen_bar');
-  if(!video||!fc) return;
-  if(_magFrozen){magResume();return;}
-  _magFrozen=true;
-  fc.width=video.videoWidth||window.innerWidth;
-  fc.height=video.videoHeight||window.innerHeight;
-  var ctx=fc.getContext('2d');
-  var sw=video.videoWidth,sh=video.videoHeight;
-  var cw=sw/_magZoom,ch=sh/_magZoom;
-  ctx.drawImage(video,(sw-cw)/2,(sh-ch)/2,cw,ch,0,0,fc.width,fc.height);
-  fc.style.display='block';
-  video.style.display='none';
-  if(fb) fb.style.display='block';
-  var btn=document.getElementById('mag_freeze_btn');
-  if(btn) btn.style.borderColor='#e8c46a';
-}
-
-function magResume(){
-  _magFrozen=false;
-  var video=document.getElementById('mag_video');
-  var fc=document.getElementById('mag_freeze');
-  var fb=document.getElementById('mag_frozen_bar');
-  if(video) video.style.display='block';
-  if(fc) fc.style.display='none';
-  if(fb) fb.style.display='none';
-  var btn=document.getElementById('mag_freeze_btn');
-  if(btn) btn.style.borderColor='#60e8c0';
-}
-
-function magSaveToGun(){
-  var fc=document.getElementById('mag_freeze');
-  if(!fc||!selId) return;
-  var g=guns.find(function(x){return x.id===selId;});
-  if(!g){toast('No active gun record','err');return;}
-  var dataUrl=fc.toDataURL('image/jpeg',0.85);
-  if(!g.photos) g.photos=[];
-  if(g.photo&&!g.photos.length) g.photos=[g.photo];
-  g.photos.push(dataUrl);
-  g.photo=g.photos[0];
-  guns=guns.map(function(x){return x.id===selId?g:x;});
-  sv();
-  toast('Photo saved to '+g.make+' '+g.model);
-  closeMagnifier();
-}
-
-function closeMagnifier(){
-  if(_magTorchOn&&_magTrack){
-    try{_magTrack.applyConstraints({advanced:[{torch:false}]});}catch(e){}
-    _magTorchOn=false;
-  }
-  if(_magStream){_magStream.getTracks().forEach(function(t){t.stop();});_magStream=null;_magTrack=null;}
-  _magFrozen=false;_magGridOn=false;_magZoom=2;
-  var m=document.getElementById('magnifier_modal');
-  if(m) m.remove();
-}
 
 function haptic(type){
   if(!appSettings.haptic) return;
@@ -7785,14 +7495,6 @@ function playRack(){
       });
     }
   }catch(e){}
-}
-
-
-function rebuildQR(){
-  // Rebuild QR with new size - re-open modal for current gun
-  var m=document.getElementById('qr_modal');
-  if(m) m.remove();
-  if(window._qrGun) openQR(window._qrGun.id);
 }
 
 
@@ -10520,9 +10222,6 @@ function buildHamMenu(){
         +'<div class="ham-item" onclick="hamAction(function(){showPrintMenu(\''+selId+'\')})">'
           +'<span class="ham-item-icon">'+_iM('printer')+'</span><span>Print Sheet</span>'
         +'</div>'
-        +'<div class="ham-item" onclick="hamAction(function(){openQR(\''+selId+'\')})" style="color:#e8c46a">'
-          +'<span class="ham-item-icon">'+_qrSvg(18)+'</span><span>Generate QR Code</span>'
-        +'</div>'
 ;
     }
   } else if(VIEW==='add'&&editId){
@@ -10534,9 +10233,6 @@ function buildHamMenu(){
       +'</div>'
       +'<div class="ham-item" onclick="hamAction(function(){pOnePDF(\''+editId+'\')})" style="color:#a0c0ff">'
         +'<span class="ham-item-icon">'+_iM('save')+'</span><span>Save as PDF</span>'
-      +'</div>'
-      +'<div class="ham-item" onclick="hamAction(function(){openQR(\''+editId+'\')})" style="color:#e8c46a">'
-        +'<span class="ham-item-icon">'+_qrSvg(18)+'</span><span>Generate QR Code</span>'
       +'</div>'
       +(checkNFCSupport()?
         '<div class="ham-item" onclick="hamAction(function(){writeNFCTag(\''+editId+'\')})" style="color:#60e880">'
@@ -10614,12 +10310,8 @@ function buildHamMenu(){
     +'<div class="ham-item" onclick="hamAction(function(){expCSV()})">'
       +'<span class="ham-item-icon">&#8595;</span><span>Export CSV</span>'
     +'</div>'
-    +'<div class="ham-item" onclick="hamAction(function(){openLabelSheet()})">'
-      +'<span class="ham-item-icon">&#9646;&#9646;</span><span>Print QR Labels</span>'
-    +'</div>'
 
     +'<div class="ham-section">App</div>'
-    +'<div class="ham-item" onclick="hamAction(function(){openMagnifier()})" style="color:#60e8c0"><span class="ham-item-icon">&#128269;</span><span>Serial # Magnifier</span></div>'
     +'<div class="ham-item" onclick="hamAction(function(){openGunIdentifier()})" style="color:#a0c0ff"><span class="ham-item-icon">'+_iM('camera')+'</span><span>AI Gun Identifier</span></div>'
     +'<div class="ham-item" onclick="hamAction(function(){openArmorer()})" style="color:#60e8c0"><span class="ham-item-icon">'+_iM('armorer')+'</span><span>Armorer</span></div>'
     +'<div class="ham-item" onclick="hamAction(function(){openSettings()})">'
@@ -10658,9 +10350,6 @@ function toggleEditMenu(id){
     +'</div>'
     +'<div onclick="document.getElementById(\'edit_action_menu\').remove();pOnePDF(\''+id+'\')" style="display:flex;align-items:center;gap:10px;padding:13px 16px;color:#a0c0ff;font-size:14px;cursor:pointer;border-bottom:1px solid #1e2535" onmouseover="this.style.background=\'#2a3040\'" onmouseout="this.style.background=\'\'">'
       +'<span>'+_iM('save')+'</span><span>Save as PDF</span>'
-    +'</div>'
-    +'<div onclick="document.getElementById(\'edit_action_menu\').remove();setTimeout(function(){openQR(\''+id+'\');},50)" style="display:flex;align-items:center;gap:10px;padding:13px 16px;color:#e8c46a;font-size:14px;cursor:pointer;border-bottom:1px solid #1e2535" onmouseover="this.style.background=\'#2a3040\'" onmouseout="this.style.background=\'\'">'
-      +'<span>'+_qrSvg(18)+'</span><span>Generate QR Code</span>'
     +'</div>'
     +(checkNFCSupport()?'<div onclick="document.getElementById(\'edit_action_menu\').remove();writeNFCTag(\''+id+'\')" style="display:flex;align-items:center;gap:10px;padding:13px 16px;color:#60e880;font-size:14px;cursor:pointer;border-bottom:1px solid #1e2535" onmouseover="this.style.background=\'#2a3040\'" onmouseout="this.style.background=\'\'">'
       +'<span>&#128225;</span><span>Write NFC Tag</span>'
@@ -10710,7 +10399,7 @@ var ARMORER_KB = [
   {keywords:['save','save changes','save button'], answer:'When adding or editing a firearm, the <b>Save</b> button is at the bottom of the form. It says "Add to Inventory" for new firearms or "Save Changes" for existing ones. All data saves locally to your device.', related:['add firearm','edit']},
   {keywords:['make','manufacturer','brand'], answer:'The <b>Make</b> field is on the Add/Edit form. Enter the manufacturer name (e.g., "Glock", "Smith & Wesson", "Ruger"). This field is used for price estimation and reporting.', related:['model','add firearm']},
   {keywords:['model','model name','model number'], answer:'The <b>Model</b> field is on the Add/Edit form, right below Make. Enter the specific model (e.g., "G19 Gen5", "M&P Shield", "10/22").', related:['make','add firearm']},
-  {keywords:['serial','serial number','sn'], answer:'The <b>Serial Number</b> field is on the Add/Edit form. This is critical for insurance and theft reporting. Use the <b>Serial # Magnifier</b> tool (hamburger menu ☰ → Serial # Magnifier) if the number is hard to read.', related:['magnifier','insurance report']},
+  {keywords:['serial','serial number','sn'], answer:'The <b>Serial Number</b> field is on the Add/Edit form. This is critical for insurance and theft reporting.', related:['insurance report']},
   {keywords:['caliber','gauge','chambering','ammunition type'], answer:'The <b>Caliber/Gauge</b> field is on the Add/Edit form. Enter the chambering (e.g., "9mm", "5.56 NATO", "12 Gauge", ".308 Win").', related:['add firearm']},
   {keywords:['type','firearm type','pistol','rifle','shotgun','revolver','category'], answer:'The <b>Type</b> dropdown on the Add/Edit form lets you select: Pistol, Rifle, Shotgun, Revolver, Lever Action, Bolt Action, or Other. This affects Dashboard type counts and some Condition Profile questions.', related:['add firearm','condition profile']},
   {keywords:['condition','firearm condition','excellent','good','fair','poor'], answer:'The <b>Condition</b> dropdown on the Add/Edit form has options: Excellent, Good, Fair, Poor. This is a quick general grade. For detailed condition assessment, use the <b>Condition Profile</b> after estimating value.', related:['condition profile','valuation']},
@@ -10751,7 +10440,6 @@ var ARMORER_KB = [
   {keywords:['print sheet','print one','individual print','firearm sheet'], answer:'From a firearm\'s edit view or detail view, open the hamburger menu ☰ → <b>Print Sheet</b>. Or tap the ⋮ menu → Print Sheet. Generates a detailed single-firearm document. <em>(Pro feature)</em>', related:['print','pdf']},
   {keywords:['pdf','save pdf','save as pdf','download pdf'], answer:'From a firearm\'s edit view, hamburger menu ☰ → <b>Save as PDF</b>. This generates a downloadable PDF of the firearm\'s complete record. <em>(Pro feature)</em>', related:['print']},
   {keywords:['csv','export csv','export','spreadsheet','download csv','export data'], answer:'Hamburger menu ☰ → <b>Export CSV</b>, or tap the CSV button on the Dashboard. Exports your full inventory as a CSV spreadsheet file including all fields, estimates, and condition grades. <em>(Pro feature)</em>', related:['backup','print']},
-  {keywords:['qr labels','label sheet','print labels','qr label sheet','barcode labels'], answer:'Hamburger menu ☰ → <b>Print QR Labels</b>. Generates a sheet of QR code labels for your firearms — great for tagging gun cases, safes, or storage. <em>(Pro feature)</em>', related:['qr code','print']},
   {keywords:['drop off','drop off receipt','gunsmith receipt','service receipt'], answer:'Hamburger menu ☰ → <b>Drop-Off Receipt</b>. Generates a receipt for leaving a firearm with a gunsmith or service provider — includes firearm details and owner info.', related:['work order','print']},
   // ── COLLECTIONS ──
   {keywords:['collection','collections','switch collection','multiple collections','manage collections'], answer:'Collections let you organize firearms into separate groups. The <b>collection dropdown</b> is at the top of the screen. Tap it to switch between collections, create new ones, rename, or delete. <em>(Pro+ feature for multiple collections)</em>', related:['create collection','import collection']},
@@ -10764,7 +10452,7 @@ var ARMORER_KB = [
   // ── TRANSFER TOOLS ──
   {keywords:['transfer','transfer wizard','bill of sale','bos','sell firearm','sold'], answer:'From a firearm\'s detail view, hamburger menu ☰ → <b>Transfer Wizard</b>. This walks you through generating a Bill of Sale with buyer/seller info, terms, and signatures. The firearm gets marked as "Transferred Out." <em>(Pro feature)</em>', related:['transfer worksheet','custody']},
   {keywords:['transfer worksheet','multi transfer','batch transfer','transfer multiple'], answer:'From the Dashboard, tap the <b>Transfer Worksheet</b> button, or hamburger menu ☰ → more options. Select multiple firearms and generate a combined transfer document. <em>(Pro feature)</em>', related:['transfer wizard','bill of sale']},
-  {keywords:['qr code','generate qr','qr transfer','qr'], answer:'From a firearm\'s edit or detail view, hamburger menu ☰ → <b>Generate QR Code</b>. Creates a QR code containing the firearm\'s data for quick transfer scanning. <em>(Pro feature)</em>', related:['nfc','transfer wizard']},
+  {keywords:['qr code','qr transfer','qr'], answer:'During a transfer, ArsenalDB can show a <b>QR Transfer</b> code that the buyer scans with their phone to receive the bill-of-sale details. The code is generated entirely on your device — no data is sent to any outside service. <em>(Pro feature)</em>', related:['transfer wizard','nfc']},
   {keywords:['nfc','nfc tag','write nfc','tap tag'], answer:'On supported Android devices, from a firearm\'s edit view, hamburger menu ☰ → <b>Write NFC Tag</b>. Writes the firearm\'s data to an NFC tag for physical tagging. <em>(Pro feature, Android only)</em>', related:['qr code']},
   // ── AI FEATURES ──
   {keywords:['gun identifier','identify','identify gun','ai identifier','photo identify','what gun is this'], answer:'Hamburger menu ☰ → <b>AI Gun Identifier</b>. A live viewfinder opens — frame the firearm and when the brackets turn <b>green</b> (sharp, steady, well-lit), tap to capture. You\'ll then be offered an optional close-up of the markings for a more accurate ID. AI identifies the make, model, type, and caliber, validated against the price database. You can add the result directly to your inventory. <em>(Pro+ feature, requires API key)</em>', related:['api key','add firearm']},
@@ -10783,7 +10471,6 @@ var ARMORER_KB = [
   {keywords:['license','license key','activate','activation','purchased','receipt','unlock pro','enter key'], answer:'After purchasing, you\'ll receive a <b>license key</b> in your receipt email. Open the hamburger menu \u2630 \u2192 <b>Settings</b> \u2192 <b>License</b> card, paste the key, and tap <b>Activate License</b>. Your tier unlocks immediately on this device. Use <b>Check License</b> anytime to re-verify, or <b>Remove</b> to free the activation for another device.', related:['tier','upgrade']},
   {keywords:['free tier','free limit','5 firearms','five firearms','limit'], answer:'The Free tier supports up to <b>5 firearms</b>. You get full add/edit/view functionality, local valuations, reports viewing, and the Armorer assistant. Upgrade to Pro to remove the limit and unlock print/export features.', related:['tier','upgrade']},
   // ── SERIAL # MAGNIFIER ──
-  {keywords:['magnifier','serial magnifier','zoom','magnify','read serial','hard to read'], answer:'Hamburger menu ☰ → <b>Serial # Magnifier</b>. Opens a live camera view with zoom and brightness controls to help you read worn or hard-to-see serial numbers. You can save the captured number directly to a firearm record.', related:['serial number','add firearm']},
   // ── GENERAL NAVIGATION ──
   {keywords:['tabs','bottom tabs','nav bar','navigation','navigate','get around'], answer:'The bottom nav has three main tabs: <b>Dashboard</b> (home), <b>Reports</b>, and <b>Inventory</b>. Tap any tab to switch views. The hamburger menu ☰ (top-left) has additional tools and actions.', related:['dashboard','inventory','reports','hamburger']},
   {keywords:['hamburger','menu','three bar','side menu','ham menu','main menu'], answer:'The <b>☰ hamburger menu</b> is the three-bar button in the top-left corner. It opens a slide-out panel with all app features: Range Sessions, Add Firearm, collection management, print/export, tools (Magnifier, AI Identifier, Armorer), Settings, and more.', related:['tabs']},
@@ -10984,7 +10671,7 @@ function _armorerAICall(query){
     +'If asked about legal/valuation/compliance topics, respond: "I\'m here to help you navigate ArsenalDB — for legal, valuation, or compliance questions, please consult a qualified professional."\n\n'
     +'APP STRUCTURE:\n'
     +'- Bottom nav: Dashboard | Reports | Inventory\n'
-    +'- Hamburger menu (☰ top-left): Range Sessions, Add Firearm, Backup/Share/Import Collection, View Inventory, Print Full Inventory, Drop-Off Receipt, Export CSV, Print QR Labels, Serial # Magnifier, AI Gun Identifier, Armorer, Settings, Clear All Data\n'
+    +'- Hamburger menu (☰ top-left): Range Sessions, Add Firearm, Backup/Share/Import Collection, View Inventory, Print Full Inventory, Drop-Off Receipt, Export CSV, AI Gun Identifier, Armorer, Settings, Clear All Data\n'
     +'- Add/Edit form: Make, Model, Serial#, Caliber, Type, Condition, Status, Acquired, Notes, Photos, Valuation\n'
     +'- Detail view tabs: Maintenance (work orders, cleaning), Details (specs, estimates, condition profile), Schematics (parts), Range (per-firearm sessions), Custody (chain of custody events)\n'
     +'- Report tabs: Worth, Cleaning, Milestones, Insurance (claim sheets), Theft (stolen firearm reports), Custody\n'
@@ -11427,6 +11114,7 @@ function runGunIdentifier(input){
 
 // Stash for retry flow
 var _idLastImages=null; // array of {base64, mediaType}; [0] = full profile
+var _idLastResult=null; // -O: previous identification result, fed back into assisted retry
 
 // -K: System prompt establishing firearms expert identity
 var _ID_SYSTEM='You are an expert firearms identifier with 30 years of experience as a gunsmith, dealer, and collector. You can identify firearms from photos by reading roll marks, analyzing physical features, and cross-referencing your extensive knowledge of manufacturer models and variants. You are meticulous and honest — when you are uncertain, you say so clearly rather than guessing confidently.';
@@ -11467,7 +11155,7 @@ function _idRunAnalysis(images, hints){
     +'  - Any distinctive design elements (accessory rail, serration pattern, grip angle, magazine release style)\n\n'
     +'STEP 3 — IDENTIFY: Based on your observations from Steps 1-2, identify the firearm.\n\n'
     +'COMMON MISTAKES TO AVOID:\n'
-    +'  - Glock vs S&W M&P: M&P has a higher grip angle, sear deactivation lever, and different trigger guard shape\n'
+    +'  - Glock vs S&W M&P: these differ in grip angle, trigger-guard shape, and the M&P sear-deactivation lever — compare grip rake and slide profile carefully rather than assuming\n'
     +'  - Beretta 92 vs Taurus PT92: PT92 has frame-mounted safety vs Beretta slide-mounted\n'
     +'  - Sig P320 vs P365: Size difference is dramatic — P365 is micro-compact\n'
     +'  - Springfield XD vs HS Produkt: Same gun, different importers\n'
@@ -11477,7 +11165,7 @@ function _idRunAnalysis(images, hints){
     +'{"make":"","model":"","type":"","caliber":"","barrelLength":"","year":"","visibleText":"what text/markings you read","keyFeatures":"3-5 distinguishing features you observed","reasoning":"why you identified it as this specific model","notes":""}\n\n'
     +'Type must be one of: Pistol, Revolver, Rifle, Shotgun, AR-15/Semi-Auto Rifle, Bolt-Action Rifle, Lever-Action Rifle, Pump Shotgun, Semi-Auto Shotgun, Other.\n'
     +'barrelLength: numeric inches only (e.g. "4.5") or empty string if unknown.\n'
-    +'year: approximate year or range (e.g. "2018" or "2015-2020") or empty if unknown.\n'
+    +'year: only state a year (or range) if you are confident from clear evidence such as a date code or known production window; otherwise leave it an empty string. Do NOT guess a year.\n'
     +'If you truly cannot determine the make, say "Unknown" — do NOT guess a manufacturer you are not confident about.';
 
   var content=images.map(function(img){
@@ -11511,6 +11199,7 @@ function _idRunAnalysis(images, hints){
       // -K: PDB validation + computed confidence
       result=_idValidateAndScore(result);
 
+      _idLastResult=result; // -O: remember for assisted retry
       showIdentifierResult(result, images[0].base64, images[0].mediaType);
     }catch(ex){
       // Show diagnostic info so user can report the issue
@@ -11781,21 +11470,36 @@ function _idRunAssisted(){
   if(caliber) hints.push('Caliber: '+caliber);
   if(notes) hints.push('Additional markings/details: '+notes);
 
-  var assistedPrompt='You previously attempted to identify this firearm from the photo but the user says the result was wrong. The user has now provided additional information they can see on the gun:\n\n'
+  // -O: tell the model what it returned last time so it doesn't simply repeat it
+  var priorBlock='';
+  if(_idLastResult){
+    var pr=_idLastResult;
+    var priorDesc=[pr.make,pr.model].filter(Boolean).join(' ');
+    if(priorDesc){
+      priorBlock='Your PREVIOUS answer was: "'+priorDesc+'"'
+        +(pr.caliber?' in '+pr.caliber:'')+'. The user says this was WRONG. '
+        +'Do NOT return this same identification again unless the user-provided hints below independently confirm it.\n\n';
+    }
+  }
+
+  // -A3: make is a hard constraint when the user supplies it
+  var makeConstraint='';
+  if(make){
+    makeConstraint='HARD CONSTRAINT: The user can read "'+make+'" on the firearm. The manufacturer in your answer MUST be "'+make+'". '
+      +'Your job is to identify which specific MODEL from '+make+' matches the photo and the other hints — do not substitute a different manufacturer under any circumstances.\n\n';
+  }
+
+  var assistedPrompt=priorBlock
+    +'You previously attempted to identify this firearm from the photo but the user says the result was wrong. The user has now provided additional information they can see on the gun:\n\n'
     +hints.join('\n')+'\n\n'
+    +makeConstraint
     +'Using BOTH the image AND these user-provided hints, re-identify this firearm. The user-provided information is more reliable than what you can see in the photo — prioritize it.\n\n'
-    +'Serial number hints:\n'
-    +'- Serial number prefixes often identify manufacturer, model line, and production year\n'
-    +'- S&W: 3-letter prefix (e.g. HBB = M&P Shield)\n'
-    +'- Ruger: prefix digits indicate model series\n'
-    +'- Sig: prefix letters indicate model family\n'
-    +'- Glock: 3-letter prefix + numbers\n'
-    +'- Use the serial prefix to narrow down the specific model and approximate production year if possible\n\n'
+    +'A serial number prefix can sometimes help narrow the model or production era, but treat this as a weak signal: only use it if you are confident, and never invent a year or model from a prefix alone.\n\n'
     +'Respond with JSON in this exact format (no other text before or after):\n'
     +'{"make":"","model":"","type":"","caliber":"","barrelLength":"","year":"","visibleText":"what text/markings you read","keyFeatures":"3-5 distinguishing features you observed","reasoning":"why you identified it as this specific model, including how the user hints helped","notes":""}\n\n'
     +'Type must be one of: Pistol, Revolver, Rifle, Shotgun, AR-15/Semi-Auto Rifle, Bolt-Action Rifle, Lever-Action Rifle, Pump Shotgun, Semi-Auto Shotgun, Other.\n'
     +'barrelLength: numeric inches only (e.g. "4.5") or empty string if unknown.\n'
-    +'year: approximate year or range (e.g. "2018" or "2015-2020") or empty if unknown.';
+    +'year: only state a year (or range) if confident from clear evidence; otherwise leave it an empty string. Do NOT guess a year.';
 
   // -N: include ALL stashed images (profile + markings close-up if present)
   var content=_idLastImages.map(function(img){
@@ -11823,6 +11527,7 @@ function _idRunAssisted(){
       }
       var result=JSON.parse(clean);
       result=_idValidateAndScore(result);
+      _idLastResult=result; // -O: remember for further assisted retries
       showIdentifierResult(result, _idLastImages[0].base64, _idLastImages[0].mediaType);
     }catch(ex){
       var preview=text.length>200?text.substring(0,200)+'...':text;
@@ -12011,7 +11716,6 @@ function rPicturePage(){
     +'<div class="pic-actions">'
       +'<button onclick="openDet(\''+g.id+'\')" style="flex:1;background:#1e3050;border:2px solid #a0c0ff60;color:#a0c0ff;padding:14px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">'+_iM('info')+' View Details</button>'
       +'<button onclick="editGun(\''+g.id+'\')" style="flex:1;background:#e8c46a;color:#1a1d24;border:none;padding:14px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">'+_iM('pencil')+' Edit Firearm</button>'
-      +'<button onclick="openQR(\''+g.id+'\')" style="background:#1e2535;border:2px solid #3a4455;color:#c0c8d8;padding:14px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px">'+_qrSvg(16)+' QR</button>'
     +'</div>'
 
     // Swipe detection overlay
@@ -12080,157 +11784,74 @@ function initSwipeNav(){
     }
   },{passive:true});
 }
-function closeQR(){var m=document.getElementById("qr_modal");if(m)m.remove();}
-
-function openQR(id){
-  var g=guns.find(function(x){return x.id===id;});
-  if(!g){toast('Gun not found','err');return;}
-
-  function buildAndShow(photoData){
-    var shareData={
-      make:g.make,model:g.model,type:g.type,caliber:g.caliber,
-      serialNumber:g.serialNumber,year:g.year,condition:g.condition,
-      working:g.working,storageLocation:g.storageLocation,
-      currentValue:g.currentValue,
-      lastCleaned:g.lastCleaned
-    };
-
-    var encoded='';
-    try{encoded=btoa(unescape(encodeURIComponent(JSON.stringify(shareData))));}catch(e){}
-
-    var scanUrl='https://arsenaldb.com/app.html'+(encoded?'?view='+encoded:'');
-
-
-    var sz=qrSize||260;
-    var apiUrl='https://api.qrserver.com/v1/create-qr-code/?size='+sz+'x'+sz+'&ecc=M&color=000000&bgcolor=ffffff&data='+encodeURIComponent(scanUrl);
-
-    closeQR();
-    var modal=document.createElement('div');
-    modal.id='qr_modal';
-    modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-    modal.innerHTML=
-      '<div style="background:#222835;border:2px solid #3a4455;border-radius:12px;padding:24px;max-width:320px;width:100%;text-align:center">'
-      +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:4px">&#9646;&#9646; QR Code</div>'
-      +'<div style="font-size:12px;color:#8a95a8;margin-bottom:4px">'+eh(g.make)+' '+eh(g.model)+'</div>'
-      +'<div style="font-size:11px;color:#60e880;margin-bottom:8px">Scan to view full details</div>'
-      +'<div style="display:flex;justify-content:center;gap:6px;margin-bottom:12px">'
-        +'<button onclick="qrSize=180;rebuildQR()" style="background:'+(sz===180?'#e8c46a20':'transparent')+';border:1px solid '+(sz===180?'#e8c46a':'#3a4455')+';color:'+(sz===180?'#e8c46a':'#8a95a8')+';padding:5px 10px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">S</button>'
-        +'<button onclick="qrSize=260;rebuildQR()" style="background:'+(sz===260?'#e8c46a20':'transparent')+';border:1px solid '+(sz===260?'#e8c46a':'#3a4455')+';color:'+(sz===260?'#e8c46a':'#8a95a8')+';padding:5px 10px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">M</button>'
-        +'<button onclick="qrSize=360;rebuildQR()" style="background:'+(sz===360?'#e8c46a20':'transparent')+';border:1px solid '+(sz===360?'#e8c46a':'#3a4455')+';color:'+(sz===360?'#e8c46a':'#8a95a8')+';padding:5px 10px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">L</button>'
-        +'<button onclick="qrSize=480;rebuildQR()" style="background:'+(sz===480?'#e8c46a20':'transparent')+';border:1px solid '+(sz===480?'#e8c46a':'#3a4455')+';color:'+(sz===480?'#e8c46a':'#8a95a8')+';padding:5px 10px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">XL</button>'
-      +'</div>'
-      +'<div style="background:#1a1d24;padding:12px;border-radius:8px;display:inline-block;margin-bottom:8px;border:2px solid #e8c46a20">'
-        +'<img id="qr_img" src="'+apiUrl+'" width="'+sz+'" height="'+sz+'" style="display:block;max-width:100%"/>'
-      +'</div>'
-      +'<div id="qr_status" style="font-size:12px;color:#8a95a8;margin-bottom:14px">Loading... (requires wifi)</div>'
-      +'<div style="display:flex;flex-direction:column;gap:8px">'
-        +'<button onclick="saveQRImg()" style="background:#1e3050;border:2px solid #a0c0ff60;color:#a0c0ff;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">'+_iM('save')+' Save QR</button>'
-        +'<button onclick="printQR()" style="background:#1e2535;border:2px solid #3a4455;color:#c0c8d8;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">'+_iM('printer')+' Print Label</button>'
-        +'<button onclick="closeQR()" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:9px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">Close</button>'
-      +'</div>'
-      +'</div>';
-
-    modal.onclick=function(e){if(e.target===modal)closeQR();};
-    document.body.appendChild(modal);
-    window._qrGun=g;
-    window._qrApiUrl=apiUrl;
-
-    var imgEl=document.getElementById('qr_img');
-    if(imgEl){
-      imgEl.onload=function(){
-        var st=document.getElementById('qr_status');
-        if(st){st.textContent='Ready to scan!';st.style.color='#60e880';}
-      };
-      imgEl.onerror=function(){
-        var st=document.getElementById('qr_status');
-        if(st){st.textContent='No wifi — connect to load QR';st.style.color='#ff7070';}
-      };
-    }
-  }
-
-  // // No photo in QR - text only for reliable URL
-  buildAndShow('');
-}
-function generateQR(text){
-  var container=document.getElementById('qr_canvas');
-  if(!container)return;
-  container.innerHTML='';
-  var canvas=document.createElement('canvas');
-  container.appendChild(canvas);
-  try{
-    // Use module size 9 — larger = easier for phone cameras to scan
-    var ok=QRGen.draw(canvas,text,10);
-    if(!ok){
-      container.innerHTML='<div style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;color:#ff7070;font-size:12px;padding:16px;text-align:center">Data too large for QR.<br>Try removing some fields.</div>';
-    }
-  }catch(e){
-    container.innerHTML='<div style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;color:#ff7070;font-size:12px;padding:16px;text-align:center">QR generation failed.</div>';
-  }
-}
-
-function saveQRImg(){
-  var img=document.getElementById('qr_img');
-  if(!img){toast('QR not ready yet','err');return;}
-  // Download the QR image
-  var a=document.createElement('a');
-  a.href=img.src;
-  a.download='arsenal_vault_qr_'+Date.now()+'.png';
-  a.target='_blank';
-  a.click();
-  toast('QR code saved');
-}
-
-function printQR(){
-  var img=document.getElementById('qr_img');
-  var g=window._qrGun||{make:'',model:'',serialNumber:'',caliber:'',type:''};
-  var src=img?img.src:'';
-  var W=window.open('','_blank');
-  W.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>QR Label</title>'
-    +'<style>'
-    +'body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;font-family:-apple-system,sans-serif;background:#fff}'
-    +'.label{border:2px solid #000;border-radius:8px;padding:16px;display:inline-flex;flex-direction:column;align-items:center;gap:6px;max-width:260px}'
-    +'.title{font-size:15px;font-weight:700;color:#000;text-align:center}'
-    +'.sub{font-size:12px;color:#444;text-align:center}'
-    +'.sn{font-size:11px;font-weight:700;letter-spacing:.05em;color:#000}'
-    +'img.qr{width:200px;height:200px}'
-    +'.foot{font-size:10px;color:#999;text-align:center}'
-    +'@media print{.no-print{display:none}}'
-    +'</style></head><body>');
-  W.document.write('<div class="label">');
-  W.document.write('<div class="title">'+g.make+' '+g.model+'</div>');
-  if(g.caliber||g.type) W.document.write('<div class="sub">'+(g.type||'')+(g.type&&g.caliber?' | ':'')+g.caliber+'</div>');
-  W.document.write('<img class="qr" src="'+src+'"/>');
-  if(g.serialNumber) W.document.write('<div class="sn">SN: '+g.serialNumber+'</div>');
-  if(g.lastCleaned) W.document.write('<div class="sub">Cleaned: '+g.lastCleaned+'</div>');
-  W.document.write('<div class="foot">ArsenalDB &middot; Scan for details</div>');
-  W.document.write('</div>');
-  W.document.write('<button class="no-print" onclick="window.print()" style="margin-top:20px;padding:10px 24px;font-size:14px;cursor:pointer;border-radius:6px;border:2px solid #000">Print Label</button>');
-  W.document.write('</body></html>');
-  W.document.close();
-}
 
 
 // ── QR TRANSFER MODE ──────────────────────────────────────────────────
+// -O: transfer QR is now rendered on-device via ArsenalQR (no third-party
+// image service). DL number is opt-in (default OFF) so it is never baked into
+// a shareable code unless the seller deliberately includes it.
+var _qrtState=null; // {gunId, bosNum, includeDL}
+
+function _qrtBuildPayload(g,p,bosNum,includeDL){
+  return {
+    v:1,
+    bosNumber:bosNum,
+    gunId:g.id,
+    createdAt:new Date().toISOString(),
+    gun:{make:g.make,model:g.model,type:g.type,caliber:g.caliber,serialNumber:g.serialNumber,year:g.year,condition:g.condition,currentValue:g.currentValue},
+    seller:{name:p.name||'',address:p.address||'',city:p.city||'',state:p.state||'',zip:p.zip||'',phone:p.phone||'',email:p.email||'',dlState:p.dlState||'',dlType:p.dlType||'Driver License',dlNumber:(includeDL?(p.dlNumber||''):'')}
+  };
+}
+
+function _qrtRender(){
+  var st=_qrtState; if(!st) return;
+  var g=guns.find(function(x){return x.id===st.gunId;}); if(!g) return;
+  var p=appSettings.ownerProfile||{};
+  var payload=_qrtBuildPayload(g,p,st.bosNum,st.includeDL);
+  var encoded=''; try{encoded=btoa(unescape(encodeURIComponent(JSON.stringify(payload))));}catch(e){}
+  var transferUrl='https://arsenaldb.com/app.html?transfer='+encoded;
+  var modal=document.getElementById('qrt_modal');
+  if(modal) modal.dataset.payload=JSON.stringify(payload);
+  var canvas=document.getElementById('qrt_canvas');
+  if(!canvas) return;
+  var ctx=canvas.getContext('2d');
+  try{
+    var qr=ArsenalQR(0,'M'); qr.addData(transferUrl); qr.make();
+    var n=qr.getModuleCount(); var margin=4; var target=240;
+    var mod=Math.max(2,Math.floor(target/(n+margin*2)));
+    var px=(n+margin*2)*mod;
+    canvas.width=px; canvas.height=px;
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,px,px);
+    ctx.fillStyle='#000000';
+    for(var r=0;r<n;r++){for(var c=0;c<n;c++){ if(qr.isDark(r,c)) ctx.fillRect((c+margin)*mod,(r+margin)*mod,mod,mod); }}
+    canvas.style.width='240px'; canvas.style.height='240px';
+  }catch(e){
+    canvas.width=240; canvas.height=240;
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,240,240);
+    ctx.fillStyle='#aa0000'; ctx.font='13px sans-serif';
+    ctx.fillText('QR generation failed',40,120);
+  }
+}
+
+function _qrtToggleDL(cb){ if(_qrtState){ _qrtState.includeDL=!!(cb&&cb.checked); _qrtRender(); } }
+
 function openQRTransfer(gunId){
   var g=guns.find(function(x){return x.id===gunId;});
   if(!g){toast('Firearm not found','err');return;}
   var p=appSettings.ownerProfile||{};
 
-  // Build transfer payload
   var bosNum=genBosNumber();
-  var transferPayload={
-    v:1, // version
-    bosNumber:bosNum,
-    gunId:gunId,
-    createdAt:new Date().toISOString(),
-    gun:{make:g.make,model:g.model,type:g.type,caliber:g.caliber,serialNumber:g.serialNumber,year:g.year,condition:g.condition,currentValue:g.currentValue},
-    seller:{name:p.name||'',address:p.address||'',city:p.city||'',state:p.state||'',zip:p.zip||'',phone:p.phone||'',email:p.email||'',dlState:p.dlState||'',dlType:p.dlType||'Driver License',dlNumber:p.dlNumber||''}
-  };
+  _qrtState={gunId:gunId, bosNum:bosNum, includeDL:false};
 
-  var encoded='';
-  try{encoded=btoa(unescape(encodeURIComponent(JSON.stringify(transferPayload))));}catch(e){}
-  var transferUrl='https://arsenaldb.com/app.html?transfer='+encoded;
-  var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=220x220&ecc=M&color=000000&bgcolor=ffffff&data='+encodeURIComponent(transferUrl);
+  // DL toggle only shown if a DL number exists on the seller profile.
+  var hasDL=!!(p.dlNumber&&String(p.dlNumber).trim());
+  var dlMasked=hasDL?('\u2022\u2022\u2022'+String(p.dlNumber).slice(-3)):'';
+  var dlToggle=hasDL
+    ?'<label style="display:flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;font-size:12px;color:#c0c8d8;cursor:pointer">'
+       +'<input type="checkbox" id="qrt_dl_chk" onchange="_qrtToggleDL(this)" style="width:16px;height:16px;accent-color:#e8c46a"/>'
+       +'<span>Include my driver&rsquo;s license number ('+eh(dlMasked)+') in this code</span>'
+     +'</label>'
+    :'';
 
   var modal=document.createElement('div');
   modal.className='qrt-modal';
@@ -12246,8 +11867,13 @@ function openQRTransfer(gunId){
     +'<div class="qrt-body">'
       +'<div class="qrt-qr-box">'
         +'<div style="font-size:11px;color:#8a95a8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">Have buyer scan with their phone</div>'
-        +'<img src="'+qrUrl+'" style="width:220px;height:220px;border-radius:8px" onerror="this.style.display=\'none\'"/>'
+        +'<canvas id="qrt_canvas" style="width:240px;height:240px;border-radius:8px;background:#fff;display:inline-block"></canvas>'
         +'<div style="margin-top:14px;font-size:12px;color:#8a95a8;line-height:1.6">Buyer opens ArsenalDB in their browser,<br/>fills in their info, draws signature,<br/>and gets a <strong style="color:#e8c46a">6-digit completion code</strong>.</div>'
+      +'</div>'
+      +'<div style="background:#2a210f;border:1px solid #e8c46a40;border-radius:10px;padding:12px 14px;margin-bottom:16px">'
+        +'<div style="font-size:12px;color:#e8c46a;font-weight:700;margin-bottom:4px">&#9888; Contains your personal info</div>'
+        +'<div style="font-size:12px;color:#c0c8d8;line-height:1.6">This code holds your name and address. The code is generated on your device and isn&rsquo;t sent anywhere &mdash; but anyone who scans or screenshots it can read that info. Only show it to your buyer.</div>'
+        +dlToggle
       +'</div>'
       +'<div style="background:#1a1d24;border:1px solid #2e3545;border-radius:10px;padding:14px;margin-bottom:16px">'
         +'<div style="font-size:11px;color:#e8c46a;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">BOS '+eh(bosNum)+'</div>'
@@ -12271,8 +11897,8 @@ function openQRTransfer(gunId){
     +'</div>'
     +'</div>';
   document.body.appendChild(modal);
-  // Store payload for verification
-  modal.dataset.payload=JSON.stringify(transferPayload);
+  // Render the on-device QR + seed modal.dataset.payload (DL off by default)
+  _qrtRender();
 }
 
 function closeQRTransfer(){
@@ -13200,6 +12826,8 @@ function _saveEstimateToHistory(){
     high: aiVal.high,
     notes: aiVal.notes || '',
     caveats: aiVal.caveats || '',
+    confidence: aiVal.confidence || '',
+    compsFound: (aiVal.compsFound != null ? aiVal.compsFound : ''),
     source: source,
     date: new Date().toISOString().split('T')[0]
   };
@@ -14209,8 +13837,8 @@ function rRangeTab(gunId){
 var _BYO_STORAGE_KEY = 'arsenal_byo_api_key';
 var _BYO_API_URL = 'https://api.anthropic.com/v1/messages';
 var _BYO_ANTHROPIC_VERSION = '2023-06-01';
-var _BYO_MODEL = 'claude-sonnet-4-5';  // Current Sonnet model
-var _BYO_VISION_MODEL = 'claude-sonnet-4-5'; // Same model — Sonnet supports vision
+var _BYO_MODEL = 'claude-sonnet-4-6';  // Current Sonnet model
+var _BYO_VISION_MODEL = 'claude-sonnet-4-6'; // Same model — Sonnet supports vision
 
 // Key format validation. Anthropic keys start with sk-ant- and are ~100+ chars.
 function _BYO_validateKeyFormat(key){
@@ -14303,6 +13931,11 @@ function _BYO_claudeCall(messages, options){
   };
   if(options.system) body.system = options.system;
   if(options.temperature != null) body.temperature = options.temperature;
+  // -O: optional server-side tools (e.g. web_search). When present, the API
+  // response may contain server_tool_use / web_search_tool_result blocks in
+  // addition to text blocks; the text extraction below joins only text blocks,
+  // which is the model's final assembled answer.
+  if(options.tools) body.tools = options.tools;
 
   return fetch(_BYO_API_URL, {
     method: 'POST',
@@ -14816,32 +14449,53 @@ function doValAI(){
     if(cpDetails.length) extras.push('Detailed condition profile:\n  '+cpDetails.join('\n  '));
   }
 
-  var prompt = 'You are a firearms market valuation expert. A local database estimates the following firearm at:\n'
+  var prompt = 'You are a firearms market valuation expert helping someone decide whether a price is fair before they buy or sell.\n\n'
+    + 'A local price database gives this anchor estimate:\n'
     + '  Low: $' + baseline.low + ' | Mid: $' + baseline.mid + ' | High: $' + baseline.high + '\n'
-    + '  Database note: ' + (baseline.notes || 'N/A') + '\n\n'
+    + '  Database note: ' + (baseline.notes || 'N/A') + '\n'
+    + '  Anchor match quality: ' + _valTierLabel(baseline.tier) + '\n\n'
     + 'Firearm: ' + details + '\n'
     + (extras.length ? extras.join('\n') + '\n' : '')
-    + '\nYour job: Using the database values as an anchor, apply adjustment factors based on the specific details above — rarity, collector demand, variant premiums or discounts, condition specifics, year of manufacture, and any modifications.\n\n'
-    + 'Respond ONLY with valid JSON, no markdown, no extra text:\n'
-    + '{"low": 450, "mid": 550, "high": 700, "adjustmentReason": "Brief explanation of why you adjusted up/down from the database baseline, under 120 chars", "notes": "Brief description and collector context under 80 chars", "caveats": "Optional note on factors that could shift this significantly"}\n\n'
-    + 'Use USD. Round to nearest $5 or $10. If the database values look reasonable and no strong adjustment factors apply, return values close to the database baseline. Do NOT invent dramatic swings without cause.';
+    + '\nUse the web_search tool to find RECENT actual selling prices for this specific make/model (and variant) in comparable condition — for example completed/sold listings and current asking prices from gun marketplaces. Prefer recent sold prices over old or asking-only data. Search more than once if needed to pin down the right model and condition.\n\n'
+    + 'Then determine the fair used-market value. Weigh the live market data you find most heavily. Use the database anchor only as a sanity check — and trust it less when its match quality is weak (manufacturer-only, platform, caliber, or unknown), in which case rely primarily on what you find via search.\n\n'
+    + 'Think through the comparables briefly first if you want, THEN end your reply with a single JSON object as the very last thing (no text after it). JSON shape:\n'
+    + '{"low": 450, "mid": 550, "high": 700, "confidence": "high|medium|low", "compsFound": 6, "adjustmentReason": "Brief note on how market data compared to the database anchor, under 120 chars", "notes": "Brief description and collector/market context under 100 chars", "caveats": "Optional note on factors that could shift this significantly"}\n\n'
+    + 'Field rules:\n'
+    + '- low/mid/high in USD, rounded to nearest $5 or $10.\n'
+    + '- confidence: "high" if multiple recent comparable sales agree; "medium" if limited or mixed data; "low" if you found little reliable data and are leaning on the anchor or general knowledge.\n'
+    + '- compsFound: approximate number of relevant recent sale/listing data points you actually found (0 if none).\n'
+    + 'Do NOT invent dramatic swings without supporting data. If search yields nothing useful, stay close to the database anchor and set confidence to "low".';
 
-  _BYO_claudeCall([{role:'user', content: prompt}], {max_tokens:400, temperature:0})
+  // -O: extract the final JSON object from a possibly-reasoned, multi-block response.
+  function _parseValJson(txt){
+    var clean=(txt||'').replace(/```json|```/g,'').trim();
+    var jsonStart=clean.lastIndexOf('{');
+    var jsonEnd=clean.lastIndexOf('}');
+    if(jsonStart<0||jsonEnd<=jsonStart) throw new Error('NO_JSON');
+    return JSON.parse(clean.substring(jsonStart,jsonEnd+1));
+  }
+
+  function _valFallbackLocal(reason){
+    baseline.notes = (baseline.notes||'') + ' (' + reason + ' — using local estimate)';
+    baseline.source = 'local';
+    aiLoad=null;
+    aiVal=baseline;
+    if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
+    rnd();
+  }
+
+  // B1: web search lets the model pull recent sold prices. B2: reason-then-JSON
+  // with a higher token budget. B5: any failure falls back to the local estimate.
+  _BYO_claudeCall([{role:'user', content: prompt}], {
+    max_tokens:1500,
+    temperature:0,
+    tools:[{type:'web_search_20250305', name:'web_search'}]
+  })
     .then(function(res){
-      var txt = (res.text || '').replace(/```json|```/g,'').trim();
       var result;
-      try { result = JSON.parse(txt); }
-      catch(ex){
-        // Fallback to local on parse failure
-        result = baseline;
-        result.notes = (result.notes||'') + ' (AI parse failed — using local estimate)';
-        result.source = 'local';
-        aiLoad=null;
-        aiVal=result;
-        if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
-        rnd();
-        return;
-      }
+      try { result = _parseValJson(res.text); }
+      catch(ex){ _valFallbackLocal('AI parse failed'); return; }
+      if(result.low==null||result.mid==null||result.high==null){ _valFallbackLocal('AI returned no values'); return; }
       result.source = 'ai';
       aiLoad=null;
       aiVal=result;
@@ -14850,14 +14504,21 @@ function doValAI(){
     })
     .catch(function(err){
       _BYO_showError(err);
-      // Graceful fallback to local lookup
-      baseline.notes = (baseline.notes||'') + ' (AI failed — using local estimate)';
-      baseline.source = 'local';
-      aiLoad=null;
-      aiVal=baseline;
-      if(valBtn){valBtn.disabled=false;valBtn.innerHTML='&#10022; AI Est.';}
-      rnd();
+      _valFallbackLocal('AI failed');
     });
+}
+
+// -O: human-readable label for the local anchor's match quality.
+function _valTierLabel(tier){
+  switch(tier){
+    case 'custom': return 'user-saved custom price (trust strongly)';
+    case 'exact': return 'exact model match (reasonably reliable)';
+    case 'manufacturer': return 'manufacturer-average only, no model match (weak — verify against market)';
+    case 'platform': return 'platform-type guess only (weak — verify against market)';
+    case 'caliber': return 'caliber-based guess only (very weak — verify against market)';
+    case 'unknown': return 'no match found, broad placeholder (do not trust — rely on market data)';
+    default: return 'model-level estimate';
+  }
 }
 
 
@@ -17013,7 +16674,8 @@ function valLookup(make, model, caliber, condition, year) {
     return {
       low: Math.round(_cp.low * _cpM), mid: Math.round(_cp.mid * _cpM),
       high: Math.round(_cp.high * _cpM),
-      notes: _cp.notes + ' — Updated ' + _cp.updated + ' (' + (condition || 'Good') + ' condition)'
+      notes: _cp.notes + ' — Updated ' + _cp.updated + ' (' + (condition || 'Good') + ' condition)',
+      tier: 'custom'
     };
   }
 
@@ -17028,10 +16690,11 @@ function valLookup(make, model, caliber, condition, year) {
   };
   var cm = mult[cond] || 1.0;
 
-  function price(low, mid, high, src) {
+  function price(low, mid, high, src, tier) {
     return {
       low: Math.round(low * cm), mid: Math.round(mid * cm),
-      high: Math.round(high * cm), notes: src + ' (' + cond + ' condition)'
+      high: Math.round(high * cm), notes: src + ' (' + cond + ' condition)',
+      tier: tier || 'model'
     };
   }
 
@@ -17067,7 +16730,7 @@ function valLookup(make, model, caliber, condition, year) {
       }
 
       if (allMatch) {
-        return price(entry[1], entry[2], entry[3], entry[4]);
+        return price(entry[1], entry[2], entry[3], entry[4], 'exact');
       }
     }
   }
@@ -17087,7 +16750,7 @@ function valLookup(make, model, caliber, condition, year) {
             if (e2[0][p2] === '') continue;
             if (md.indexOf(e2[0][p2]) < 0) { allMatch2 = false; break; }
           }
-          if (allMatch2) return price(e2[1], e2[2], e2[3], e2[4]);
+          if (allMatch2) return price(e2[1], e2[2], e2[3], e2[4], 'exact');
         }
         break;
       }
@@ -17113,7 +16776,7 @@ function valLookup(make, model, caliber, condition, year) {
     var catPrices = tierInfo.c[cat] || tierInfo.c.handgun || tierInfo.c[Object.keys(tierInfo.c)[0]];
     if (catPrices) {
       var tierNote = (canonical.charAt(0).toUpperCase() + canonical.slice(1)) + ' ' + cat + ' — general estimate. For a more specific estimate, verify model name or use AI Est.';
-      return price(catPrices[0], catPrices[1], catPrices[2], tierNote);
+      return price(catPrices[0], catPrices[1], catPrices[2], tierNote, 'manufacturer');
     }
   }
 
@@ -17122,7 +16785,7 @@ function valLookup(make, model, caliber, condition, year) {
     var platEntry = _pdb_platform[pl];
     for (var pk = 0; pk < platEntry[0].length; pk++) {
       if (md.indexOf(platEntry[0][pk]) >= 0) {
-        return price(platEntry[1], platEntry[2], platEntry[3], platEntry[4]);
+        return price(platEntry[1], platEntry[2], platEntry[3], platEntry[4], 'platform');
       }
     }
   }
@@ -17134,7 +16797,7 @@ function valLookup(make, model, caliber, condition, year) {
       var calEntry = _pdb_caliber[ci];
       for (var ck = 0; ck < calEntry[0].length; ck++) {
         if (cal.indexOf(calEntry[0][ck]) >= 0) {
-          return price(calEntry[1], calEntry[2], calEntry[3], calEntry[4]);
+          return price(calEntry[1], calEntry[2], calEntry[3], calEntry[4], 'caliber');
         }
       }
     }
@@ -17143,7 +16806,8 @@ function valLookup(make, model, caliber, condition, year) {
   // ── TIER 6: Unknown ──
   return {
     low: Math.round(300 * cm), mid: Math.round(500 * cm), high: Math.round(900 * cm),
-    notes: 'No specific data for this make/model — showing broad estimate. For a more accurate figure, enter value manually or upgrade to Pro+ for AI-powered estimates.'
+    notes: 'No specific data for this make/model — showing broad estimate. For a more accurate figure, enter value manually or upgrade to Pro+ for AI-powered estimates.',
+    tier: 'unknown'
   };
 }
 
