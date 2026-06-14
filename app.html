@@ -4956,7 +4956,8 @@ function rAdd(){
   }
 
   // ── FULL FORM MODE ────────────────────────────────────────────────
-  var photoHtml='<div style="padding-bottom:14px">'+phGrid+'<div style="display:flex;align-items:center;gap:10px;margin-top:8px">'+phbtn+'<span style="font-size:11px;color:#4a5568">JPG, PNG · First photo is main</span></div></div>';
+  var idbtn='<button class="btn-g" onclick="openGunIdentifier()" style="background:#141920;border:1px solid #a0c0ff60;color:#a0c0ff">&#129302; Identify</button>';
+  var photoHtml='<div style="padding-bottom:14px">'+phGrid+'<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">'+phbtn+idbtn+'<span style="font-size:11px;color:#4a5568;width:100%">JPG, PNG · First photo is main · Identify can fill make/model from a photo</span></div></div>';
 
   var basicHtml='<div class="form-grid">'
     +'<div class="form-group"><label class="lbl">Make *</label><div class="ac-wrap"><input type="text" id="f_make" value="'+eh(f.make)+'" placeholder="e.g. Smith &amp; Wesson" autocomplete="off" oninput="acInput(this.value)" onkeydown="acKey(event)" onblur="acBlur()"/><div id="ac_list" class="ac-list"></div></div></div>'
@@ -5968,7 +5969,7 @@ function printTheft(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-06-04-O';   // bump on every revision
+var BUILD_TAG   = '2026-06-04-P';   // bump on every revision
 var PDB_UPDATE_URL = 'https://arsenaldb.com/pricedb.json';
 var PDB_VERSION    = '2026-05-19';     // inline baseline version
 var _cachedPDB     = null;             // populated from localStorage on boot
@@ -11568,23 +11569,140 @@ function _idRetryMarkings(){
     +'</div>';
 }
 
+// -P: When the identifier runs mid-add (or mid-edit), merge its result into the
+// in-progress form instead of wiping it. Blanks are filled silently; fields the
+// user already filled that DIFFER are surfaced for a per-field choice. The ID
+// photo(s) are offered for adding (asked each time). Opened fresh (not on the
+// add screen), it falls back to the original "new blank form" behavior.
+var _idMerging=false;
+
+function _idFieldLabel(k){
+  return {make:'Make',model:'Model',type:'Type',caliber:'Caliber',barrelLength:'Barrel Length',year:'Year'}[k]||k;
+}
+
 function applyIdentifierResult(result){
   var m=document.getElementById('identifier_modal');
+  _idMerging = (typeof VIEW!=='undefined' && VIEW==='add');
+
+  if(_idMerging){
+    // Capture anything typed but not yet synced (e.g. Make autocomplete field)
+    try{ collect(); }catch(e){}
+  } else {
+    // Fresh path — original behavior: start from an empty form
+    FORM=ef();
+    editId=null;
+  }
+
+  // Candidate identity fields from the result
+  var cands=[];
+  if(result.make&&result.make!=='Unknown') cands.push(['make',result.make]);
+  if(result.model) cands.push(['model',result.model]);
+  if(result.type) cands.push(['type',result.type]);
+  if(result.caliber) cands.push(['caliber',result.caliber]);
+  if(result.barrelLength) cands.push(['barrelLength',result.barrelLength]);
+  if(result.year) cands.push(['year',result.year]);
+
+  var conflicts=[];
+  for(var i=0;i<cands.length;i++){
+    var key=cands[i][0], val=cands[i][1];
+    var cur=(FORM[key]==null?'':String(FORM[key])).trim();
+    if(!cur){
+      FORM[key]=val;                               // fill blank silently
+    } else if(cur.toLowerCase()===String(val).trim().toLowerCase()){
+      /* same value — nothing to do */
+    } else {
+      conflicts.push({key:key, label:_idFieldLabel(key), mine:cur, ident:String(val)});
+    }
+  }
+
   if(m) m.remove();
-  // Pre-fill new gun form with identified data
-  FORM=ef();
-  if(result.make&&result.make!=='Unknown') FORM.make=result.make;
-  if(result.model) FORM.model=result.model;
-  if(result.type) FORM.type=result.type;
-  if(result.caliber) FORM.caliber=result.caliber;
-  if(result.barrelLength) FORM.barrelLength=result.barrelLength;
-  if(result.year) FORM.year=result.year;
-  editId=null;
+
+  if(conflicts.length){
+    _idShowConflictModal(conflicts, result);
+  } else {
+    _idAfterFields(result);
+  }
+}
+
+function _idShowConflictModal(conflicts, result){
+  var modal=document.createElement('div');
+  modal.id='id_conflict_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000d0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+  var rows=conflicts.map(function(c,idx){
+    return '<div style="background:#13161d;border:1px solid #2e3545;border-radius:10px;padding:12px;margin-bottom:10px;text-align:left">'
+      +'<div style="font-size:11px;color:#a0c0ff;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">'+eh(c.label)+'</div>'
+      +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#e0e4ec;margin-bottom:6px"><input type="radio" name="cf_'+idx+'" value="mine" checked style="accent-color:#e8c46a"/><span>Keep mine: <strong>'+eh(c.mine)+'</strong></span></label>'
+      +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#e0e4ec"><input type="radio" name="cf_'+idx+'" value="ident" style="accent-color:#a0c0ff"/><span>Use ID: <strong>'+eh(c.ident)+'</strong></span></label>'
+    +'</div>';
+  }).join('');
+  modal.innerHTML='<div style="background:#222835;border:2px solid #e8c46a40;border-radius:12px;padding:20px;max-width:360px;width:100%;margin:auto">'
+    +'<div style="font-size:16px;font-weight:700;color:#e8c46a;margin-bottom:4px">Conflicting fields</div>'
+    +'<div style="font-size:12px;color:#8a95a8;margin-bottom:14px;line-height:1.5">The identifier found different values for fields you already filled. Choose what to keep — your photos and everything else stay either way.</div>'
+    +rows
+    +'<button id="id_cf_apply" style="width:100%;background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:6px">Apply</button>'
+  +'</div>';
+  document.body.appendChild(modal);
+  document.getElementById('id_cf_apply').onclick=function(){
+    for(var idx=0;idx<conflicts.length;idx++){
+      var sel=document.querySelector('input[name="cf_'+idx+'"]:checked');
+      if(sel&&sel.value==='ident'){ FORM[conflicts[idx].key]=conflicts[idx].ident; }
+    }
+    modal.remove();
+    _idAfterFields(result);
+  };
+}
+
+function _idAfterFields(result){
+  var imgs=(_idLastImages&&_idLastImages.length)?_idLastImages.slice():[];
+  if(!imgs.length){ _idFinishApply(); return; }
+  var n=imgs.length;
+  var modal=document.createElement('div');
+  modal.id='id_apply_modal';
+  modal.style.cssText='position:fixed;inset:0;background:#000000cc;z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML='<div style="background:#222835;border:2px solid #a0c0ff40;border-radius:12px;padding:22px;max-width:340px;width:100%;text-align:center">'
+    +'<div style="font-size:30px;margin-bottom:8px">&#128247;</div>'
+    +'<div style="font-size:16px;font-weight:700;color:#a0c0ff;margin-bottom:6px">Add the ID photo'+(n>1?'s':'')+'?</div>'
+    +'<div style="font-size:13px;color:#8a95a8;margin-bottom:16px;line-height:1.5">Add the '+n+' photo'+(n>1?'s':'')+' you used to identify this firearm to its record?</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+      +'<button id="id_apply_add" style="background:linear-gradient(135deg,#a0c0ff,#7090dd);color:#1a1d24;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Add photo'+(n>1?'s':'')+'</button>'
+      +'<button id="id_apply_skip" style="background:transparent;border:1px solid #3a4455;color:#8a95a8;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">Skip</button>'
+    +'</div>'
+  +'</div>';
+  document.body.appendChild(modal);
+  document.getElementById('id_apply_add').onclick=function(){
+    modal.remove();
+    _idAddImagesToForm(imgs, function(){ _idFinishApply(); });
+  };
+  document.getElementById('id_apply_skip').onclick=function(){
+    modal.remove();
+    _idFinishApply();
+  };
+}
+
+function _idAddImagesToForm(images, done){
+  if(!FORM.photos) FORM.photos=[];
+  var i=0;
+  function next(){
+    if(i>=images.length || FORM.photos.length>=10){ done&&done(); return; }
+    var img=images[i++];
+    var dataUrl='data:'+(img.mediaType||'image/jpeg')+';base64,'+img.base64;
+    _dataUrlToBlob(dataUrl).then(function(blob){
+      return photoBlobSave(blob,null);
+    }).then(function(pid){
+      FORM.photos.push(pid);
+      if(!FORM.photo) FORM.photo=FORM.photos[0];
+      next();
+    }).catch(function(){ next(); });
+  }
+  next();
+}
+
+function _idFinishApply(){
   VIEW='add';
   playRack();
   rnd();
-  _historyPush();
-  toast('Fields pre-filled — review and save');
+  if(!_idMerging) _historyPush();   // merge path is already on the add screen
+  toast(_idMerging ? 'Identified — fields merged, review and save' : 'Fields pre-filled — review and save');
 }
 
 function showIdentifierError(msg){
