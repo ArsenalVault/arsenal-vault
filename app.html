@@ -1590,7 +1590,7 @@ function acceptArsenalPhoto(dataUrl){
   rnd();
 }
 
-function ef(){return{make:'',model:'',type:'',caliber:'',barrelLength:'',serialNumber:'',year:'',purchasePrice:'',currentValue:'',condition:'Good',working:true,repairNotes:'',maintenanceLog:'',photo:'',photos:[],storageLocation:'',ammoType:'',ammoCount:'',ammoLocation:'',insuranceValue:'',lastCleaned:'',starred:false,custody:[],totalRounds:0,serviceInterval:0,notes:[],estimateHistory:[],conditionProfile:null,inventoryNumber:''};}
+function ef(){return{make:'',model:'',type:'',caliber:'',barrelLength:'',serialNumber:'',year:'',purchasePrice:'',currentValue:'',condition:'Good',working:true,repairNotes:'',maintenanceLog:'',photo:'',photos:[],storageLocation:'',ammoType:'',ammoCount:'',ammoLocation:'',insuranceValue:'',lastCleaned:'',starred:false,custody:[],totalRounds:0,serviceInterval:0,notes:[],estimateHistory:[],conditionProfile:null,lastDiagnosis:null,inventoryNumber:''};}
 
 // ── INVENTORY NUMBERING ──────────────────────────────────────────────
 // Per-collection auto-sequential: INV-001, INV-002, etc.
@@ -4898,17 +4898,20 @@ function rAdd(){
       +((aiVal.source==='ai'&&aiVal.compsFound!=null)?'<div style="font-size:11px;color:#8a95a8;margin-bottom:6px">Based on '+eh(String(aiVal.compsFound))+' recent market data point'+(Number(aiVal.compsFound)===1?'':'s')+'</div>':'')
       +'<div style="font-size:13px;color:#b0bac8;line-height:1.5">'+eh(aiVal.notes||'')+'</div>'
       +(aiVal.caveats?'<div style="font-size:11px;color:#8a95a8;margin-top:4px;font-style:italic">'+eh(aiVal.caveats)+'</div>':'')
+      +_aiCaveat()
       +'<div style="border-top:1px solid #2e3545;margin-top:10px;padding-top:10px;text-align:center">'
         +'<button onclick="_openConditionProfile()" style="background:transparent;border:1px solid #e8c46a50;color:#e8c46a;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'+(FORM.conditionProfile&&FORM.conditionProfile.updatedAt?_iM('pencil')+' Update Profile':'&#9998; Refine Estimate')+'</button>'
       +'</div>'
       +'</div>';
   }
 
-  var adb=aiDiag?'<div class="ai-box"><div style="font-size:12px;color:#a0b8ff;letter-spacing:.1em;margin-bottom:10px;font-weight:700">✦ AI GUNSMITH DIAGNOSIS</div>'
-    +'<div style="margin-bottom:7px"><span style="font-size:11px;color:#8a95a8">DIAGNOSIS: </span><span style="color:#f0f2f5;font-size:14px">'+eh(aiDiag.diagnosis||'')+'</span></div>'
-    +'<div style="margin-bottom:7px"><span style="font-size:11px;color:#8a95a8">SEVERITY: </span><span style="font-size:14px;font-weight:700;color:'+(aiDiag.severity==='Serious'?'#ff7070':aiDiag.severity==='Moderate'?'#ffd060':'#60e880')+'">'+eh(aiDiag.severity||'')+'</span></div>'
-    +'<div style="margin-bottom:7px"><span style="font-size:11px;color:#8a95a8">RECOMMENDATION: </span><span style="color:#f0f2f5;font-size:14px">'+eh(aiDiag.recommendation||'')+'</span></div>'
-    +'<div><span style="font-size:11px;color:#8a95a8">DIY FRIENDLY: </span><span style="font-size:14px;font-weight:700;color:'+(aiDiag.diyFriendly?'#60e880':'#ff7070')+'">'+(aiDiag.diyFriendly?'Yes':'No — See a gunsmith')+'</span></div></div>':'';
+  var _dg=aiDiag||FORM.lastDiagnosis;
+  var _dgSaved=(!aiDiag&&FORM.lastDiagnosis);
+  var adb=_dg?'<div class="ai-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap"><div style="font-size:12px;color:#a0b8ff;letter-spacing:.1em;font-weight:700">✦ AI GUNSMITH DIAGNOSIS</div>'+((_dgSaved&&_dg.date)?'<span style="font-size:10px;color:#8a95a8;font-weight:600">Saved '+_relTime(_dg.date)+'</span>':'')+'</div>'
+    +'<div style="margin-bottom:7px"><span style="font-size:11px;color:#8a95a8">DIAGNOSIS: </span><span style="color:#f0f2f5;font-size:14px">'+eh(_dg.diagnosis||'')+'</span></div>'
+    +'<div style="margin-bottom:7px"><span style="font-size:11px;color:#8a95a8">SEVERITY: </span><span style="font-size:14px;font-weight:700;color:'+(_dg.severity==='Serious'?'#ff7070':_dg.severity==='Moderate'?'#ffd060':'#60e880')+'">'+eh(_dg.severity||'')+'</span></div>'
+    +'<div style="margin-bottom:7px"><span style="font-size:11px;color:#8a95a8">RECOMMENDATION: </span><span style="color:#f0f2f5;font-size:14px">'+eh(_dg.recommendation||'')+'</span></div>'
+    +'<div><span style="font-size:11px;color:#8a95a8">DIY FRIENDLY: </span><span style="font-size:14px;font-weight:700;color:'+(_dg.diyFriendly?'#60e880':'#ff7070')+'">'+(_dg.diyFriendly?'Yes':'No — See a gunsmith')+'</span></div>'+_aiCaveat()+'</div>':'';
 
   var rep=(!f.working)?'<div class="form-group" style="margin-top:16px"><label class="lbl">Describe the Issue</label>'
     +'<textarea id="f_rep" placeholder="What is wrong with this firearm?" oninput="FORM.repairNotes=this.value">'+eh(f.repairNotes)+'</textarea></div>'
@@ -5969,7 +5972,11 @@ function printTheft(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-06-04-P';   // bump on every revision
+var BUILD_TAG   = '2026-06-04-Q';   // bump on every revision
+// -Q: unified AI/estimate caveat (note #2). One line reused across valuation,
+// diagnosis, and the Gun Identifier so generated output never reads as gospel.
+var AI_CAVEAT = 'Estimate only — a starting point, not a professional appraisal or inspection. Verify before relying on it.';
+function _aiCaveat(){return '<div style="font-size:10px;color:#8a95a8;margin-top:8px;font-style:italic;line-height:1.4;border-top:1px solid #2e354580;padding-top:7px">&#9888; '+AI_CAVEAT+'</div>';}
 var PDB_UPDATE_URL = 'https://arsenaldb.com/pricedb.json';
 var PDB_VERSION    = '2026-05-19';     // inline baseline version
 var _cachedPDB     = null;             // populated from localStorage on boot
@@ -11352,6 +11359,7 @@ function showIdentifierResult(result, imgBase64, mediaType){
     +'</div>'
     +(result.notes?'<div style="font-size:12px;color:#8a95a8;margin-bottom:8px;font-style:italic">'+eh(result.notes)+'</div>':'')
     +featuresHtml
+    +_aiCaveat()
     +'<div style="display:flex;flex-direction:column;gap:8px">'
       +'<button onclick="_idApplyResult()" style="background:#e8c46a;color:#1a1d24;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">+ Add to Inventory</button>'
       +'<button onclick="_idRetryOptions()" style="background:#1e2535;border:1.5px solid #a0c0ff50;color:#a0c0ff;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Not right? Help me identify it</button>'
@@ -12521,7 +12529,11 @@ function editGun(id){
   // Migrate legacy single photo to array
   if(!FORM.photos||!FORM.photos.length)FORM.photos=FORM.photo?[FORM.photo]:[];
   _pushViewState();
-  editId=id;aiVal=null;aiDiag=null;VIEW='add';rnd();
+  editId=id;
+  // -Q: surface the most recent saved estimate so it persists onto the edit form (note #1b)
+  var _eh=(FORM.estimateHistory||[]);
+  aiVal=_eh.length?_eh[_eh.length-1]:null;
+  aiDiag=null;VIEW='add';rnd();
   _historyPush();
 }
 
@@ -12638,7 +12650,21 @@ function rDet(){
         estPanel = panelWrap('est_hist', _iM('chart')+' Estimate History ('+estHist.length+')', estRows);
       }
 
-      extraInfo = notesPanel + extraInfo + estPanel + _cpRenderInfoPanel(g);
+      // -Q: Saved diagnosis panel (note #1a — latest only)
+      var diagPanel = '';
+      if(g.lastDiagnosis && g.lastDiagnosis.diagnosis){
+        var _d = g.lastDiagnosis;
+        var _sevColor = _d.severity==='Serious'?'#ff7070':_d.severity==='Moderate'?'#ffd060':'#60e880';
+        var diagRows = '<div style="margin-bottom:7px"><span style="font-size:11px;color:#8a95a8">DIAGNOSIS: </span><span style="color:#f0f2f5;font-size:14px">'+eh(_d.diagnosis||'')+'</span></div>'
+          +'<div style="margin-bottom:7px"><span style="font-size:11px;color:#8a95a8">SEVERITY: </span><span style="font-size:14px;font-weight:700;color:'+_sevColor+'">'+eh(_d.severity||'')+'</span></div>'
+          +'<div style="margin-bottom:7px"><span style="font-size:11px;color:#8a95a8">RECOMMENDATION: </span><span style="color:#f0f2f5;font-size:14px">'+eh(_d.recommendation||'')+'</span></div>'
+          +'<div><span style="font-size:11px;color:#8a95a8">DIY FRIENDLY: </span><span style="font-size:14px;font-weight:700;color:'+(_d.diyFriendly?'#60e880':'#ff7070')+'">'+(_d.diyFriendly?'Yes':'No — See a gunsmith')+'</span></div>'
+          +(_d.date?'<div style="font-size:10px;color:#8a95a8;margin-top:6px">Diagnosed '+_relTime(_d.date)+'</div>':'')
+          +_aiCaveat();
+        diagPanel = panelWrap('last_diag', '✦ AI Gunsmith Diagnosis', diagRows);
+      }
+
+      extraInfo = notesPanel + extraInfo + diagPanel + estPanel + _cpRenderInfoPanel(g);
 
   tc=((!g.working&&g.repairNotes)?'<div class="panel" style="border-color:#ff707050"><div class="sec-title" style="color:#ff7070">'+_iM('alert-triangle')+' Repair Notes</div><div style="font-size:15px;color:#f0f2f5;line-height:1.6">'+eh(g.repairNotes)+'</div></div>':'')+
     (!g.repairNotes&&!extraInfo?'<div class="empty" style="padding:28px 0"><div style="font-size:15px;color:#b0bac8">No additional info yet</div><button class="btn-g" style="margin-top:14px" onclick="editGun(\''+g.id+'\')">Add Info</button></div>':'')+extraInfo;
@@ -13584,7 +13610,7 @@ function editRangeSession(id){
   renderRangeFormModal();
 }
 
-function openNewRangeForm(){
+function openNewRangeForm(gunId){
   // Initialize form state
   rangeForm={
     date:new Date().toISOString().split('T')[0],
@@ -13593,6 +13619,12 @@ function openNewRangeForm(){
     guns:[],
     notes:'',rating:0,photos:[]
   };
+  // -Q: when launched from a firearm's page, pre-load that gun (note #3).
+  // Still editable/removable in the form; opening from the global Range view
+  // passes no id, so the picker stays blank as before.
+  if(gunId && guns.some(function(g){return g.id===gunId;})){
+    rangeForm.guns.push({gunId:gunId,rounds:0,groupSize:'',groupUnit:'MOA',score:'',ammoLot:'',opticSettings:'',loadData:'',drills:'',recoilNotes:''});
+  }
   renderRangeFormModal();
 }
 
@@ -13943,7 +13975,7 @@ function rRangeTab(gunId){
     +(interval?'<div style="font-size:11px;color:#8a95a8">Service every '+interval.toLocaleString()+' rds</div>':'<div style="font-size:11px;color:#8a95a8"><a onclick="editGun(\''+gunId+'\')" style="color:#a0c0ff;cursor:pointer">Set service interval</a></div>')
     +'</div>'
     +sessionsHtml
-    +'<button onclick="openNewRangeForm()" style="width:100%;margin-top:12px;background:#1e2535;border:1px solid #3a4455;color:#60e880;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🎯 Log New Session</button>';
+    +'<button onclick="openNewRangeForm(\''+gunId+'\')" style="width:100%;margin-top:12px;background:#1e2535;border:1px solid #3a4455;color:#60e880;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🎯 Log New Session</button>';
 }
 
 // ── BEGIN BYO-T1 BRING YOUR OWN API KEY ──────────────────────────────
@@ -17177,7 +17209,7 @@ function doSnLookup(){
       }
     }
     if(fillMsg.length>0){
-      if(yrSt){yrSt.style.color='#60e880';yrSt.textContent='✓ '+result.confidence+' — '+result.source;}
+      if(yrSt){yrSt.style.color='#60e880';yrSt.textContent='✓ '+result.confidence+' — '+result.source+' · Approximate, verify before relying.';}
       toast('Found: '+fillMsg.join(' · '));
     } else {
       if(yrSt){yrSt.style.color='#ffd060';yrSt.textContent='⚠ '+result.source;}
@@ -17457,7 +17489,7 @@ function doDiag(){
   aiLoad='diag';rnd();
   claude('Certified gunsmith. Firearm: '+FORM.make+' '+FORM.model+' '+FORM.caliber+'. Issue: '+FORM.repairNotes+'. Respond ONLY with JSON: {"diagnosis":"text","severity":"Minor|Moderate|Serious","recommendation":"text","diyFriendly":true}',600,function(e,txt){
     if(e){toast('Diagnosis failed','err');}
-    else{try{aiDiag=JSON.parse(txt);}catch(ex){toast('Could not parse diagnosis','err');}}
+    else{try{aiDiag=JSON.parse(txt);FORM.lastDiagnosis=Object.assign({},aiDiag,{issue:(FORM.repairNotes||''),date:new Date().toISOString()});}catch(ex){toast('Could not parse diagnosis','err');}}
     aiLoad=null;rnd();
   });
 }
