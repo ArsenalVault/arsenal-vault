@@ -805,6 +805,7 @@ td{padding:13px 14px;font-size:15px;border-bottom:1px solid #252c38;vertical-ali
 .toast{position:fixed;bottom:22px;right:22px;z-index:10000;padding:13px 22px;border-radius:8px;font-size:14px;display:none;font-weight:600}
 .toast.ok{background:#0d1f12;border:2px solid #60e880;color:#60e880}
 .toast.err{background:#1f0d0d;border:2px solid #ff7070;color:#ff7070}
+.toast.warn{background:#1f1a0d;border:2px solid #e8c46a;color:#e8c46a}
 .wbtns{display:flex;gap:8px;margin-top:4px}
 .wbtn{flex:1;padding:12px;border-radius:6px;border:2px solid #3a4455;background:#13161d;color:#b0bac8;cursor:pointer;font-size:13px;text-transform:uppercase;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:600}
 .wbtn.wy{border-color:#60e880;color:#60e880;background:#0d1f12}
@@ -1620,7 +1621,28 @@ function _backfillInventoryNumbers(){
   if(changed) sv();
 }
 
-// ── RANGE SESSIONS ────────────────────────────────────────────────────
+// One-time repair: reassign a fresh number to any firearm sharing an inventory
+// number with an earlier one. Inventory numbers are meant to be unique, durable
+// identifiers; the only way collisions arose was the old duplicateGun() inheriting
+// the source's number (fixed at build 2026-06-21-T). The FIRST holder of a number
+// keeps it (so existing references stay stable); later collisions get max+1.
+// Runs every load and is a no-op once clean. Models _backfillInventoryNumbers /
+// _dedupeCollectionNames.
+function _dedupeInventoryNumbers(){
+  var seen = {}, changed = false;
+  for(var i = 0; i < guns.length; i++){
+    var num = guns[i].inventoryNumber;
+    if(!num) continue;            // missing numbers are handled by backfill
+    if(seen[num]){
+      guns[i].inventoryNumber = _nextInventoryNumber(); // unique max+1
+      seen[guns[i].inventoryNumber] = true;
+      changed = true;
+    } else {
+      seen[num] = true;
+    }
+  }
+  if(changed) sv();
+}
 var rangeSessions=[];
 function loadRangeSessions(){try{var s=localStorage.getItem('av_range_sessions');if(s)rangeSessions=JSON.parse(s);}catch(e){rangeSessions=[];}}
 function saveRangeSessions(){try{localStorage.setItem('av_range_sessions',JSON.stringify(rangeSessions));}catch(e){}}
@@ -2239,6 +2261,7 @@ function ld(){
       // loadGunsFromCollection calls rnd() on completion
     } else {
       _backfillInventoryNumbers();
+      _dedupeInventoryNumbers();
       rnd();
     }
     _ONB_afterLoadHook();
@@ -4771,9 +4794,49 @@ function rDash(){
 }
 
 
+// ── DUPLICATE SERIAL DETECTION ────────────────────────────────────────
+// Serial numbers are only unique within a manufacturer (historically even
+// only within a model / production run), so a same-serial-different-make
+// collision can be legitimate — but it is far more often an accidental
+// double-entry. We FLAG, never block. Blank/unrecorded serials are excluded;
+// comparison is trim + uppercase only (no internal separator stripping, which
+// would manufacture false matches). Scope = active collection (in-memory guns).
+// Normalization reuses the canonical _normSerial() (defined in MERGE IMPORT),
+// so this flag and the merge-dedup logic agree on what "same serial" means.
+// Placeholder serials ("N/A", "NA", "N-A", "NONE", "UNKNOWN", "not available",
+// etc.) are treated as "no serial" — they never count as duplicates of each
+// other. Matched against the WHOLE field after stripping non-alphanumerics, so
+// a real serial that merely contains those letters (e.g. "SN12NA34") is safe.
+function _isPlaceholderSerial(s){
+  var t = _normSerial(s).replace(/[^a-z0-9]/g, ''); // _normSerial trims + lowercases
+  if(t === '') return true;
+  return ({na:1, nan:1, none:1, nil:1, null:1, n:1, unknown:1, unk:1, unkn:1,
+    noserial:1, nosn:1, noserialnumber:1, notavailable:1, notapplicable:1,
+    pending:1, tbd:1, unmarked:1, nomark:1, nomarkings:1})[t] === 1;
+}
+function _serialDupSet(list){
+  list = list || guns;
+  var seen = {}, dup = {};
+  list.forEach(function(g){
+    if(_isPlaceholderSerial(g.serialNumber)) return;
+    var n = _normSerial(g.serialNumber);
+    if(seen[n]) dup[n] = 1; else seen[n] = 1;
+  });
+  return dup; // { NORMALIZED_SERIAL: 1 } — only serials that appear 2+ times
+}
+function _serialSiblings(gun, list){
+  list = list || guns;
+  if(_isPlaceholderSerial(gun && gun.serialNumber)) return [];
+  var n = _normSerial(gun && gun.serialNumber);
+  return list.filter(function(g){
+    return g.id !== gun.id && !_isPlaceholderSerial(g.serialNumber) && _normSerial(g.serialNumber) === n;
+  });
+}
+
 // ── LIST ──────────────────────────────────────────────────────────────
 function rList(){
   var f=filtered();
+  var _dupSet=_serialDupSet(guns);
   var typeOpts=TYPES.map(function(t){return '<option'+(fType===t?' selected':'')+'>'+t+'</option>';}).join('');
   var condOpts=CONDITIONS.map(function(c){return '<option'+(fCond===c?' selected':'')+'>'+c+'</option>';}).join('');
 
@@ -4804,6 +4867,7 @@ function rList(){
             +(g.inventoryNumber?'<span style="color:#8a95a8;font-weight:600;font-size:11px;letter-spacing:.04em">'+eh(g.inventoryNumber)+'</span> ':'')
             +eh(g.make)+' '+eh(g.model)+(g.starred?' &#9733;':'')+((g.notes&&g.notes.length)?' <span style="color:#e8c46a;font-size:11px" title="Has notes">'+_iM('notes',13)+'</span>':'')
             +(_hasOpenCleaningWO(g)?' <span style="display:inline-block;background:#8EB4D820;color:#8EB4D8;border:1px solid #8EB4D850;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.06em;vertical-align:middle;margin-left:4px">CLEANING</span>':'')
+            +(_dupSet[_normSerial(g.serialNumber)]?' <span style="display:inline-block;background:#e8c46a20;color:#e8c46a;border:1px solid #e8c46a55;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.06em;vertical-align:middle;margin-left:4px" title="Another firearm shares this serial number — verify">&#9888; DUP SN</span>':'')
           +'</div>'
           +'<div style="font-size:12px;color:#8a95a8;margin-top:3px">'
             +eh(g.type||'—')+' &middot; '+eh(g.caliber)+(g.serialNumber?' &middot; SN: '+eh(g.serialNumber):'')
@@ -4842,6 +4906,7 @@ function rList(){
     +'<div style="display:flex;gap:6px;margin-bottom:14px">'
       +'<button onclick="go(\'pic\')" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #a0c0ff40;border-radius:8px;color:#a0c0ff;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('camera')+' View Inventory</button>'
       +'<button onclick="openTransferWorksheetModal()" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #8a95a840;border-radius:8px;color:#c8d4e8;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('document')+' Transfer Worksheet</button>'
+      +'<button onclick="openLabelScanner()" style="flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;background:#1a1d24;border:1px solid #e8c46a40;border-radius:8px;color:#e8c46a;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">'+_iM('camera')+' Scan Label</button>'
     +'</div>'
     
     +'</div>'
@@ -5074,7 +5139,10 @@ function doSave(){
     var updated=Object.assign({},FORM,{id:editId});
     guns=guns.map(function(g){return g.id===editId?updated:g;});
     if(window._arsenal&&window._arsenal.updateFirearm){window._arsenal.updateFirearm(editId,updated);}
-    toast('Firearm updated');haptic('save');
+    var _sibE=_serialSiblings(updated);
+    if(_sibE.length){ toast('Updated \u2014 \u26a0 serial also on '+((_sibE[0].make||'')+' '+(_sibE[0].model||'')).trim()+(_sibE.length>1?' +'+(_sibE.length-1)+' more':'')+'. Verify.','warn'); }
+    else { toast('Firearm updated'); }
+    haptic('save');
   }
   else{
     var newId=gid();
@@ -5089,7 +5157,10 @@ function doSave(){
     var newGun=Object.assign({},FORM,{id:newId,custody:initCoc,inventoryNumber:invNum});
     guns.push(newGun);
     if(window._arsenal&&window._arsenal.createFirearm){window._arsenal.createFirearm(newGun);}
-    toast('Added to inventory');haptic('save');
+    var _sibA=_serialSiblings(newGun);
+    if(_sibA.length){ toast('Added \u2014 \u26a0 serial also on '+((_sibA[0].make||'')+' '+(_sibA[0].model||'')).trim()+(_sibA.length>1?' +'+(_sibA.length-1)+' more':'')+'. Verify.','warn'); }
+    else { toast('Added to inventory'); }
+    haptic('save');
     // Fire acquisition prompt after a short delay so the toast is visible first.
     // User can dismiss the modal in one tap if they don't want to log details now.
     setTimeout(function(){ try{ openAcquisitionPrompt(newId); }catch(e){} }, 400);
@@ -5260,6 +5331,10 @@ function rReports(){
     +_rtab('ins','document','Insurance')
     +_rtab('theft','lock','Theft')
     +_rtab('custody','lock-open','Custody')
+    +'</div>'
+    +_rtLbl('Inventory')
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">'
+    +_rtab('labels','printer','Labels')
     +'</div>';
 
   var body='';
@@ -5269,6 +5344,7 @@ function rReports(){
   else if(reportTab==='maint') body=rMaint();
   else if(reportTab==='ins') body=rIns();
   else if(reportTab==='theft') body=rTheft();
+  else if(reportTab==='labels') body=rLabels();
 
   return tabs+body;
 }
@@ -5967,12 +6043,183 @@ function printTheft(){
   });
 }
 
+// ── INVENTORY LABELS ──────────────────────────────────────────────────
+// Prints 1.5"x1" labels, 5 across x 10 down = 50 per US-Letter sheet. Each
+// label: inventory number + make/model + a QR code. The QR encodes "A:"+gun.id
+// — a compact tagged token kept short on purpose so the printed code stays a
+// low-version (sparse, easy-scan) QR at this small size. NEXT-SESSION SCANNER
+// CONTRACT: read the QR string; if it starts with "A:", the firearm id is the
+// remainder; look it up and open editGun(id); anything that doesn't resolve to a
+// known gun is "not an ArsenalDB label." Alignment is calibratable (margins +
+// gaps) so it adapts to the exact label product / printer drift.
+function _invNumVal(s){ var m=(s||'').toString().match(/(\d+)/); return m?parseInt(m[1],10):1e12; }
+function _lblNum(id, def){ var el=document.getElementById(id); if(!el) return def; var v=parseFloat(el.value); return (isNaN(v)||v<0)?def:v; }
+function _labelQR(id){
+  try{
+    var qr=ArsenalQR(0,'M'); qr.addData('A:'+id); qr.make();
+    var n=qr.getModuleCount(), m=2, sz=n+m*2, rects='';
+    for(var r=0;r<n;r++){ for(var c=0;c<n;c++){ if(qr.isDark(r,c)) rects+='<rect x="'+(c+m)+'" y="'+(r+m)+'" width="1" height="1"/>'; } }
+    return '<svg viewBox="0 0 '+sz+' '+sz+'" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:100%"><rect width="'+sz+'" height="'+sz+'" fill="#fff"/><g fill="#000">'+rects+'</g></svg>';
+  }catch(e){ return ''; }
+}
+function _lblField(id,label,def){
+  return '<div><label class="lbl" style="display:block;font-size:11px;color:#8a95a8;margin-bottom:4px">'+label+'</label><input type="number" step="0.01" min="0" id="'+id+'" value="'+def+'" style="width:100%"/></div>';
+}
+function rLabels(){
+  var n=guns.length;
+  if(!n){
+    return '<div class="panel"><div class="empty" style="padding:30px 0"><div style="font-size:15px;color:#b0bac8">No firearms to label yet</div></div></div>';
+  }
+  var sheets=Math.max(1,Math.ceil(n/50));
+  return '<div class="panel">'
+    +'<div class="sec-title">'+_iM('printer')+' Inventory Labels</div>'
+    +'<div style="font-size:13px;color:#b0bac8;line-height:1.6;margin-bottom:14px">Prints 1.5\u2033 \u00d7 1\u2033 labels, 5 across \u00d7 10 down (50 per sheet). Each label shows its inventory number, make + model, and a QR code. <span style="color:#8a95a8">An in-app scanner to read these \u2014 scan a label, jump straight to that firearm\u2019s edit page \u2014 is coming in a future build.</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:13px;color:#d0d8e8;background:#1a2030;border:1px solid #2e3545;border-radius:8px;padding:10px 12px;margin-bottom:14px"><span>'+n+' firearm'+(n!==1?'s':'')+'</span><span style="color:#8a95a8">'+sheets+' sheet'+(sheets!==1?'s':'')+' of 50</span></div>'
+    +'<label class="lbl" style="display:block;font-size:12px;color:#8a95a8;margin-bottom:5px">Start at label position (1\u201350) \u2014 skip used slots on a partial sheet</label>'
+    +'<input type="number" id="lbl_start" value="1" min="1" max="50" style="width:100%;margin-bottom:14px"/>'
+    +'<details style="margin-bottom:14px"><summary style="cursor:pointer;font-size:12px;color:#e8c46a;font-weight:600;padding:4px 0">Alignment (advanced)</summary>'
+      +'<div style="font-size:11px;color:#8a95a8;line-height:1.5;margin:8px 0">Defaults assume 0.5\u2033 page margins and no gaps between labels. Print to PDF first to check alignment; nudge these (inches) if your sheet differs or the printer shifts the page.</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        +_lblField('lbl_top','Top margin','0.5')
+        +_lblField('lbl_left','Left margin','0.5')
+        +_lblField('lbl_colgap','Gap between columns','0')
+        +_lblField('lbl_rowgap','Gap between rows','0')
+      +'</div>'
+    +'</details>'
+    +'<button class="report-btn" onclick="printLabels()" style="width:100%">'+_iM('printer')+' Print Labels</button>'
+    +'<button class="report-btn" onclick="openLabelScanner()" style="width:100%;margin-top:8px;border-color:#e8c46a60;color:#e8c46a">'+_iM('camera')+' Scan a Label</button>'
+  +'</div>';
+}
+function printLabels(){
+  if(!guns.length){ toast('No firearms to label','err'); return; }
+  var list=guns.slice().sort(function(a,b){ return _invNumVal(a.inventoryNumber)-_invNumVal(b.inventoryNumber); });
+  var startPos=parseInt((document.getElementById('lbl_start')||{}).value,10);
+  if(!startPos||startPos<1||startPos>50) startPos=1;
+  var topM=_lblNum('lbl_top',0.5), leftM=_lblNum('lbl_left',0.5), colG=_lblNum('lbl_colgap',0), rowG=_lblNum('lbl_rowgap',0);
+  var COLS=5, ROWS=10, LW=1.5, LH=1, PER=COLS*ROWS;
+  var esc=function(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
 
+  // Chunk into sheets; first sheet honors the start-position offset, the rest fill from slot 0.
+  var sheets=[], idx=0, firstCap=PER-(startPos-1);
+  sheets.push({offset:startPos-1, items:list.slice(0,firstCap)});
+  idx=firstCap;
+  while(idx<list.length){ sheets.push({offset:0, items:list.slice(idx,idx+PER)}); idx+=PER; }
 
+  function labelHtml(g,slot){
+    var col=slot%COLS, row=Math.floor(slot/COLS);
+    var left=(leftM+col*(LW+colG)).toFixed(4), top=(topM+row*(LH+rowG)).toFixed(4);
+    var make=esc(g.make||''), model=esc(g.model||'');
+    return '<div class="lbl" style="left:'+left+'in;top:'+top+'in">'
+      +'<div class="qr">'+_labelQR(g.id)+'</div>'
+      +'<div class="txt"><div class="inv">'+esc(g.inventoryNumber||'\u2014')+'</div><div class="mm">'+make+(make&&model?' ':'')+model+'</div></div>'
+    +'</div>';
+  }
+  var sheetHtml=sheets.map(function(sh,si){
+    var cells=sh.items.map(function(g,i){ return labelHtml(g, sh.offset+i); }).join('');
+    return '<div class="sheet"'+(si<sheets.length-1?' style="page-break-after:always"':'')+'>'+cells+'</div>';
+  }).join('');
 
+  var css='@page{size:letter;margin:0}'
+    +'*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff}'
+    +'.sheet{position:relative;width:8.5in;height:11in;overflow:hidden}'
+    +'.lbl{position:absolute;width:'+LW+'in;height:'+LH+'in;display:flex;align-items:center;padding:0.07in;overflow:hidden}'
+    +'.lbl .qr{width:0.80in;height:0.80in;flex:0 0 0.80in;margin-right:0.05in}'
+    +'.lbl .txt{flex:1;min-width:0;overflow:hidden}'
+    +'.lbl .inv{font:700 8.5pt monospace;color:#000;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+    +'.lbl .mm{font:600 7pt Arial,Helvetica,sans-serif;color:#000;line-height:1.12;margin-top:1px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}'
+    +'@media screen{body{background:#444;padding:16px}.sheet{background:#fff;margin:0 auto 16px;box-shadow:0 2px 14px #0008}}';
+
+  var W=window.open('','_blank');
+  if(!W){ toast('Pop-up blocked. Allow pop-ups to print.','err'); return; }
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>ArsenalDB Labels</title><style>'+css+'</style></head><body>'
+    +sheetHtml
+    +'<scr'+'ipt>window.onload=function(){setTimeout(function(){try{window.print();}catch(e){}},350);};</scr'+'ipt>'
+    +'</body></html>';
+  W.document.open(); W.document.write(html); W.document.close();
+}
+
+// ── LABEL QR SCANNER ──────────────────────────────────────────────────
+// Owner-only scanner: point the camera at a printed inventory label, decode
+// its QR ("A:"+gun.id), and jump straight to that firearm's edit page. Uses the
+// native BarcodeDetector (supported in Android Chrome) — zero added library
+// weight. A QR that isn't an ArsenalDB label (or whose gun isn't in the active
+// collection) simply isn't matched; the owner is told to keep scanning. The
+// overlay is a body-level element (like the Gun Identifier camera), so rnd()
+// — which only repaints #app — never tears it down.
+var _qrScan={stream:null,active:false,last:null,detector:null,raf:null};
+
+function openLabelScanner(){
+  if(!('BarcodeDetector' in window)){
+    toast('Live scanning needs a browser with barcode support (Android Chrome).','err');
+    return;
+  }
+  try{ _qrScan.detector=new BarcodeDetector({formats:['qr_code']}); }
+  catch(e){ toast('QR scanning not available on this device.','err'); return; }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    toast('Camera not available on this device.','err'); return;
+  }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}},audio:false})
+    .then(function(stream){
+      _qrScan.stream=stream; _qrScan.active=true; _qrScan.last=null;
+      _qrScanBuildOverlay();
+    })
+    .catch(function(err){ toast('Camera unavailable ('+(err&&err.name||'error')+').','err'); });
+}
+
+function _qrScanBuildOverlay(){
+  var old=document.getElementById('qrscan_overlay'); if(old) old.remove();
+  var ov=document.createElement('div');
+  ov.id='qrscan_overlay';
+  ov.style.cssText='position:fixed;inset:0;background:#000;z-index:10003;display:flex;flex-direction:column';
+  ov.innerHTML=''
+    +'<video id="qrscan_video" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>'
+    +'<div style="position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:62vw;max-width:280px;aspect-ratio:1/1;z-index:2;border-radius:16px;box-shadow:0 0 0 9999px rgba(8,10,16,.66);outline:2px solid #e8c46a88;pointer-events:none"></div>'
+    +'<div style="position:relative;z-index:3;padding:16px;background:linear-gradient(180deg,#000c,#0000)"><div style="font-size:13px;font-weight:800;color:#e8c46a;letter-spacing:.08em">SCAN LABEL</div></div>'
+    +'<div id="qrscan_status" style="position:absolute;left:0;right:0;bottom:96px;z-index:3;text-align:center;font-size:13px;font-weight:700;color:#e8c46a;text-shadow:0 1px 4px #000;padding:0 20px">Center a label\u2019s QR code in the box</div>'
+    +'<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;padding:18px 24px 30px;background:linear-gradient(0deg,#000d,#0000);display:flex;justify-content:center">'
+      +'<button onclick="_qrScanStop()" style="background:#0008;border:1px solid #3a4455;color:#c0c8d8;padding:12px 28px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit">Cancel</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  var v=document.getElementById('qrscan_video');
+  v.srcObject=_qrScan.stream;
+  v.onloadedmetadata=function(){ v.play().catch(function(){}); _qrScanTick(); };
+}
+
+function _qrScanTick(){
+  if(!_qrScan.active) return;
+  var v=document.getElementById('qrscan_video');
+  if(!v||v.readyState<2){ _qrScan.raf=setTimeout(_qrScanTick,200); return; }
+  _qrScan.detector.detect(v).then(function(codes){
+    if(_qrScan.active && codes && codes.length){ _qrScanHandle(codes[0].rawValue); }
+    if(_qrScan.active) _qrScan.raf=setTimeout(_qrScanTick,200);
+  }).catch(function(){ if(_qrScan.active) _qrScan.raf=setTimeout(_qrScanTick,300); });
+}
+
+function _qrScanHandle(raw){
+  if(!raw) return;
+  var id=(raw.indexOf('A:')===0)?raw.slice(2):raw;
+  var g=guns.find(function(x){return x.id===id;});
+  if(g){
+    _qrScanStop();
+    haptic('save');
+    toast('Opening '+((g.make||'')+' '+(g.model||'')).trim());
+    editGun(g.id);
+  } else if(raw!==_qrScan.last){
+    _qrScan.last=raw;
+    var st=document.getElementById('qrscan_status');
+    if(st){ st.textContent='Not an ArsenalDB label (or not in this collection) \u2014 keep scanning'; st.style.color='#ff8a8a'; }
+  }
+}
+
+function _qrScanStop(){
+  _qrScan.active=false;
+  if(_qrScan.raf){ clearTimeout(_qrScan.raf); _qrScan.raf=null; }
+  if(_qrScan.stream){ try{ _qrScan.stream.getTracks().forEach(function(t){t.stop();}); }catch(e){} _qrScan.stream=null; }
+  var ov=document.getElementById('qrscan_overlay'); if(ov) ov.remove();
+}
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-06-04-R';   // bump on every revision
+var BUILD_TAG   = '2026-06-21-U';   // bump on every revision
 // -R: add/edit photo capture rewritten to avoid full-resolution decode.
 // onPhoto now uses _compressFileToBlob (createImageBitmap + resizeWidth) so a
 // 50MP camera photo never materializes at full res — fixes the "low memory"
@@ -7112,6 +7359,7 @@ function duplicateGun(id){
   if(!confirm('Duplicate '+g.make+' '+g.model+'?'))return;
   var copy=Object.assign({},g,{
     id:gid(),
+    inventoryNumber:_nextInventoryNumber(),
     serialNumber:'',
     photos:[],
     photo:'',
@@ -9709,6 +9957,7 @@ function loadGunsFromCollection(collId){
             _logSetGuns('loadGunsFromCollection:idb-empty-fallback-ls:'+collId, guns.length, _prevLn);
           }
           _backfillInventoryNumbers();
+          _dedupeInventoryNumbers();
           rnd();
         };
         req.onerror=function(){
@@ -9717,6 +9966,7 @@ function loadGunsFromCollection(collId){
           else guns=[];
           _logSetGuns('loadGunsFromCollection:idb-error-fallback-ls:'+collId, guns.length, _prevLn);
           _backfillInventoryNumbers();
+          _dedupeInventoryNumbers();
           rnd();
         };
       }catch(e){
@@ -9730,6 +9980,7 @@ function loadGunsFromCollection(collId){
       else guns=[];
       _logSetGuns('loadGunsFromCollection:no-db-ls:'+collId, guns.length, _prevLn);
       _backfillInventoryNumbers();
+      _dedupeInventoryNumbers();
       rnd();
     }
   });
@@ -12668,7 +12919,28 @@ function rDet(){
         diagPanel = panelWrap('last_diag', '✦ AI Gunsmith Diagnosis', diagRows);
       }
 
-      extraInfo = notesPanel + extraInfo + diagPanel + estPanel + _cpRenderInfoPanel(g);
+      // Duplicate-serial panel — flags when another firearm shares this serial.
+      // Tappable rows jump to the colliding record so the user can compare/merge.
+      var dupePanel = '';
+      var _dupSibs = _serialSiblings(g);
+      if(_dupSibs.length){
+        var dupRows = _dupSibs.map(function(s){
+          return '<div onclick="openDet(\''+s.id+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #252c38;cursor:pointer;gap:8px">'
+            +'<div style="flex:1;min-width:0">'
+              +'<div style="font-size:14px;color:#f0f2f5;font-weight:600">'+(s.inventoryNumber?'<span style="color:#8a95a8;font-weight:600;font-size:11px">'+eh(s.inventoryNumber)+'</span> ':'')+eh(s.make||'')+' '+eh(s.model||'')+'</div>'
+              +'<div style="font-size:12px;color:#8a95a8;margin-top:2px">'+eh(s.type||'')+(s.type&&s.caliber?' \u00b7 ':'')+eh(s.caliber||'')+'</div>'
+            +'</div>'
+            +'<span style="color:#e8c46a;font-size:13px;flex-shrink:0">View \u203a</span>'
+          +'</div>';
+        }).join('');
+        dupePanel = '<div class="panel" style="border-color:#e8c46a55">'
+          +'<div class="sec-title" style="color:#e8c46a">\u26a0 Duplicate Serial Number</div>'
+          +'<div style="font-size:13px;color:#d0d8e8;line-height:1.5;margin-bottom:8px">Serial <strong style="color:#e8c46a">'+eh(g.serialNumber)+'</strong> is also on '+_dupSibs.length+' other firearm'+(_dupSibs.length>1?'s':'')+'. This can be legitimate (serials repeat across makers), but is often an accidental double-entry \u2014 verify.</div>'
+          +dupRows
+        +'</div>';
+      }
+
+      extraInfo = dupePanel + notesPanel + extraInfo + diagPanel + estPanel + _cpRenderInfoPanel(g);
 
   tc=((!g.working&&g.repairNotes)?'<div class="panel" style="border-color:#ff707050"><div class="sec-title" style="color:#ff7070">'+_iM('alert-triangle')+' Repair Notes</div><div style="font-size:15px;color:#f0f2f5;line-height:1.6">'+eh(g.repairNotes)+'</div></div>':'')+
     (!g.repairNotes&&!extraInfo?'<div class="empty" style="padding:28px 0"><div style="font-size:15px;color:#b0bac8">No additional info yet</div><button class="btn-g" style="margin-top:14px" onclick="editGun(\''+g.id+'\')">Add Info</button></div>':'')+extraInfo;
