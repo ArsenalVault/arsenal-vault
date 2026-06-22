@@ -5972,7 +5972,11 @@ function printTheft(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-06-04-Q';   // bump on every revision
+var BUILD_TAG   = '2026-06-04-R';   // bump on every revision
+// -R: add/edit photo capture rewritten to avoid full-resolution decode.
+// onPhoto now uses _compressFileToBlob (createImageBitmap + resizeWidth) so a
+// 50MP camera photo never materializes at full res — fixes the "low memory"
+// tab kill during add-firearm. Sequential queue + photo-processing lock kept.
 // -Q: unified AI/estimate caveat (note #2). One line reused across valuation,
 // diagnosis, and the Gun Identifier so generated output never reads as gospel.
 var AI_CAVEAT = 'Estimate only — a starting point, not a professional appraisal or inspection. Verify before relying on it.';
@@ -17632,59 +17636,29 @@ function onPhoto(){
     var file = files[idx];
     var fileSize = file.size;
     idx++;
-    var r = new FileReader();
-    r.onload = function(e){
-      var rawDataUrl = e.target.result;
-      // Compress to a smaller JPEG. _compressPhoto returns a base64 data
-      // URL today; we then convert that to a Blob and save it.
-      // Target: 1024px longest edge, quality 0.72 → ~80-120 KB per photo.
-      // Visual placeholder + legible serial when zoomed; not print-quality.
-      _compressPhoto(rawDataUrl, 1024, 0.72).then(function(compressedDataUrl){
-        // Drop reference to original raw data URL — GC can reclaim
-        rawDataUrl = null;
-        return _dataUrlToBlob(compressedDataUrl).then(function(blob){
-          // Drop reference to compressed data URL too — Blob has the bytes now
-          compressedDataUrl = null;
-          // Save the Blob to photo_blob store. gunId is null at capture
-          // time (firearm not yet saved); we'll update gunId at sv() time.
-          return photoBlobSave(blob, null).then(function(photoId){
-            blob = null;  // store has ownership now
-            FORM.photos.push(photoId);
-            if(FORM.photos.length > 0) FORM.photo = FORM.photos[0];
-            try {
-              _DBG_log('onPhoto:saved-blob', {idx: idx, of: files.length, photoId: photoId, fileSizeKB: Math.round(fileSize/1024)});
-            } catch(_){}
-            rnd();
-            processNext();
-          });
-        });
-      }).catch(function(err){
-        _DBG_log('onPhoto:capture-failed', {msg: err && err.message});
-        // Fallback: save the raw data URL as a Blob (uncompressed)
-        // so we don't lose the photo entirely.
-        if(rawDataUrl){
-          _dataUrlToBlob(rawDataUrl).then(function(blob){
-            return photoBlobSave(blob, null);
-          }).then(function(photoId){
-            FORM.photos.push(photoId);
-            if(FORM.photos.length > 0) FORM.photo = FORM.photos[0];
-            rawDataUrl = null;
-            rnd();
-            processNext();
-          }).catch(function(){
-            rawDataUrl = null;
-            processNext();
-          });
-        } else {
-          processNext();
-        }
+    // -R: Lean capture. _compressFileToBlob decodes the camera file straight
+    // to a bounded-size bitmap (createImageBitmap with resizeWidth), so a 50MP
+    // S25 FE photo never materializes at full resolution. No multi-MB base64
+    // string, native bitmap released immediately. Returns a JPEG Blob.
+    // Target: 1024px longest edge, q0.72 → ~80-120 KB per photo.
+    _compressFileToBlob(file, 1024, 0.72).then(function(blob){
+      // Save the Blob to photo_blob store. gunId is null at capture time
+      // (firearm not yet saved); gunId is reconciled at sv() time.
+      return photoBlobSave(blob, null).then(function(photoId){
+        FORM.photos.push(photoId);
+        if(FORM.photos.length > 0) FORM.photo = FORM.photos[0];
+        try {
+          _DBG_log('onPhoto:saved-blob', {idx: idx, of: files.length, photoId: photoId, fileSizeKB: Math.round(fileSize/1024)});
+        } catch(_){}
+        rnd();
+        processNext();
       });
-    };
-    r.onerror = function(){
-      _DBG_log('onPhoto:read-error', {msg: r.error && r.error.message});
+    }).catch(function(err){
+      _DBG_log('onPhoto:capture-failed', {msg: err && err.message});
+      // Total failure (decode + legacy fallback both failed). Skip this photo
+      // rather than wedge the queue or save a heap-dangerous full-res blob.
       processNext();
-    };
-    r.readAsDataURL(file);
+    });
   }
   processNext();
   this.value='';
@@ -17743,6 +17717,60 @@ function _compressPhoto(dataUrl, maxEdge, quality){
     img.onerror = function(){ reject(new Error('image decode failed')); };
     img.src = dataUrl;
   });
+}
+
+// -R: Lean file→Blob compressor for the add/edit capture path.
+// Decodes the camera File directly with createImageBitmap, capping the decode
+// width so a 50MP photo (Galaxy S25 FE) never materializes at full resolution
+// in memory — this is the fix for the "low memory" tab kill during add. The
+// native bitmap is released immediately with .close(); output goes straight to
+// a JPEG Blob via canvas.toBlob (no base64 round-trip). Falls back to the old
+// readAsDataURL→_compressPhoto path if createImageBitmap is unavailable.
+// Returns Promise<Blob>.
+function _compressFileToBlob(file, maxEdge, quality){
+  maxEdge = maxEdge || 1024;
+  quality = quality != null ? quality : 0.72;
+  function _legacy(){
+    return new Promise(function(resolve, reject){
+      var fr = new FileReader();
+      fr.onload = function(e){
+        _compressPhoto(e.target.result, maxEdge, quality)
+          .then(function(durl){ return _dataUrlToBlob(durl); })
+          .then(resolve).catch(reject);
+      };
+      fr.onerror = function(){ reject(new Error('read failed')); };
+      fr.readAsDataURL(file);
+    });
+  }
+  if(typeof createImageBitmap !== 'function'){ return _legacy(); }
+  // resizeWidth caps decode width and preserves aspect (resizeHeight auto);
+  // imageOrientation honors EXIF so portraits aren't sideways. The exact
+  // longest-edge cap is applied on the already-small bitmap in the canvas step.
+  return createImageBitmap(file, { resizeWidth: maxEdge, resizeQuality: 'high', imageOrientation: 'from-image' })
+    .then(function(bmp){
+      try {
+        var w = bmp.width, h = bmp.height;
+        var scale = (Math.max(w, h) > maxEdge) ? (maxEdge / Math.max(w, h)) : 1;
+        var newW = Math.round(w * scale), newH = Math.round(h * scale);
+        var canvas = document.createElement('canvas');
+        canvas.width = newW; canvas.height = newH;
+        var ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(bmp, 0, 0, newW, newH);
+        if(bmp.close) bmp.close(); // release native bitmap immediately
+        return new Promise(function(resolve, reject){
+          canvas.toBlob(function(blob){
+            canvas.width = 0; canvas.height = 0; // help GC reclaim canvas
+            if(blob) resolve(blob); else reject(new Error('toBlob returned null'));
+          }, 'image/jpeg', quality);
+        });
+      } catch(e){
+        if(bmp && bmp.close) bmp.close();
+        throw e;
+      }
+    })
+    .catch(function(){ return _legacy(); });
 }
 
 // -Q Phase 3: Retroactive photo compression utility.
