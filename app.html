@@ -6127,11 +6127,14 @@ function printLabels(){
     +'.lbl .txt{flex:1;min-width:0;overflow:hidden}'
     +'.lbl .inv{font:700 8.5pt monospace;color:#000;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
     +'.lbl .mm{font:600 7pt Arial,Helvetica,sans-serif;color:#000;line-height:1.12;margin-top:1px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}'
-    +'@media screen{body{background:#444;padding:16px}.sheet{background:#fff;margin:0 auto 16px;box-shadow:0 2px 14px #0008}}';
+    +'.printhint{display:none}'
+    +'@media screen{body{background:#444;padding:16px}.sheet{background:#fff;margin:0 auto 16px;box-shadow:0 2px 14px #0008}.printhint{display:block;max-width:8.5in;margin:0 auto 16px;background:#1a2030;border:1px solid #e8c46a66;border-radius:8px;padding:12px 14px;color:#e8c46a;font:600 13px Arial,Helvetica,sans-serif;line-height:1.55}}'
+    +'@media print{.printhint{display:none!important}}';
 
   var W=window.open('','_blank');
   if(!W){ toast('Pop-up blocked. Allow pop-ups to print.','err'); return; }
   var html='<!doctype html><html><head><meta charset="utf-8"><title>ArsenalDB Labels</title><style>'+css+'</style></head><body>'
+    +'<div class="printhint">Before printing: set <b>Paper = Letter</b>, <b>Scale = 100% / Actual Size</b> (not \u201cFit to page\u201d), and <b>Margins = None</b>. This note will not print.</div>'
     +sheetHtml
     +'<scr'+'ipt>window.onload=function(){setTimeout(function(){try{window.print();}catch(e){}},350);};</scr'+'ipt>'
     +'</body></html>';
@@ -6219,7 +6222,7 @@ function _qrScanStop(){
 }
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-06-21-V';   // bump on every revision
+var BUILD_TAG   = '2026-06-21-W';   // bump on every revision
 // -R: add/edit photo capture rewritten to avoid full-resolution decode.
 // onPhoto now uses _compressFileToBlob (createImageBitmap + resizeWidth) so a
 // 50MP camera photo never materializes at full res — fixes the "low memory"
@@ -21805,9 +21808,17 @@ function _showMergeConflicts(newOnes, dupes, data){
 
 function _applyMergeResolutions(newOnes, resolved, data){
   var added=0, replaced=0, kept=0, skipped=0;
-  // Add all non-duplicates with fresh ids to avoid collision with existing guns
+  // Preserve each incoming firearm's id so its identity is stable across devices.
+  // QR labels are keyed to the id, so re-minting it on merge used to break label
+  // scanning after a sync (fixed 2026-06-21-W). Only re-mint on a genuine
+  // collision with an id already present locally.
+  var _idSeen={};
+  for(var k=0;k<guns.length;k++){ if(guns[k].id) _idSeen[guns[k].id]=1; }
   for(var i=0;i<newOnes.length;i++){
-    var g=Object.assign({}, newOnes[i], { id: gid() });
+    var incoming=newOnes[i];
+    var keepId = incoming.id && !_idSeen[incoming.id];
+    var g=Object.assign({}, incoming, keepId ? {} : { id: gid() });
+    _idSeen[g.id]=1;
     guns.push(g);
     added++;
   }
