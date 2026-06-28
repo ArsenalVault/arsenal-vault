@@ -6073,10 +6073,10 @@ function rLabels(){
   var sheets=Math.max(1,Math.ceil(n/50));
   return '<div class="panel">'
     +'<div class="sec-title">'+_iM('printer')+' Inventory Labels</div>'
-    +'<div style="font-size:13px;color:#b0bac8;line-height:1.6;margin-bottom:14px">Prints 1.5\u2033 \u00d7 1\u2033 labels, 5 across \u00d7 10 down (50 per sheet). Each label shows its inventory number, make + model, and a QR code. <span style="color:#8a95a8">An in-app scanner to read these \u2014 scan a label, jump straight to that firearm\u2019s edit page \u2014 is coming in a future build.</span></div>'
+    +'<div style="font-size:13px;color:#b0bac8;line-height:1.6;margin-bottom:14px">Prints 1.5\u2033 \u00d7 1\u2033 labels, 5 across \u00d7 10 down (50 per sheet). Each label shows its inventory number, make + model, and a QR code. <span style="color:#8a95a8">Use <b>Scan a Label</b> below to read one and jump straight to that firearm.</span></div>'
     +'<div style="display:flex;justify-content:space-between;font-size:13px;color:#d0d8e8;background:#1a2030;border:1px solid #2e3545;border-radius:8px;padding:10px 12px;margin-bottom:14px"><span>'+n+' firearm'+(n!==1?'s':'')+'</span><span style="color:#8a95a8">'+sheets+' sheet'+(sheets!==1?'s':'')+' of 50</span></div>'
     +'<label class="lbl" style="display:block;font-size:12px;color:#8a95a8;margin-bottom:5px">Start at label position (1\u201350) \u2014 skip used slots on a partial sheet</label>'
-    +'<input type="number" id="lbl_start" value="1" min="1" max="50" style="width:100%;margin-bottom:14px"/>'
+    +'<input type="number" id="lbl_start" value="1" min="1" max="50" oninput="_lblSyncSheet()" style="width:100%;margin-bottom:14px"/>'
     +'<details style="margin-bottom:14px"><summary style="cursor:pointer;font-size:12px;color:#e8c46a;font-weight:600;padding:4px 0">Alignment (advanced)</summary>'
       +'<div style="font-size:11px;color:#8a95a8;line-height:1.5;margin:8px 0">Defaults assume 0.5\u2033 page margins and no gaps between labels. Print to PDF first to check alignment; nudge these (inches) if your sheet differs or the printer shifts the page.</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
@@ -6086,11 +6086,49 @@ function rLabels(){
         +_lblField('lbl_rowgap','Gap between rows','0')
       +'</div>'
     +'</details>'
-    +'<button class="report-btn" onclick="printLabels()" style="width:100%">'+_iM('printer')+' Print Labels</button>'
+    +'<div style="font-size:12px;color:#e8c46a;background:#1a2030;border:1px solid #e8c46a40;border-radius:8px;padding:10px 12px;margin-bottom:12px;line-height:1.5"><b>Printing from a phone?</b> Print <b>one sheet at a time</b> \u2014 sending every sheet in a single job makes mobile printers shrink and shift the later pages. Use the per-sheet control below.</div>'
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px">'
+      +'<button class="report-btn" onclick="_lblStep(-1)" style="width:54px;padding:10px 0">\u25c0</button>'
+      +'<div style="font-size:14px;color:#d0d8e8;min-width:120px;text-align:center">Sheet <span id="lbl_cursheet" style="font-weight:700;color:#fff">1</span> of <span id="lbl_sheetn" style="font-weight:700;color:#fff">'+sheets+'</span></div>'
+      +'<button class="report-btn" onclick="_lblStep(1)" style="width:54px;padding:10px 0">\u25b6</button>'
+    +'</div>'
+    +'<button class="report-btn" onclick="printLabelSheet()" style="width:100%">'+_iM('printer')+' Print this sheet</button>'
+    +'<button class="report-btn" onclick="printLabels()" style="width:100%;margin-top:8px;background:transparent;border-color:#2e3545;color:#8a95a8">Print all sheets at once (desktop)</button>'
     +'<button class="report-btn" onclick="openLabelScanner()" style="width:100%;margin-top:8px;border-color:#e8c46a60;color:#e8c46a">'+_iM('camera')+' Scan a Label</button>'
   +'</div>';
 }
-function printLabels(){
+function _lblSheetCount(){
+  var n=guns.length; if(!n) return 0;
+  var sp=parseInt((document.getElementById('lbl_start')||{}).value,10);
+  if(!sp||sp<1||sp>50) sp=1;
+  var firstCap=50-(sp-1);
+  if(n<=firstCap) return 1;
+  return 1+Math.ceil((n-firstCap)/50);
+}
+function _lblStep(d){
+  var N=_lblSheetCount(); if(N<1) return;
+  var el=document.getElementById('lbl_cursheet'); if(!el) return;
+  var cur=(parseInt(el.textContent,10)||1)+d;
+  if(cur<1) cur=1; if(cur>N) cur=N;
+  el.textContent=cur;
+  var nEl=document.getElementById('lbl_sheetn'); if(nEl) nEl.textContent=N;
+}
+function _lblSyncSheet(){
+  var N=_lblSheetCount();
+  var nEl=document.getElementById('lbl_sheetn'); if(nEl) nEl.textContent=(N||1);
+  var el=document.getElementById('lbl_cursheet');
+  if(el){ var cur=parseInt(el.textContent,10)||1; if(cur<1)cur=1; if(N&&cur>N)cur=N; el.textContent=cur; }
+}
+function printLabelSheet(){
+  var N=_lblSheetCount();
+  if(N<1){ toast('No firearms to label','err'); return; }
+  var el=document.getElementById('lbl_cursheet');
+  var cur=el?(parseInt(el.textContent,10)||1):1;
+  if(cur<1)cur=1; if(cur>N)cur=N;
+  printLabels(cur-1);                 // 0-based sheet index -> single sheet
+  if(el && cur<N) el.textContent=cur+1; // auto-advance, stop at last
+}
+function printLabels(which){
   if(!guns.length){ toast('No firearms to label','err'); return; }
   var list=guns.slice().sort(function(a,b){ return _invNumVal(a.inventoryNumber)-_invNumVal(b.inventoryNumber); });
   var startPos=parseInt((document.getElementById('lbl_start')||{}).value,10);
@@ -6114,9 +6152,12 @@ function printLabels(){
       +'<div class="txt"><div class="inv">'+esc(g.inventoryNumber||'\u2014')+'</div><div class="mm">'+make+(make&&model?' ':'')+model+'</div></div>'
     +'</div>';
   }
-  var sheetHtml=sheets.map(function(sh,si){
+  var only=(typeof which==='number' && which>=0 && which<sheets.length);
+  var renderList=only?[sheets[which]]:sheets;
+  var sheetHtml=renderList.map(function(sh,si){
     var cells=sh.items.map(function(g,i){ return labelHtml(g, sh.offset+i); }).join('');
-    return '<div class="sheet"'+(si<sheets.length-1?' style="page-break-after:always"':'')+'>'+cells+'</div>';
+    var brk=(!only && si<renderList.length-1)?' style="page-break-after:always"':'';
+    return '<div class="sheet"'+brk+'>'+cells+'</div>';
   }).join('');
 
   var css='@page{size:letter;margin:0}'
@@ -6133,7 +6174,8 @@ function printLabels(){
 
   var W=window.open('','_blank');
   if(!W){ toast('Pop-up blocked. Allow pop-ups to print.','err'); return; }
-  var html='<!doctype html><html><head><meta charset="utf-8"><title>ArsenalDB Labels</title><style>'+css+'</style></head><body>'
+  var ttl=only?('ArsenalDB Labels \u2014 Sheet '+(which+1)+' of '+sheets.length):'ArsenalDB Labels';
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>'+ttl+'</title><style>'+css+'</style></head><body>'
     +'<div class="printhint">Before printing: set <b>Paper = Letter</b>, <b>Scale = 100% / Actual Size</b> (not \u201cFit to page\u201d), and <b>Margins = None</b>. This note will not print.</div>'
     +sheetHtml
     +'<scr'+'ipt>window.onload=function(){setTimeout(function(){try{window.print();}catch(e){}},350);};</scr'+'ipt>'
@@ -6222,7 +6264,7 @@ function _qrScanStop(){
 }
 // ── SETTINGS ──────────────────────────────────────────────────────────
 var APP_VERSION = '0.9.0-dev';
-var BUILD_TAG   = '2026-06-21-W';   // bump on every revision
+var BUILD_TAG   = '2026-06-28-X';   // bump on every revision
 // -R: add/edit photo capture rewritten to avoid full-resolution decode.
 // onPhoto now uses _compressFileToBlob (createImageBitmap + resizeWidth) so a
 // 50MP camera photo never materializes at full res — fixes the "low memory"
